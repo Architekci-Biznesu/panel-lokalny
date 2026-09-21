@@ -1,0 +1,90 @@
+---
+description: Panel Lokalny - zasady projektu (stack, design system, warstwa AI, konwencje kodu, bezpieczeństwo). Obowiązują w każdej sesji nad tym repo, niezależnie od tego nad którą fazą aktualnie pracujesz.
+alwaysApply: true
+---
+
+# Panel Lokalny - zasady dla AI (Cursor)
+
+Te zasady są wczytywane automatycznie w KAŻDEJ sesji Cursora nad tym repo (dzięki `alwaysApply: true`) - nie trzeba prosić Cursora, żeby je "przeczytał", ma je zawsze w kontekście. Pliki `faza-XX-*.md` opisują konkretne zadania budowy - ten plik opisuje jak pisać kod, niezależnie od zadania.
+
+Pełny kontekst produktowy: `docs/panel-lokalny-production-plan.md` i `docs/panel-lokalny-zasady-aplikacji.md` (skopiuj oba do repo w `docs/` przed startem - to zwykłe pliki referencyjne, nie rules, więc Cursor sięga po nie tylko gdy zadanie się do nich odwołuje).
+
+## Stack (nie odstępuj bez pytania)
+
+Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 + shadcn/ui + Zod + React Hook Form + Drizzle ORM + PostgreSQL (Neon) + Auth.js v5 + Stripe + BullMQ + Redis + gooey-toast + PostHog. Pełna tabela z wersjami: `docs/panel-lokalny-production-plan.md`, sekcja 8.
+
+## Design system
+
+Wszystkie tokeny (kolory, radius, fonty) w jednym pliku `app/globals.css`, jako CSS custom properties - nie definiuj kolorów/promieni inline w komponentach.
+
+```css
+:root{
+  --brand:#6d4de8; --brand-deep:#4c2fd4; --brand-soft:#c4b5fd;
+  --background:#fafafa; --foreground:#171717; --card:#ffffff;
+  --primary:#171717; --primary-foreground:#fafafa;
+  --secondary:#f4f4f5; --secondary-foreground:#27272a;
+  --muted:#f4f4f5; --muted-foreground:#71717a;
+  --accent:#f5f3ff; --accent-foreground:#4c2fd4;
+  --destructive:#dc2626; --border:#e4e4e7; --input:#d4d4d8; --ring:#6d4de8;
+  --radius:0.5rem;
+  --btn-height:2.75rem; --btn-height-sm:2.25rem;
+  --font-sans:'Montserrat', system-ui, sans-serif;
+  --font-mono:'JetBrains Mono', ui-monospace, monospace;
+}
+```
+
+Promienie: `var(--radius)` na standardowe elementy (przyciski, inputy), `calc(var(--radius) + 2px)` na kontenery najwyższego poziomu (karty/sekcje/panele), `calc(var(--radius) - 2px)` na elementy zagnieżdżone. Ikony: obrys, `stroke-width:2`, zaokrąglone końce - `lucide-react`. Font 14px bazowo, `font-variant-numeric:tabular-nums` na liczby/daty (klasa `.mono`).
+
+Przyciski: zawsze klasy globalne `.ui-btn` (+ `-primary` / `-outline` / `-ghost` / `-danger`, opcjonalnie `-sm`). Wysokość ustalona tokenami w `globals.css`: `--btn-height: 2.75rem` (domyślny) i `--btn-height-sm: 2.25rem` (`.ui-btn-sm`). Nie nadpisuj lokalnie `padding` / `height` / `font-size` na przyciskach - ikony wewnątrz też przez `.ui-btn svg` (1rem). Pełna szerokość tylko gdy layout tego wymaga (`width: 100%` na kontenerze), bez osobnych klas typu „duży przycisk”.
+
+Globalne klasy komponentowe w `@layer components` - nie powtarzaj tego samego zestawu klas Tailwind w każdym miejscu z kartą/przyciskiem/statusem. Minimalny zestaw: `.ui-card`, `.ui-section`, `.ui-btn` (+ `-primary`/`-outline`/`-ghost`/`-danger`, + `-sm`), `.ui-field`/`.ui-select`/`.ui-textarea`, `.ui-check`, `.ui-search`, `.ui-pill` (+ `-success`/`-danger`/`-warn`/`-info`/`-neutral`), `.ui-kpi`, `.ui-table-shell`, `.banner`, `.locked-note`.
+
+Dropdowny: komponent `UiSelect` + klasy `.ui-select` / `.ui-select-menu` / `.ui-select-option` (nie natywny `<select>` - lista opcji też w design systemie, hover/selected w kolorach brand). Checkboxy: zawsze `.ui-check`. Szukajka: `.ui-search` + `.ui-search-input` (ikona lupki).
+
+**Zasada jednego poziomu kontenera.** W obrębie jednej sekcji tylko JEDEN wizualnie wydzielony kontener (obramowanie + tło + cień). Elementy wewnątrz rozdzielaj spacingiem, separatorem (`border-bottom`) lub typografią - nigdy kolejną zamkniętą ramką z tłem wewnątrz istniejącej. Jeśli generujesz komponent i wychodzi "karta w karcie w karcie" - to błąd, przepisz na płaską strukturę.
+
+Bez em dashy (`—`) w żadnym tekście UI - zwykły myślnik (`-`).
+
+Mobile-first, breakpoint pod sidebar/nawigację: `900px` (poniżej - sidebar `position:fixed` chowany poza ekran, hamburger w topbarze pokazuje/chowa go klasą `.sidebar.open` - zgodnie z makietą, nie 768px). Ten sam `900px` przełącza też dwukolumnowy edytor strony (podgląd + czat AI) na jedną kolumnę. Dodatkowy breakpoint `640px` chowa nawigację strony klienta w podglądzie i zwija siatki kart do jednej kolumny. Tabele danych na mobile jako karty, nie poziomy scroll.
+
+## Warstwa AI - podmienialne providery
+
+Modele AI (do tekstu i do grafik) muszą być wymienialne bez zmian w kodzie funkcjonalnym (pętla contentowa, opinie, itd.) - nie wołaj SDK OpenAI (ani żadnego innego dostawcy) bezpośrednio z Server Actions czy komponentów.
+
+Struktura `lib/ai/`:
+- `lib/ai/types.ts` - interfejsy `TextProvider` (`generateTopic()`, `generateContent()`, `generateReviewReply()`) i `ImageProvider` (`generateImage()`)
+- `lib/ai/providers/openai.ts` - implementacja **obu** interfejsów przez OpenAI SDK (`openai`): `TextProvider` (model tekstowy) i `ImageProvider` (gpt-image)
+- `lib/ai/index.ts` - `getTextProvider()` / `getImageProvider()`: czytają zmienne środowiskowe (`AI_TEXT_PROVIDER`, `AI_IMAGE_PROVIDER`, domyślnie `openai` / `openai`) i zwracają odpowiednią implementację. Cała reszta aplikacji woła wyłącznie te dwie funkcje, nigdy konkretnego providera po nazwie
+
+Domyślnie: tekst i grafika - OpenAI SDK (`openai`, 7.15.0). Nazwa modelu tekstowego przez zmienną środowiskową (`OPENAI_TEXT_MODEL`), nie zaszyta w kodzie - modele zmieniają się szybciej niż kod. Klucz `OPENAI_API_KEY` przez zmienną środowiskową, nigdy hardcode.
+
+Claude jako provider tekstowy jest przewidziany, ale **nie implementowany teraz** - nie twórz `lib/ai/providers/anthropic.ts` ani zaślepki, dopóki nie będzie realnie potrzebny. Dodanie go później = nowy plik implementujący istniejący `TextProvider` + jedna linijka w `getTextProvider()` + zmiana `AI_TEXT_PROVIDER=anthropic`, zero zmian w miejscach, które AI faktycznie wołają.
+
+Ponieważ na start istnieje tylko jedna implementacja, łatwo przypadkiem przepuścić typy specyficzne dla OpenAI poza `lib/ai/` - i wtedy abstrakcja jest pozorna. Nic poza `lib/ai/` nie może importować z `openai` ani używać jego typów: na granicy stoją wyłącznie własne typy z `lib/ai/types.ts`.
+
+## Konwencje kodu
+
+- Struktura folderów po domenach: `features/publikacje/`, `features/opinie/`, `features/crm/`, `features/wizytowka/`, `features/strona/` - nie `components/`, `hooks/`, `utils/` na najwyższym poziomie
+- Server Components domyślnie, `"use client"` tylko przy realnej interaktywności
+- Zod na granicy każdego Server Action / Route Handler, zawsze, niezależnie od walidacji frontendowej
+- Jeden interfejs adaptera na kanał publikacji (`publish()`, `fetchReviews()`, `replyToReview()`) - implementacje per kanał (Meta, GBP) w `lib/integrations/{meta,gbp}/`, nie rozgałęziaj logiki biznesowej po kanałach
+- Angielski w kodzie (zmienne, tabele, funkcje), polski w treściach user-facing
+
+## Bezpieczeństwo - nienegocjowalne
+
+- Każde zapytanie do bazy filtrowane po `accountId`/`profileId` na poziomie query, nigdy poleganie na tym że UI czegoś nie pokazuje
+- Każdy `profileId` przyjęty z requestu/params jest weryfikowany po stronie serwera jako należący do **aktywnego konta**, zanim cokolwiek się z nim zrobi - zero wyjątków, to jest pierwsza linijka logiki każdego Server Action operującego na profilu
+- "Aktywne konto" rozstrzyga **wyłącznie** centralny helper (`getActiveProfile()` / `getActiveAccountId()`) - nigdy nie czytaj `accountId` bezpośrednio z sesji w Server Action, query czy komponencie, nawet gdy wydaje się to prostsze. Domyślnie helper zwraca konto zalogowanego użytkownika; jedynym miejscem, w którym może zwrócić inne konto, jest tryb admina dla kont wewnętrznych (`users.is_staff`) - i ta logika mieszka w samym helperze, nigdy w miejscach, które go wołają
+- Tokeny OAuth (Meta, GBP, Gmail, Outlook) szyfrowane w bazie, nie plaintext
+- Sekrety wyłącznie przez zmienne środowiskowe/sekrety platformy, nigdy hardcode'owane ani commitowane
+- Webhooki (Stripe, Meta) zawsze z weryfikacją podpisu przed przetworzeniem
+- Upload plików: whitelist typu/rozmiaru, re-encoding obrazów
+
+Pełna lista: `docs/panel-lokalny-zasady-aplikacji.md`, sekcja 4.
+
+## Zanim zaczniesz zadanie z pliku fazy
+
+1. Te zasady już masz (wczytane automatycznie, `alwaysApply: true`) - nie musisz nic robić, żeby je aktywować
+2. Przeczytaj plik `faza-XX-*.md` dla bieżącego zadania w całości
+3. Jeśli zadanie odwołuje się do sekcji `docs/panel-lokalny-production-plan.md` lub `docs/panel-lokalny-zasady-aplikacji.md` - sprawdź ją, nie zgaduj
+4. Pytaj, jeśli coś w zadaniu jest sprzeczne z tymi zasadami - nie wybieraj cicho jednej z dwóch opcji

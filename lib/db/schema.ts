@@ -1,0 +1,261 @@
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  pgEnum,
+  uniqueIndex,
+  jsonb,
+  type AnyPgColumn,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+export const userRoleEnum = pgEnum("user_role", ["owner", "member"]);
+export const profileKindEnum = pgEnum("profile_kind", ["local_business"]);
+export const companyContextSourceEnum = pgEnum("company_context_source", [
+  "website",
+  "gbp",
+]);
+export const oauthProviderEnum = pgEnum("oauth_provider", ["gbp"]);
+
+export const accounts = pgTable("accounts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+});
+
+export const users = pgTable("users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  role: userRoleEnum("role").notNull().default("owner"),
+});
+
+export const profiles = pgTable("profiles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  kind: profileKindEnum("kind").notNull().default("local_business"),
+  gbpLocationId: text("gbp_location_id"),
+  oauthConnectionId: uuid("oauth_connection_id").references(
+    (): AnyPgColumn => oauthConnections.id,
+    { onDelete: "set null" },
+  ),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const publishGroups = pgTable("publish_groups", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+});
+
+export const profileGroups = pgTable(
+  "profile_groups",
+  {
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => publishGroups.id, { onDelete: "cascade" }),
+  },
+  (table) => [uniqueIndex("profile_groups_profile_id_uidx").on(table.profileId)],
+);
+
+export const profileBriefs = pgTable(
+  "profile_briefs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    services: text("services").notNull().default(""),
+    tone: text("tone").notNull().default(""),
+    targetAudience: text("target_audience").notNull().default(""),
+    differentiators: text("differentiators"),
+    serviceArea: text("service_area"),
+    avoid: text("avoid"),
+    outOfScope: text("out_of_scope"),
+    websiteUrl: text("website_url"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [uniqueIndex("profile_briefs_profile_id_uidx").on(table.profileId)],
+);
+
+export const companyContext = pgTable("company_context", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  source: companyContextSourceEnum("source").notNull(),
+  rawData: jsonb("raw_data").notNull(),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+/** Encrypted OAuth tokens - one row per Google account connection, shared by a location batch. */
+export const oauthConnections = pgTable("oauth_connections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  provider: oauthProviderEnum("provider").notNull(),
+  encryptedAccessToken: text("encrypted_access_token").notNull(),
+  encryptedRefreshToken: text("encrypted_refresh_token"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  scopes: text("scopes"),
+  externalAccountEmail: text("external_account_email"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+/** In-progress onboarding state before activeProfileId is set (or while mode=add). */
+export const onboardingDrafts = pgTable(
+  "onboarding_drafts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    mode: text("mode").notNull().default("new"),
+    step: text("step").notNull().default("1"),
+    profileId: uuid("profile_id").references(() => profiles.id, {
+      onDelete: "set null",
+    }),
+    websiteUrl: text("website_url"),
+    manualDescription: text("manual_description"),
+    scrapeText: text("scrape_text"),
+    scrapeWarning: text("scrape_warning"),
+    services: text("services"),
+    tone: text("tone"),
+    targetAudience: text("target_audience"),
+    differentiators: text("differentiators"),
+    briefDirty: text("brief_dirty"),
+    oauthConnectionId: uuid("oauth_connection_id").references(
+      (): AnyPgColumn => oauthConnections.id,
+      { onDelete: "set null" },
+    ),
+    pendingGbpLocations: jsonb("pending_gbp_locations"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("onboarding_drafts_account_mode_uidx").on(
+      table.accountId,
+      table.mode,
+    ),
+  ],
+);
+
+export const accountsRelations = relations(accounts, ({ many }) => ({
+  users: many(users),
+  profiles: many(profiles),
+  publishGroups: many(publishGroups),
+  oauthConnections: many(oauthConnections),
+  onboardingDrafts: many(onboardingDrafts),
+}));
+
+export const usersRelations = relations(users, ({ one }) => ({
+  account: one(accounts, {
+    fields: [users.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const profilesRelations = relations(profiles, ({ one, many }) => ({
+  account: one(accounts, {
+    fields: [profiles.accountId],
+    references: [accounts.id],
+  }),
+  profileGroups: many(profileGroups),
+  brief: one(profileBriefs),
+  companyContexts: many(companyContext),
+  oauthConnection: one(oauthConnections, {
+    fields: [profiles.oauthConnectionId],
+    references: [oauthConnections.id],
+  }),
+}));
+
+export const publishGroupsRelations = relations(
+  publishGroups,
+  ({ one, many }) => ({
+    account: one(accounts, {
+      fields: [publishGroups.accountId],
+      references: [accounts.id],
+    }),
+    profileGroups: many(profileGroups),
+  }),
+);
+
+export const profileGroupsRelations = relations(profileGroups, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [profileGroups.profileId],
+    references: [profiles.id],
+  }),
+  group: one(publishGroups, {
+    fields: [profileGroups.groupId],
+    references: [publishGroups.id],
+  }),
+}));
+
+export const profileBriefsRelations = relations(profileBriefs, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [profileBriefs.profileId],
+    references: [profiles.id],
+  }),
+}));
+
+export const companyContextRelations = relations(companyContext, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [companyContext.profileId],
+    references: [profiles.id],
+  }),
+}));
+
+export const oauthConnectionsRelations = relations(
+  oauthConnections,
+  ({ one, many }) => ({
+    account: one(accounts, {
+      fields: [oauthConnections.accountId],
+      references: [accounts.id],
+    }),
+    profiles: many(profiles),
+  }),
+);
+
+export type Account = typeof accounts.$inferSelect;
+export type User = typeof users.$inferSelect;
+export type Profile = typeof profiles.$inferSelect;
+export type ProfileBrief = typeof profileBriefs.$inferSelect;
+export type CompanyContext = typeof companyContext.$inferSelect;
+export type OAuthConnection = typeof oauthConnections.$inferSelect;
+export type OnboardingDraft = typeof onboardingDrafts.$inferSelect;
