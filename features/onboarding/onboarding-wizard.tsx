@@ -22,6 +22,7 @@ import {
   WandSparkles,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "gooey-toast";
 import {
   confirmGbpLocations,
   disconnectGbpAction,
@@ -71,10 +72,8 @@ export function OnboardingWizard({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [warning, setWarning] = useState<string | null>(
-    initialDraft.scrapeWarning,
-  );
+  const scrapeWarned = useRef(false);
+  const gbpToasted = useRef(false);
 
   const step = initialDraft.step === "2" || initialDraft.step === "3"
     ? initialDraft.step
@@ -128,6 +127,36 @@ export function OnboardingWizard({
   }, []);
 
   useEffect(() => {
+    if (scrapeWarned.current || !initialDraft.scrapeWarning) return;
+    scrapeWarned.current = true;
+    toast.warning({
+      title: "Uwaga przy pobieraniu strony",
+      description: initialDraft.scrapeWarning,
+    });
+  }, [initialDraft.scrapeWarning]);
+
+  useEffect(() => {
+    if (gbpToasted.current || !gbpStatus) return;
+    gbpToasted.current = true;
+    if (gbpStatus === "connected") {
+      toast.success({
+        title: "Połączono z Google",
+        description: "Wybierz lokalizacje do podłączenia.",
+      });
+    } else if (gbpStatus === "denied") {
+      toast.warning({
+        title: "Odmówiono dostępu Google",
+        description: "Możesz pominąć ten krok i wrócić później.",
+      });
+    } else if (gbpStatus === "error") {
+      toast.error({
+        title: "Nie udało się połączyć z Google",
+        description: "Spróbuj ponownie albo pomiń ten krok.",
+      });
+    }
+  }, [gbpStatus]);
+
+  useEffect(() => {
     if (!regenOpen) return;
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -157,7 +186,10 @@ export function OnboardingWizard({
         groupMode: "none",
       });
       if (result && !result.ok) {
-        setError(result.error);
+        toast.error({
+          title: "Nie udało się",
+          description: result.error,
+        });
         autoConfirmed.current = false;
       }
     });
@@ -190,7 +222,6 @@ export function OnboardingWizard({
     ) {
       return;
     }
-    setError(null);
     setRegenOpen(false);
     setRegenerating(true);
     startTransition(async () => {
@@ -205,9 +236,16 @@ export function OnboardingWizard({
       setRegenNote("");
       if (!result.ok) {
         setRegenerating(false);
-        setError(result.error);
+        toast.error({
+          title: "Regeneracja nie powiodła się",
+          description: result.error,
+        });
         return;
       }
+      toast.success({
+        title: "Brief wygenerowany ponownie",
+        description: "Sprawdź i popraw pola przed kolejnym krokiem.",
+      });
       refresh();
     });
   }
@@ -272,12 +310,6 @@ export function OnboardingWizard({
           </div>
         )}
 
-        {error ? (
-          <p className="auth-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-
         <div className="onboarding-actions">
           <button
             type="button"
@@ -285,7 +317,6 @@ export function OnboardingWizard({
             disabled={pending}
             aria-busy={pending}
             onClick={() => {
-              setError(null);
               startTransition(async () => {
                 const result = await submitOnboardingStep1(
                   path === "website"
@@ -293,10 +324,16 @@ export function OnboardingWizard({
                     : { path: "manual", description, mode },
                 );
                 if (!result.ok) {
-                  setError(result.error);
+                  toast.error({
+                    title: "Nie udało się",
+                    description: result.error,
+                  });
                   return;
                 }
-                if (result.warning) setWarning(result.warning);
+                toast.success({
+                  title: "Brief gotowy",
+                  description: "Sprawdź i popraw pola w następnym kroku.",
+                });
                 refresh();
               });
             }}
@@ -326,8 +363,6 @@ export function OnboardingWizard({
           To propozycja startowa - możesz poprawić każde pole przed kolejnym
           krokiem.
         </p>
-
-        {warning ? <p className="banner">{warning}</p> : null}
 
         <div
           className={`brief-fields${regenerating ? " is-regenerating" : ""}`}
@@ -423,12 +458,6 @@ export function OnboardingWizard({
           })}
         </div>
 
-        {error ? (
-          <p className="auth-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-
         <div className="onboarding-actions">
           <button
             type="button"
@@ -466,7 +495,6 @@ export function OnboardingWizard({
             disabled={pending || regenerating}
             aria-busy={pending}
             onClick={() => {
-              setError(null);
               startTransition(async () => {
                 const result = await saveBriefAndContinue({
                   mode,
@@ -476,9 +504,16 @@ export function OnboardingWizard({
                   differentiators,
                 });
                 if (!result.ok) {
-                  setError(result.error);
+                  toast.error({
+                    title: "Nie udało się zapisać",
+                    description: result.error,
+                  });
                   return;
                 }
+                toast.success({
+                  title: "Brief zapisany",
+                  description: "Połącz wizytówkę Google albo pomiń ten krok.",
+                });
                 refresh();
               });
             }}
@@ -576,17 +611,6 @@ export function OnboardingWizard({
         To najszybszy sposób na start - pobierzemy lokalizacje i dane firmy.
       </p>
 
-      {gbpStatus === "denied" ? (
-        <p className="banner">
-          Odmówiono dostępu Google. Możesz pominąć ten krok i wrócić później.
-        </p>
-      ) : null}
-      {gbpStatus === "error" ? (
-        <p className="auth-error">
-          Nie udało się połączyć z Google. Spróbuj ponownie albo pomiń.
-        </p>
-      ) : null}
-
       {!showLocationPicker ? (
         <div className="gbp-connect-block">
           <button
@@ -623,6 +647,10 @@ export function OnboardingWizard({
               disabled={pending}
               onClick={() => {
                 startTransition(async () => {
+                  toast.success({
+                    title: "Onboarding zakończony",
+                    description: "Możesz wrócić do Google później w ustawieniach.",
+                  });
                   await skipGbpAndFinish(mode);
                 });
               }}
@@ -736,19 +764,12 @@ export function OnboardingWizard({
             </div>
           ) : null}
 
-          {error ? (
-            <p className="auth-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-
           <div className="gbp-connect-block">
             <button
               type="button"
               className="google-connect-btn"
               disabled={pending || selected.length === 0}
               onClick={() => {
-                setError(null);
                 startTransition(async () => {
                   const result = await confirmGbpLocations({
                     mode,
@@ -758,7 +779,10 @@ export function OnboardingWizard({
                     existingGroupId: existingGroupId || undefined,
                   });
                   if (result && !result.ok) {
-                    setError(result.error);
+                    toast.error({
+                      title: "Nie udało się podłączyć",
+                      description: result.error,
+                    });
                   }
                 });
               }}
@@ -786,9 +810,16 @@ export function OnboardingWizard({
                 startTransition(async () => {
                   const result = await disconnectGbpAction(mode);
                   if (!result.ok) {
-                    setError(result.error);
+                    toast.error({
+                      title: "Nie udało się",
+                      description: result.error,
+                    });
                     return;
                   }
+                  toast.success({
+                    title: "Rozłączono Google",
+                    description: "Możesz połączyć wizytówkę ponownie.",
+                  });
                   setSelected([]);
                   refresh();
                 });
@@ -799,12 +830,6 @@ export function OnboardingWizard({
           </div>
         </>
       )}
-
-      {!showLocationPicker && error ? (
-        <p className="auth-error" role="alert">
-          {error}
-        </p>
-      ) : null}
     </>
   );
 }

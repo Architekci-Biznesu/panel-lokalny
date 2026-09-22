@@ -3,6 +3,8 @@
 import { hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { AuthError } from "next-auth";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { signIn, signOut } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -18,6 +20,9 @@ const loginSchema = z.object({
   email: z.string().trim().email("Nieprawidłowy e-mail"),
   password: z.string().min(1, "Podaj hasło"),
 });
+
+/** bcrypt cost - 10 is OWASP-acceptable and ~4x faster than 12 on slow CI/dev. */
+const BCRYPT_ROUNDS = 10;
 
 export type ActionResult =
   | { ok: true }
@@ -49,7 +54,7 @@ export async function registerAction(
     return { ok: false, error: "Konto z tym e-mailem już istnieje" };
   }
 
-  const passwordHash = await hash(parsed.data.password, 12);
+  const passwordHash = await hash(parsed.data.password, BCRYPT_ROUNDS);
 
   await db.transaction(async (tx) => {
     const [account] = await tx
@@ -70,16 +75,20 @@ export async function registerAction(
     await signIn("credentials", {
       email,
       password: parsed.data.password,
-      redirectTo: "/onboarding",
+      redirect: false,
     });
   } catch (error) {
+    if (isRedirectError(error)) throw error;
     if (error instanceof AuthError) {
-      return { ok: false, error: "Konto utworzone, ale logowanie nie powiodło się" };
+      return {
+        ok: false,
+        error: "Konto utworzone, ale logowanie nie powiodło się",
+      };
     }
     throw error;
   }
 
-  return { ok: true };
+  redirect("/onboarding");
 }
 
 export async function loginAction(
@@ -99,16 +108,17 @@ export async function loginAction(
     await signIn("credentials", {
       email: parsed.data.email.toLowerCase(),
       password: parsed.data.password,
-      redirectTo: "/pulpit",
+      redirect: false,
     });
   } catch (error) {
+    if (isRedirectError(error)) throw error;
     if (error instanceof AuthError) {
       return { ok: false, error: "Nieprawidłowy e-mail lub hasło" };
     }
     throw error;
   }
 
-  return { ok: true };
+  redirect("/pulpit");
 }
 
 export async function logoutAction() {

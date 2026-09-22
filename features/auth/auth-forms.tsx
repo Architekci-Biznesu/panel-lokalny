@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { toast } from "gooey-toast";
 import {
   loginAction,
   registerAction,
@@ -14,8 +14,17 @@ const initial: ActionResult | null = null;
 export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, initial);
 
+  useEffect(() => {
+    if (state && !state.ok) {
+      toast.error({
+        title: "Nie udało się zalogować",
+        description: state.error,
+      });
+    }
+  }, [state]);
+
   return (
-    <form action={action} className="auth-form">
+    <form action={action} className="auth-form" noValidate>
       <div className="auth-field">
         <label htmlFor="email">E-mail</label>
         <input
@@ -23,7 +32,6 @@ export function LoginForm() {
           name="email"
           type="email"
           autoComplete="email"
-          required
           className="ui-field"
         />
       </div>
@@ -34,15 +42,9 @@ export function LoginForm() {
           name="password"
           type="password"
           autoComplete="current-password"
-          required
           className="ui-field"
         />
       </div>
-      {state && !state.ok ? (
-        <p className="auth-error" role="alert">
-          {state.error}
-        </p>
-      ) : null}
       <button type="submit" className="ui-btn ui-btn-primary" disabled={pending}>
         {pending ? "Logowanie..." : "Zaloguj się"}
       </button>
@@ -58,8 +60,17 @@ export function LoginForm() {
 export function RegisterForm() {
   const [state, action, pending] = useActionState(registerAction, initial);
 
+  useEffect(() => {
+    if (state && !state.ok) {
+      toast.error({
+        title: "Nie udało się utworzyć konta",
+        description: state.error,
+      });
+    }
+  }, [state]);
+
   return (
-    <form action={action} className="auth-form">
+    <form action={action} className="auth-form" noValidate>
       <div className="auth-field">
         <label htmlFor="name">Imię i nazwisko</label>
         <input
@@ -67,7 +78,6 @@ export function RegisterForm() {
           name="name"
           type="text"
           autoComplete="name"
-          required
           className="ui-field"
         />
       </div>
@@ -78,7 +88,6 @@ export function RegisterForm() {
           name="email"
           type="email"
           autoComplete="email"
-          required
           className="ui-field"
         />
       </div>
@@ -89,16 +98,9 @@ export function RegisterForm() {
           name="password"
           type="password"
           autoComplete="new-password"
-          required
-          minLength={8}
           className="ui-field"
         />
       </div>
-      {state && !state.ok ? (
-        <p className="auth-error" role="alert">
-          {state.error}
-        </p>
-      ) : null}
       <button type="submit" className="ui-btn ui-btn-primary" disabled={pending}>
         {pending ? "Tworzenie konta..." : "Utwórz konto"}
       </button>

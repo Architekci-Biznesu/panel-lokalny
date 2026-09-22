@@ -6,6 +6,7 @@ declare module "next-auth" {
       id: string;
       accountId: string;
       activeProfileId: string | null;
+      adminImpersonating: boolean;
     } & DefaultSession["user"];
   }
 
@@ -20,5 +21,6 @@ declare module "next-auth/jwt" {
     id: string;
     accountId: string;
     activeProfileId: string | null;
+    adminImpersonating?: boolean;
   }
 }

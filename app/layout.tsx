@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Montserrat } from "next/font/google";
+import { GooeyToaster } from "@/features/shell/gooey-toaster";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -26,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl" className={`${montserrat.variable} ${jetbrainsMono.variable} h-full`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        <GooeyToaster />
+      </body>
     </html>
   );
 }

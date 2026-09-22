@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { isCurrentUserStaff } from "@/lib/session";
 
 export default async function HomePage() {
   const session = await auth();
@@ -9,6 +10,9 @@ export default async function HomePage() {
   }
 
   if (!session.user.activeProfileId) {
+    if (await isCurrentUserStaff()) {
+      redirect("/admin");
+    }
     redirect("/onboarding");
   }
 

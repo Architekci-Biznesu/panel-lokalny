@@ -76,13 +76,14 @@ Jeśli coś wygląda jak "wymaga wydzielenia", w pierwszej kolejności próbuj t
 - Walidacja danych wejściowych przez Zod na granicy API (Server Actions/Route Handlers) zawsze, nawet jeśli frontend już waliduje - front można obejść
 - Jeden wspólny adapter na kanał publikacji (Meta, GBP) z jednym interfejsem `publish()`, `fetchReviews()` itd. - dodanie nowego kanału nie dotyka istniejącej logiki
 - Nazewnictwo: angielskie w kodzie (zmienne, funkcje, nazwy tabel), polskie tylko w treściach user-facing i komentarzach biznesowych, jeśli potrzebne
+- Feedback po akcjach (sukces / błąd / ostrzeżenie / info) wyłącznie przez `gooey-toast` - bez inline komunikatów pod polami, transientnych bannerów po submitcie ani natywnych baniek walidacji przeglądarki (`noValidate` na formularzach); stałe UI (np. `.locked-note`, statusy) zostają
 
 ## 3. Dostępność (a11y)
 
 - Kontrast tekstu do tła zgodny z WCAG AA (min. 4.5:1 dla tekstu podstawowego)
 - Pełna obsługa klawiatury - każda akcja (akceptuj/edytuj/odrzuć, przełącznik profilu, nawigacja) dostępna bez myszy
 - `aria-label` na przyciskach z samą ikoną (bez widocznego tekstu)
-- Formularze: każdy input ma powiązany `<label>`, komunikaty błędów czytelne dla screen readerów (`aria-describedby`)
+- Formularze: każdy input ma powiązany `<label>`; transientne błędy/sukcesy idą przez gooey-toast (biblioteka obsługuje a11y toasta), nie przez osobne akapity przy polach
 
 ## 4. Bezpieczeństwo
 

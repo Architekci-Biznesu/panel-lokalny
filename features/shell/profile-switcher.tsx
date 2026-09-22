@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { toast } from "gooey-toast";
+import { exitAdminMode } from "@/features/admin/actions";
 import { switchActiveProfile } from "@/features/onboarding/actions";
 
 type ProfileOption = { id: string; name: string };
@@ -12,10 +14,14 @@ export function ProfileSwitcher({
   profiles,
   activeProfileId,
   compact = false,
+  adminImpersonating = false,
+  ownerEmail = null,
 }: {
   profiles: ProfileOption[];
   activeProfileId: string | null;
   compact?: boolean;
+  adminImpersonating?: boolean;
+  ownerEmail?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -35,9 +41,27 @@ export function ProfileSwitcher({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  // Onboarding / first visit: hide until the user already has at least one profile
   if (profiles.length === 0 || (compact && !activeProfileId)) {
     return null;
+  }
+
+  function selectProfile(profileId: string) {
+    if (profileId === activeProfileId) {
+      setOpen(false);
+      return;
+    }
+    startTransition(async () => {
+      const result = await switchActiveProfile(profileId);
+      if (!result.ok) {
+        toast.error({
+          title: "Nie udało się przełączyć profilu",
+          description: result.error,
+        });
+        return;
+      }
+      setOpen(false);
+      router.refresh();
+    });
   }
 
   return (
@@ -55,10 +79,18 @@ export function ProfileSwitcher({
           </>
         ) : (
           <>
-            <span className="profile-switcher-label">Aktywny profil</span>
+            <span className="profile-switcher-label">
+              Aktywny profil
+              {adminImpersonating ? (
+                <span className="ui-pill ui-pill-warn">admin</span>
+              ) : null}
+            </span>
             <span className="profile-switcher-value">
               {active?.name ?? "Brak profilu"}
             </span>
+            {adminImpersonating && ownerEmail ? (
+              <span className="profile-switcher-sub">{ownerEmail}</span>
+            ) : null}
             <ChevronDown className="profile-switcher-icon" aria-hidden />
           </>
         )}
@@ -66,30 +98,42 @@ export function ProfileSwitcher({
 
       {open ? (
         <div className="profile-menu-panel" role="menu">
+          {adminImpersonating ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="profile-menu-admin-exit"
+              disabled={pending}
+              onClick={() => {
+                startTransition(async () => {
+                  await exitAdminMode();
+                });
+              }}
+            >
+              Wróć do panelu admina
+            </button>
+          ) : null}
           {profiles.map((profile) => (
             <button
               key={profile.id}
               type="button"
-              className={profile.id === active?.id ? "active" : undefined}
+              className={profile.id === activeProfileId ? "active" : undefined}
               role="menuitem"
-              onClick={() => {
-                startTransition(async () => {
-                  await switchActiveProfile(profile.id);
-                  setOpen(false);
-                  router.refresh();
-                });
-              }}
+              disabled={pending}
+              onClick={() => selectProfile(profile.id)}
             >
               {profile.name}
             </button>
           ))}
-          <Link
-            href="/onboarding?mode=add"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-          >
-            Dodaj profil
-          </Link>
+          {!adminImpersonating ? (
+            <Link
+              href="/onboarding?mode=add"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              Dodaj profil
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </div>

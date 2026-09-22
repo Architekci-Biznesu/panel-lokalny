@@ -70,6 +70,13 @@ Ponieważ na start istnieje tylko jedna implementacja, łatwo przypadkiem przepu
 - Jeden interfejs adaptera na kanał publikacji (`publish()`, `fetchReviews()`, `replyToReview()`) - implementacje per kanał (Meta, GBP) w `lib/integrations/{meta,gbp}/`, nie rozgałęziaj logiki biznesowej po kanałach
 - Angielski w kodzie (zmienne, tabele, funkcje), polski w treściach user-facing
 
+## Feedback UI - gooey-toast
+
+- Feedback po akcjach (sukces, błąd, ostrzeżenie, info) wyłącznie przez `gooey-toast`: `toast.success` / `toast.error` / `toast.warning` / `toast.info` (Toaster montowany globalnie w root layout)
+- Zakaz inline komunikatów po akcji: `.auth-error`, akapity sukcesu pod formularzem, transientne bannery wynikające z submitu / Server Action
+- Zakaz natywnych baniek walidacji przeglądarki (`required` + default tooltip) - formularze z `noValidate`, braki/błędy pól przez `toast.error`; Server Action / Zod / `ok: false` też przez toast
+- Stałe UI informacyjne (np. `.locked-note`, statusy w tabeli, `.ui-pill`) zostają - to nie jest transient feedback po submitcie
+
 ## Bezpieczeństwo - nienegocjowalne
 
 - Każde zapytanie do bazy filtrowane po `accountId`/`profileId` na poziomie query, nigdy poleganie na tym że UI czegoś nie pokazuje

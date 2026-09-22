@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   timestamp,
+  boolean,
   pgEnum,
   uniqueIndex,
   jsonb,
@@ -24,6 +25,7 @@ export const accounts = pgTable("accounts", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
   stripeCustomerId: text("stripe_customer_id"),
 });
 
@@ -36,6 +38,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
   role: userRoleEnum("role").notNull().default("owner"),
+  isStaff: boolean("is_staff").notNull().default(false),
 });
 
 export const profiles = pgTable("profiles", {

@@ -13,6 +13,8 @@ type ShellProps = {
   profiles: { id: string; name: string }[];
   activeProfileId: string | null;
   userName: string;
+  adminImpersonating?: boolean;
+  ownerEmail?: string | null;
 };
 
 export function AppShell({
@@ -20,6 +22,8 @@ export function AppShell({
   profiles,
   activeProfileId,
   userName,
+  adminImpersonating = false,
+  ownerEmail = null,
 }: ShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,6 +40,8 @@ export function AppShell({
           <ProfileSwitcher
             profiles={profiles}
             activeProfileId={activeProfileId}
+            adminImpersonating={adminImpersonating}
+            ownerEmail={ownerEmail}
           />
         </div>
 

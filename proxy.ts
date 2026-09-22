@@ -1,7 +1,20 @@
 import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 
-export const proxy = auth((req) => {
+async function readIsStaff(userId: string | undefined): Promise<boolean> {
+  if (!userId) return false;
+  const [user] = await db
+    .select({ isStaff: users.isStaff })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return user?.isStaff === true;
+}
+
+export const proxy = auth(async (req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
   const isAuthPage =
@@ -9,6 +22,7 @@ export const proxy = auth((req) => {
   const isApi = pathname.startsWith("/api");
   const isAuthApi = pathname.startsWith("/api/auth");
   const isOnboarding = pathname === "/onboarding";
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const isAddProfile =
     isOnboarding && req.nextUrl.searchParams.get("mode") === "add";
 
@@ -26,19 +40,31 @@ export const proxy = auth((req) => {
   }
 
   const activeProfileId = req.auth?.user?.activeProfileId ?? null;
+  const isStaff = await readIsStaff(req.auth?.user?.id);
+  const hasWorkingProfile = !!activeProfileId;
 
   if (isAuthPage) {
-    const target = activeProfileId ? "/pulpit" : "/onboarding";
+    let target = "/onboarding";
+    if (hasWorkingProfile) {
+      target = "/pulpit";
+    } else if (isStaff) {
+      target = "/admin";
+    }
     return NextResponse.redirect(new URL(target, req.nextUrl.origin));
   }
 
+  if (isAdminRoute) {
+    return NextResponse.next();
+  }
+
   // Onboarding gate for UI only - never redirect /api/*
-  if (!isApi && !activeProfileId && !isOnboarding) {
-    return NextResponse.redirect(new URL("/onboarding", req.nextUrl.origin));
+  if (!isApi && !hasWorkingProfile && !isOnboarding) {
+    const target = isStaff ? "/admin" : "/onboarding";
+    return NextResponse.redirect(new URL(target, req.nextUrl.origin));
   }
 
   // Allow /onboarding?mode=add even when a profile is already active
-  if (!isApi && activeProfileId && isOnboarding && !isAddProfile) {
+  if (!isApi && hasWorkingProfile && isOnboarding && !isAddProfile) {
     return NextResponse.redirect(new URL("/pulpit", req.nextUrl.origin));
   }
 

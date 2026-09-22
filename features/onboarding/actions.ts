@@ -464,7 +464,9 @@ export async function skipGbpAndFinish(modeRaw: string) {
     }
   }
 
-  await unstable_update({ user: { activeProfileId: draft.profileId } });
+  await unstable_update({
+    user: { activeProfileId: draft.profileId },
+  });
   await db
     .delete(onboardingDrafts)
     .where(eq(onboardingDrafts.id, draft.id));
@@ -683,7 +685,9 @@ export async function confirmGbpLocations(
     };
   }
 
-  await unstable_update({ user: { activeProfileId: createdProfileIds[0] } });
+  await unstable_update({
+    user: { activeProfileId: createdProfileIds[0] },
+  });
   await db.delete(onboardingDrafts).where(eq(onboardingDrafts.id, draft.id));
 
   if (errors.length) {
@@ -703,7 +707,14 @@ export async function switchActiveProfile(profileId: string) {
   if (!profile) {
     return { ok: false as const, error: "Profil nie należy do konta" };
   }
-  await unstable_update({ user: { activeProfileId: profile.id } });
+  const { auth } = await import("@/lib/auth");
+  const session = await auth();
+  await unstable_update({
+    user: {
+      activeProfileId: profile.id,
+      adminImpersonating: session?.user?.adminImpersonating === true,
+    },
+  });
   return { ok: true as const };
 }
 

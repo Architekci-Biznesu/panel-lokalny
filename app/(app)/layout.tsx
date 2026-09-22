@@ -1,6 +1,9 @@
 import { auth } from "@/lib/auth";
 import { AppShell } from "@/features/shell/app-shell";
-import { listAccountProfiles } from "@/lib/session";
+import {
+  getAdminSwitcherProps,
+  listAccountProfiles,
+} from "@/lib/session";
 
 export default async function AppLayout({
   children,
@@ -9,6 +12,7 @@ export default async function AppLayout({
 }) {
   const session = await auth();
   const userName = session?.user?.name ?? session?.user?.email ?? "Użytkownik";
+  const adminChrome = await getAdminSwitcherProps();
 
   let profiles: { id: string; name: string }[] = [];
   try {
@@ -25,6 +29,8 @@ export default async function AppLayout({
       profiles={profiles}
       activeProfileId={session?.user?.activeProfileId ?? null}
       userName={userName}
+      adminImpersonating={adminChrome.adminImpersonating}
+      ownerEmail={adminChrome.ownerEmail}
     >
       {children}
     </AppShell>
