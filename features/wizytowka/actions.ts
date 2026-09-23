@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { startGbpAudit } from "@/features/wizytowka/audit";
+import { buildAttributeUpdateBody } from "@/features/wizytowka/attributes";
 import {
   draftsToServiceItems,
   parseTime,
@@ -25,6 +26,7 @@ import {
   patchGbpLocation,
   updateGbpLocationAttributes,
 } from "@/lib/integrations/gbp/client";
+import { autocompleteRegions } from "@/lib/integrations/places/client";
 import { getActiveProfile, requireOwnedProfile } from "@/lib/session";
 import { parseLocation } from "@/features/wizytowka/types";
 
@@ -226,7 +228,15 @@ const serviceAreaSchema = z.object({
     "CUSTOMER_LOCATION_ONLY",
     "BUSINESS_LOCATION_ONLY",
   ]),
-  placeNames: z.array(z.string().trim().min(1)).max(20).optional(),
+  places: z
+    .array(
+      z.object({
+        placeId: z.string().trim().min(1),
+        placeName: z.string().trim().min(1),
+      }),
+    )
+    .max(20)
+    .optional(),
 });
 
 export async function updateGbpServiceArea(
@@ -237,10 +247,11 @@ export async function updateGbpServiceArea(
     return { ok: false, error: "Niepoprawny obszar obsługi" };
   }
   const places =
-    parsed.data.placeNames && parsed.data.placeNames.length > 0
+    parsed.data.places && parsed.data.places.length > 0
       ? {
-          placeInfos: parsed.data.placeNames.map((placeName) => ({
-            placeName,
+          placeInfos: parsed.data.places.map((p) => ({
+            placeId: p.placeId,
+            placeName: p.placeName,
           })),
         }
       : undefined;
@@ -250,6 +261,36 @@ export async function updateGbpServiceArea(
       places,
     },
   });
+}
+
+const placeSearchSchema = z.object({
+  query: z.string().trim().min(2).max(120),
+});
+
+export async function searchServiceAreaPlaces(
+  input: unknown,
+): Promise<
+  | { ok: true; results: Array<{ placeId: string; placeName: string }> }
+  | { ok: false; error: string }
+> {
+  const parsed = placeSearchSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Podaj co najmniej 2 znaki" };
+  }
+
+  try {
+    await getActiveProfile();
+    const results = await autocompleteRegions(parsed.data.query);
+    return { ok: true, results };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Nie udało się wyszukać miejsc",
+    };
+  }
 }
 
 const hoursPeriodSchema = z.object({
@@ -290,10 +331,75 @@ export async function updateGbpRegularHours(
   }
 }
 
+const gbpDateSchema = z.object({
+  year: z.number().int().min(2000).max(2100),
+  month: z.number().int().min(1).max(12),
+  day: z.number().int().min(1).max(31),
+});
+
+const specialHourPeriodSchema = z.object({
+  startDate: gbpDateSchema,
+  endDate: gbpDateSchema.optional(),
+  closed: z.boolean(),
+  openTime: z.string().optional(),
+  closeTime: z.string().optional(),
+});
+
+const specialHoursSchema = z.object({
+  periods: z.array(specialHourPeriodSchema).max(50),
+});
+
+export async function updateGbpSpecialHours(
+  input: unknown,
+): Promise<ActionResult> {
+  const parsed = specialHoursSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Niepoprawne godziny specjalne" };
+  }
+  try {
+    const specialHourPeriods = parsed.data.periods.map((p) => {
+      const endDate = p.endDate ?? p.startDate;
+      if (p.closed) {
+        return {
+          startDate: p.startDate,
+          endDate,
+          closed: true,
+        };
+      }
+      const openTime = parseTime(p.openTime ?? "");
+      const closeTime = parseTime(p.closeTime ?? "");
+      if (!openTime || !closeTime) {
+        throw new Error("Godziny muszą mieć format HH:MM");
+      }
+      return {
+        startDate: p.startDate,
+        endDate,
+        openTime,
+        closeTime,
+        closed: false,
+      };
+    });
+    return await withGbpPatch(["specialHours"], {
+      specialHours: { specialHourPeriods },
+    });
+  } catch (error) {
+    return fail(error);
+  }
+}
+
 const attributeUpdateSchema = z.object({
   attributeName: z.string().min(1),
-  valueType: z.string().optional(),
-  values: z.array(z.union([z.string(), z.boolean()])).min(1),
+  valueType: z.enum(["BOOL", "ENUM", "REPEATED_ENUM", "URL"]),
+  clear: z.boolean().optional(),
+  boolValue: z.boolean().optional(),
+  enumValue: z.string().optional(),
+  repeatedEnum: z
+    .object({
+      setValues: z.array(z.string()).optional(),
+      unsetValues: z.array(z.string()).optional(),
+    })
+    .optional(),
+  uri: z.string().optional(),
 });
 
 export async function updateGbpAttribute(
@@ -307,23 +413,46 @@ export async function updateGbpAttribute(
   try {
     const profile = await getActiveGbpProfile();
     const token = await getGbpAccessTokenForProfile(profile);
-    const attr: Record<string, unknown> = {
-      name: parsed.data.attributeName,
-      valueType: parsed.data.valueType ?? "BOOL",
-    };
-    if (parsed.data.valueType === "BOOL" || !parsed.data.valueType) {
-      attr.values = parsed.data.values.map((v) =>
-        typeof v === "boolean" ? v : v === "true",
-      );
-    } else {
-      attr.values = parsed.data.values;
+    const body = buildAttributeUpdateBody(parsed.data);
+
+    await updateGbpLocationAttributes(
+      token,
+      profile.gbpLocationId!,
+      body.attributes,
+      body.attributeMask,
+    );
+    revalidatePath("/wizytowka", "layout");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function updateGbpAttributesBatch(
+  input: unknown,
+): Promise<ActionResult> {
+  const parsed = z.array(attributeUpdateSchema).min(1).safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Niepoprawne atrybuty" };
+  }
+
+  try {
+    const profile = await getActiveGbpProfile();
+    const token = await getGbpAccessTokenForProfile(profile);
+    const attributes: Array<Record<string, unknown>> = [];
+    const attributeMask: string[] = [];
+
+    for (const item of parsed.data) {
+      const body = buildAttributeUpdateBody(item);
+      attributes.push(...body.attributes);
+      attributeMask.push(...body.attributeMask);
     }
 
     await updateGbpLocationAttributes(
       token,
       profile.gbpLocationId!,
-      [attr],
-      [parsed.data.attributeName],
+      attributes,
+      attributeMask,
     );
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
@@ -550,6 +679,57 @@ export async function acceptGbpSuggestion(
     return { ok: true };
   } catch (error) {
     return fail(error);
+  }
+}
+
+export async function acceptAllGbpSuggestions(): Promise<
+  | { ok: true; accepted: number; skippedHighRiskTitle: boolean }
+  | { ok: false; error: string }
+> {
+  try {
+    const profile = await getActiveGbpProfile();
+    await requireOwnedProfile(profile.id);
+
+    const pending = await db
+      .select()
+      .from(gbpSuggestions)
+      .where(
+        and(
+          eq(gbpSuggestions.profileId, profile.id),
+          eq(gbpSuggestions.status, "pending"),
+        ),
+      );
+
+    const batch = pending.filter(
+      (item) => !(item.field === "title" && item.risk === "high"),
+    );
+    const skippedHighRiskTitle = pending.some(
+      (item) => item.field === "title" && item.risk === "high",
+    );
+
+    let accepted = 0;
+    for (const item of batch) {
+      const result = await acceptGbpSuggestion({
+        suggestionId: item.id,
+        riskAcknowledged: false,
+      });
+      if (!result.ok) {
+        if (accepted === 0) {
+          return { ok: false, error: result.error };
+        }
+        break;
+      }
+      accepted += 1;
+    }
+
+    revalidatePath("/wizytowka", "layout");
+    return { ok: true, accepted, skippedHighRiskTitle };
+  } catch (error) {
+    const failed = fail(error);
+    if (!failed.ok) {
+      return { ok: false, error: failed.error };
+    }
+    return { ok: false, error: "Nie udało się zaakceptować" };
   }
 }
 

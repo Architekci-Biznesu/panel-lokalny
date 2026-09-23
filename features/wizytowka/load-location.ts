@@ -2,12 +2,15 @@ import { and, desc, eq } from "drizzle-orm";
 import {
   getActiveGbpProfile,
   getGbpAccessTokenForProfile,
+  GbpNotConnectedError,
+  isGbpUnauthenticatedError,
 } from "@/lib/integrations/gbp/access";
 import {
   batchGetGbpCategories,
   fetchGbpLocationDetails,
   getGbpLocationAttributes,
   listGbpAttributesForCategory,
+  listGbpAttributesForLocation,
   type GbpAttributeMetadata,
   type GbpCategory,
 } from "@/lib/integrations/gbp/client";
@@ -35,10 +38,26 @@ export type LoadedGbpBundle = {
 
 export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
   const profile = await getActiveGbpProfile();
-  const accessToken = await getGbpAccessTokenForProfile(profile);
+  let accessToken = await getGbpAccessTokenForProfile(profile);
   const locationName = profile.gbpLocationId!;
 
-  const raw = await fetchGbpLocationDetails(accessToken, locationName);
+  let raw: Record<string, unknown>;
+  try {
+    raw = await fetchGbpLocationDetails(accessToken, locationName);
+  } catch (error) {
+    if (!isGbpUnauthenticatedError(error)) throw error;
+    accessToken = await getGbpAccessTokenForProfile(profile, { force: true });
+    try {
+      raw = await fetchGbpLocationDetails(accessToken, locationName);
+    } catch (retryError) {
+      if (isGbpUnauthenticatedError(retryError)) {
+        throw new GbpNotConnectedError(
+          "Sesja Google wygasła - połącz wizytówkę ponownie",
+        );
+      }
+      throw retryError;
+    }
+  }
   const location = parseLocation(raw);
 
   const primaryName = location.categories?.primaryCategory?.name;
@@ -56,11 +75,13 @@ export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
       getGbpLocationAttributes(accessToken, locationName).catch(() => ({
         attributes: [] as Array<Record<string, unknown>>,
       })),
-      primaryName
-        ? listGbpAttributesForCategory(accessToken, primaryName).catch(
-            () => [] as GbpAttributeMetadata[],
-          )
-        : Promise.resolve([] as GbpAttributeMetadata[]),
+      listGbpAttributesForLocation(accessToken, locationName).catch(() =>
+        primaryName
+          ? listGbpAttributesForCategory(accessToken, primaryName).catch(
+              () => [] as GbpAttributeMetadata[],
+            )
+          : Promise.resolve([] as GbpAttributeMetadata[]),
+      ),
       db
         .select()
         .from(gbpSuggestions)

@@ -12,14 +12,106 @@ import {
   batchGetGbpCategories,
   fetchGbpLocationDetails,
   listGbpAttributesForCategory,
+  listGbpAttributesForLocation,
   listGbpCategories,
 } from "@/lib/integrations/gbp/client";
 import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/access";
 import { requireOwnedProfile } from "@/lib/session";
-import { parseLocation } from "@/features/wizytowka/types";
+import { parseLocation, serviceItemsToDrafts } from "@/features/wizytowka/types";
 
 function normalizeSuggestionValue(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function parseJsonNames(value: string): string[] | null {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    if (parsed.some((item) => typeof item !== "string")) return null;
+    return parsed as string[];
+  } catch {
+    return null;
+  }
+}
+
+function serviceDraftFingerprint(item: {
+  kind?: string;
+  serviceTypeId?: string;
+  displayName?: string;
+  description?: string;
+}): string {
+  return [
+    item.kind ?? "",
+    item.serviceTypeId ?? "",
+    (item.displayName ?? "").trim(),
+    (item.description ?? "").trim(),
+  ]
+    .join("|")
+    .toLowerCase();
+}
+
+function servicesFingerprint(value: string): string | null {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    const drafts = parsed.some(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        ("structuredServiceItem" in item || "freeFormServiceItem" in item),
+    )
+      ? serviceItemsToDrafts(parsed as Parameters<typeof serviceItemsToDrafts>[0])
+      : (parsed as Array<{
+          kind?: string;
+          serviceTypeId?: string;
+          displayName?: string;
+          description?: string;
+        }>);
+    return drafts
+      .map((item) => serviceDraftFingerprint(item))
+      .sort()
+      .join("\n");
+  } catch {
+    return null;
+  }
+}
+
+/** True when suggested content matches the live location (no real change). */
+function isNoopSuggestion(
+  field: string,
+  current: string | null,
+  suggested: string,
+): boolean {
+  if (current == null) return false;
+
+  if (
+    field === "title" ||
+    field === "description" ||
+    field === "primary_category"
+  ) {
+    return (
+      normalizeSuggestionValue(current) === normalizeSuggestionValue(suggested)
+    );
+  }
+
+  if (field === "additional_categories") {
+    const a = parseJsonNames(current);
+    const b = parseJsonNames(suggested);
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    const left = [...a].sort().join("\n");
+    const right = [...b].sort().join("\n");
+    return left === right;
+  }
+
+  if (field === "services") {
+    const left = servicesFingerprint(current);
+    const right = servicesFingerprint(suggested);
+    if (left == null || right == null) return false;
+    return left === right;
+  }
+
+  return normalizeSuggestionValue(current) === normalizeSuggestionValue(suggested);
 }
 
 function currentValueForField(
@@ -125,9 +217,13 @@ async function executeAudit(profile: Profile): Promise<void> {
     await Promise.all([
       listGbpCategories(accessToken).catch(() => []),
       batchGetGbpCategories(accessToken, categoryNames),
-      primaryName
-        ? listGbpAttributesForCategory(accessToken, primaryName).catch(() => [])
-        : Promise.resolve([]),
+      listGbpAttributesForLocation(accessToken, locationName).catch(() =>
+        primaryName
+          ? listGbpAttributesForCategory(accessToken, primaryName).catch(
+              () => [],
+            )
+          : Promise.resolve([]),
+      ),
       db
         .select({
           field: gbpSuggestions.field,
@@ -252,6 +348,10 @@ async function executeAudit(profile: Profile): Promise<void> {
           description?: string;
         }>;
         if (!Array.isArray(items)) continue;
+        const currentCount = (location.serviceItems ?? []).length;
+        if (currentCount > 0 && items.length < currentCount) {
+          continue;
+        }
         const invalid = items.some((item) => {
           if (item.kind === "structured") {
             return !item.serviceTypeId || !serviceTypeSet.has(item.serviceTypeId);
@@ -266,10 +366,17 @@ async function executeAudit(profile: Profile): Promise<void> {
       }
     }
 
+    const currentValue = currentValueForField(location, suggestion.field);
+    if (
+      isNoopSuggestion(suggestion.field, currentValue, suggestion.suggestedValue)
+    ) {
+      continue;
+    }
+
     await db.insert(gbpSuggestions).values({
       profileId: profile.id,
       field: suggestion.field,
-      currentValue: currentValueForField(location, suggestion.field),
+      currentValue,
       suggestedValue: suggestion.suggestedValue,
       rationale: suggestion.rationale || null,
       risk: suggestion.field === "title" ? "high" : "none",

@@ -7,12 +7,10 @@ export default function UstawieniaLayout({
 }) {
   return (
     <div className="wiz-page">
-      <div className="wiz-header">
+      <div className="page-header wiz-header">
         <div>
-          <h1 className="text-xl font-semibold">Ustawienia</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Kontekst firmy, profile, integracje i plan
-          </p>
+          <h1>Ustawienia</h1>
+          <p>Kontekst firmy, profile, integracje i plan</p>
         </div>
       </div>
       <UstawieniaSubnav />

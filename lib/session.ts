@@ -1,7 +1,13 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { profiles, users, type Profile } from "@/lib/db/schema";
+import {
+  companyContext,
+  onboardingDrafts,
+  profiles,
+  users,
+  type Profile,
+} from "@/lib/db/schema";
 
 export class AuthError extends Error {
   constructor(
@@ -84,10 +90,28 @@ export async function getActiveProfile(): Promise<Profile> {
     .limit(1);
 
   if (!profile) {
-    throw new AuthError("Profil nie należy do aktywnego konta", 403);
+    const fallbackId = await resolveSwitcherProfileId(null);
+    const ready = await listAccountProfiles();
+    const fallback = ready.find((item) => item.id === fallbackId);
+    if (!fallback) {
+      throw new AuthError("Profil nie należy do aktywnego konta", 403);
+    }
+    return fallback;
   }
 
-  return profile;
+  const hidden = await onboardingDraftProfileIds(accountId);
+  if (!hidden.has(profile.id)) {
+    return profile;
+  }
+
+  const fallbackId = await resolveSwitcherProfileId(null);
+  const ready = await listAccountProfiles();
+  const fallback = ready.find((item) => item.id === fallbackId);
+  if (!fallback) {
+    throw new AuthError("Brak aktywnego profilu", 403);
+  }
+
+  return fallback;
 }
 
 /**
@@ -111,13 +135,105 @@ export async function requireOwnedProfile(
   return profile;
 }
 
+async function onboardingDraftProfileIds(accountId: string): Promise<Set<string>> {
+  const drafts = await db
+    .select({ profileId: onboardingDrafts.profileId })
+    .from(onboardingDrafts)
+    .where(eq(onboardingDrafts.accountId, accountId));
+
+  return new Set(
+    drafts.flatMap((draft) => (draft.profileId ? [draft.profileId] : [])),
+  );
+}
+
+/** Finished profiles only. A row still tied to an open onboarding draft stays hidden. */
 export async function listAccountProfiles(): Promise<Profile[]> {
   const accountId = await getActiveAccountId();
+  const hidden = await onboardingDraftProfileIds(accountId);
 
-  return db
+  const rows = await db
     .select()
     .from(profiles)
-    .where(eq(profiles.accountId, accountId));
+    .where(eq(profiles.accountId, accountId))
+    .orderBy(asc(profiles.createdAt));
+
+  return rows.filter((profile) => !hidden.has(profile.id));
+}
+
+export type AccountProfileOption = {
+  id: string;
+  name: string;
+  location: string | null;
+};
+
+function locationLabel(raw: unknown): string | null {
+  if (!raw || typeof raw !== "object") return null;
+  const address = (raw as { storefrontAddress?: {
+    locality?: string;
+    addressLines?: string[];
+  } }).storefrontAddress;
+  if (address && typeof address === "object") {
+    const locality = address.locality?.trim();
+    const line = address.addressLines?.find((item) => item.trim())?.trim();
+    if (line && locality) return `${line}, ${locality}`;
+    if (locality) return locality;
+    if (line) return line;
+  }
+  const places = (
+    raw as {
+      serviceArea?: { places?: { placeInfos?: Array<{ placeName?: string }> } };
+    }
+  ).serviceArea?.places?.placeInfos;
+  const place = places?.find((item) => item.placeName?.trim())?.placeName?.trim();
+  return place || null;
+}
+
+/** Finished profiles with a short place line from the saved Google location. */
+export async function listAccountProfileOptions(): Promise<AccountProfileOption[]> {
+  const rows = await listAccountProfiles();
+  if (rows.length === 0) return [];
+
+  const contexts = await db
+    .select({
+      profileId: companyContext.profileId,
+      rawData: companyContext.rawData,
+    })
+    .from(companyContext)
+    .where(
+      and(
+        eq(companyContext.source, "gbp"),
+        inArray(
+          companyContext.profileId,
+          rows.map((row) => row.id),
+        ),
+      ),
+    )
+    .orderBy(desc(companyContext.fetchedAt));
+
+  const labels = new Map<string, string>();
+  for (const ctx of contexts) {
+    if (labels.has(ctx.profileId)) continue;
+    const label = locationLabel(ctx.rawData);
+    if (label) labels.set(ctx.profileId, label);
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    location: labels.get(row.id) ?? null,
+  }));
+}
+
+/** Session profile when it is finished; otherwise the newest profile that still has Google connected. */
+export async function resolveSwitcherProfileId(
+  sessionProfileId: string | null,
+): Promise<string | null> {
+  const ready = await listAccountProfiles();
+  if (sessionProfileId && ready.some((profile) => profile.id === sessionProfileId)) {
+    return sessionProfileId;
+  }
+  const withOauth = [...ready].reverse().find((profile) => profile.oauthConnectionId);
+  return withOauth?.id ?? ready.at(-1)?.id ?? null;
 }
 
 /** Props for the profile switcher while in admin impersonation mode. */

@@ -2,29 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { WIZ_TABS, type WizTabHref } from "@/features/wizytowka/proposal-meta";
 
-const tabs = [
-  { href: "/wizytowka/informacje", label: "Informacje" },
-  { href: "/wizytowka/kontakt", label: "Kontakt" },
-  { href: "/wizytowka/godziny", label: "Godziny i atrybuty" },
-  { href: "/wizytowka/nap", label: "NAP" },
-  { href: "/wizytowka/raporty", label: "Raporty" },
-] as const;
-
-export function WizytowkaSubnav() {
+export function WizytowkaSubnav({
+  counts = {},
+}: {
+  counts?: Partial<Record<WizTabHref, number>>;
+}) {
   const pathname = usePathname();
 
   return (
     <nav className="wiz-subnav" aria-label="Zakładki wizytówki">
-      {tabs.map((tab) => {
-        const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+      {WIZ_TABS.map((tab) => {
+        const active =
+          pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+        const count = counts[tab.href] ?? 0;
         return (
           <Link
             key={tab.href}
             href={tab.href}
             className={`wiz-subnav-link ${active ? "active" : ""}`}
           >
-            {tab.label}
+            <span>{tab.label}</span>
+            {count > 0 ? (
+              <span className="wiz-subnav-badge" aria-label={`${count} propozycji`}>
+                {count}
+              </span>
+            ) : null}
           </Link>
         );
       })}

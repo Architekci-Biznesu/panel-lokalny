@@ -25,21 +25,25 @@ export function RaportyView({
 }) {
   return (
     <div className="wiz-stack">
-      <div>
-        <h2 className="text-base font-semibold">Raporty wizytówki</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Dane z Google Business Profile Performance API · {rangeLabel}
-        </p>
+      <div className="wiz-tab-head">
+        <div>
+          <h2 className="text-base font-semibold">Raporty wizytówki</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Dane z Google Business Profile Performance API · {rangeLabel}
+          </p>
+        </div>
       </div>
-      <div className="wiz-kpi-grid">
-        {series.map((item) => (
-          <div key={item.metric} className="ui-kpi">
-            <p className="text-sm text-muted-foreground">
-              {METRIC_LABELS[item.metric] ?? item.label}
-            </p>
-            <p className="mt-2 text-2xl font-semibold mono">{item.total}</p>
-          </div>
-        ))}
+      <div className="wiz-tab-panel">
+        <div className="wiz-kpi-grid">
+          {series.map((item) => (
+            <div key={item.metric} className="ui-kpi">
+              <p className="text-sm text-muted-foreground">
+                {METRIC_LABELS[item.metric] ?? item.label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold mono">{item.total}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

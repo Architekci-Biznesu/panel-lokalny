@@ -27,7 +27,7 @@ export function ReanalyzeButton() {
           }
           toast.success({
             title: "Analiza zakończona",
-            description: "Sprawdź nowe propozycje poniżej.",
+            description: "Sprawdź nowe propozycje.",
           });
           router.refresh();
         });

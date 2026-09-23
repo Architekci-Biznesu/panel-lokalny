@@ -1,15 +1,5 @@
-﻿import { GodzinyAtrybutyView } from "@/features/wizytowka/components/godziny-view";
-import { tryLoadActiveGbpBundle } from "@/features/wizytowka/load-location";
+﻿import { redirect } from "next/navigation";
 
-export default async function GodzinyPage() {
-  const bundle = await tryLoadActiveGbpBundle();
-  if (!bundle) return null;
-
-  return (
-    <GodzinyAtrybutyView
-      location={bundle.location}
-      attributes={bundle.attributes}
-      attributeMetadata={bundle.attributeMetadata}
-    />
-  );
+export default function GodzinyPage() {
+  redirect("/wizytowka/informacje#wiz-field-hours");
 }

@@ -2,60 +2,48 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Loader2, Pencil, WandSparkles, X } from "lucide-react";
+import { Loader2, Pencil, Star, X } from "lucide-react";
 import { toast } from "gooey-toast";
 import {
   updateGbpCategories,
   updateGbpDescription,
   updateGbpOpenInfo,
-  updateGbpServices,
   updateGbpTitle,
+  updateGbpWebsite,
 } from "@/features/wizytowka/actions";
 import { InlineSuggestion } from "@/features/wizytowka/components/inline-suggestion";
+import { CategoriesSuggestion } from "@/features/wizytowka/components/categories-suggestion";
+import { LocationNapFields } from "@/features/wizytowka/components/location-nap-fields";
 import {
   formatOpeningDate,
-  serviceItemsToDrafts,
   type GbpLocation,
-  type ServiceItemDraft,
 } from "@/features/wizytowka/types";
-import type { GbpCategory } from "@/lib/integrations/gbp/client";
 import type { GbpSuggestion } from "@/lib/db/schema";
 import { UiSelect } from "@/features/shell/ui-select";
 
 type Props = {
   location: GbpLocation;
-  categoryDetails: GbpCategory[];
   categoryOptions: Array<{ name: string; displayName: string }>;
   suggestions?: GbpSuggestion[];
 };
 
 export function InformacjeEditor({
   location,
-  categoryDetails,
   categoryOptions,
   suggestions = [],
 }: Props) {
-  const canModifyServices = location.metadata?.canModifyServiceList !== false;
   const primary = location.categories?.primaryCategory;
   const additional = location.categories?.additionalCategories ?? [];
-  const serviceTypes = categoryDetails.flatMap((c) =>
-    (c.serviceTypes ?? []).map((s) => ({
-      ...s,
-      categoryName: c.name,
-    })),
-  );
 
   const byField = new Map(suggestions.map((s) => [s.field, s]));
-
-  const servicesCurrentJson = JSON.stringify(location.serviceItems ?? []);
-  const additionalCurrentJson = JSON.stringify(
-    additional.map((c) => c.name).filter(Boolean),
-  );
+  const primarySuggestion = byField.get("primary_category");
+  const additionalSuggestion = byField.get("additional_categories");
 
   return (
     <div className="wiz-fields">
       <FieldRow
         label="Nazwa firmy"
+        anchorId="wiz-field-title"
         value={location.title ?? "-"}
         suggestion={byField.get("title")}
         categoryOptions={categoryOptions}
@@ -63,47 +51,32 @@ export function InformacjeEditor({
           <TitleEditor initial={location.title ?? ""} onDone={close} />
         )}
       />
-      <FieldRow
-        label="Kategoria główna"
-        value={primary?.displayName ?? primary?.name ?? "-"}
-        suggestion={byField.get("primary_category")}
-        categoryOptions={categoryOptions}
-        editor={({ close }) => (
-          <CategoriesEditor
-            mode="primary"
-            primaryName={primary?.name ?? ""}
-            additionalNames={additional
-              .map((c) => c.name)
-              .filter((n): n is string => Boolean(n))}
-            options={categoryOptions}
-            onDone={close}
+
+      {primarySuggestion || additionalSuggestion ? (
+        <div
+          id="wiz-field-primary_category"
+          className="wiz-field-row wiz-field-row-suggestion"
+        >
+          <span id="wiz-field-additional_categories" className="sr-only" />
+          <CategoriesSuggestion
+            primary={primary}
+            additional={additional}
+            primarySuggestion={primarySuggestion}
+            additionalSuggestion={additionalSuggestion}
+            categoryOptions={categoryOptions}
           />
-        )}
-      />
-      <FieldRow
-        label="Kategorie dodatkowe"
-        value={
-          additional.length
-            ? additional.map((c) => c.displayName ?? c.name).join(", ")
-            : "Brak"
-        }
-        suggestion={byField.get("additional_categories")}
-        suggestionCurrentFallback={additionalCurrentJson}
-        categoryOptions={categoryOptions}
-        editor={({ close }) => (
-          <CategoriesEditor
-            mode="additional"
-            primaryName={primary?.name ?? ""}
-            additionalNames={additional
-              .map((c) => c.name)
-              .filter((n): n is string => Boolean(n))}
-            options={categoryOptions}
-            onDone={close}
-          />
-        )}
-      />
+        </div>
+      ) : (
+        <CategoriesFieldRow
+          primary={primary}
+          additional={additional}
+          categoryOptions={categoryOptions}
+        />
+      )}
+
       <FieldRow
         label="Opis"
+        anchorId="wiz-field-description"
         value={location.profile?.description ?? "Brak opisu"}
         multiline
         suggestion={byField.get("description")}
@@ -116,14 +89,10 @@ export function InformacjeEditor({
         )}
       />
       <FieldRow
-        label="Data otwarcia"
-        value={
-          formatOpeningDate(location.openInfo?.openingDate) ||
-          location.openInfo?.status ||
-          "-"
-        }
+        label="Status"
+        value={openStatusLabel(location.openInfo?.status)}
         editor={({ close }) => (
-          <OpenInfoEditor
+          <OpenStatusEditor
             status={location.openInfo?.status}
             openingDate={formatOpeningDate(location.openInfo?.openingDate)}
             onDone={close}
@@ -131,57 +100,140 @@ export function InformacjeEditor({
         )}
       />
       <FieldRow
-        label="Usługi"
-        value={
-          (location.serviceItems ?? []).length
-            ? `${location.serviceItems!.length} pozycji`
-            : "Brak usług"
-        }
-        suggestion={byField.get("services")}
-        suggestionCurrentFallback={servicesCurrentJson}
-        categoryOptions={categoryOptions}
-        editor={({ close }) =>
-          canModifyServices ? (
-            <ServicesEditor
-              initial={enrichServiceDrafts(
-                serviceItemsToDrafts(location.serviceItems),
-                serviceTypes,
-              )}
-              primaryCategory={primary?.name ?? ""}
-              serviceTypes={serviceTypes}
-              onDone={close}
-            />
-          ) : (
-            <p className="locked-note">
-              Google nie pozwala edytować listy usług dla tej lokalizacji
-              (canModifyServiceList).
-            </p>
-          )
-        }
+        label="Data otwarcia"
+        value={displayOpeningDate(location.openInfo?.openingDate) || "-"}
+        editor={({ close }) => (
+          <OpeningDateEditor
+            status={location.openInfo?.status}
+            openingDate={formatOpeningDate(location.openInfo?.openingDate)}
+            onDone={close}
+          />
+        )}
       />
-      {!canModifyServices ? (
-        <p className="locked-note">
-          Edycja usług zablokowana przez Google dla tej wizytówki.
-        </p>
+      <LocationNapFields location={location} />
+      <WebsiteFieldRow websiteUri={location.websiteUri} />
+    </div>
+  );
+}
+
+function WebsiteFieldRow({ websiteUri }: { websiteUri?: string }) {
+  const [open, setOpen] = useState(false);
+  const display = websiteUri?.trim() || "-";
+
+  return (
+    <div id="wiz-field-website" className="wiz-field-row">
+      <div className="wiz-field-label">Witryna</div>
+      <div className="wiz-field-content">
+        {display.startsWith("http") ? (
+          <a
+            href={display}
+            target="_blank"
+            rel="noreferrer"
+            className="wiz-inline-link"
+          >
+            {display}
+          </a>
+        ) : (
+          display
+        )}
+      </div>
+      <button
+        type="button"
+        className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
+        aria-label="Edytuj: Witryna"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {open ? <X aria-hidden /> : <Pencil aria-hidden />}
+      </button>
+      {open ? (
+        <div className="wiz-field-editor">
+          <WebsiteForm
+            initial={websiteUri ?? ""}
+            onDone={() => setOpen(false)}
+          />
+        </div>
       ) : null}
     </div>
   );
 }
 
-function enrichServiceDrafts(
-  drafts: ServiceItemDraft[],
-  serviceTypes: Array<{ serviceTypeId: string; displayName: string }>,
-): ServiceItemDraft[] {
-  const map = new Map(serviceTypes.map((s) => [s.serviceTypeId, s.displayName]));
-  return drafts.map((d) =>
-    d.kind === "structured" && d.serviceTypeId
-      ? { ...d, displayName: map.get(d.serviceTypeId) ?? d.displayName }
-      : d,
+function CategoriesFieldRow({
+  primary,
+  additional,
+  categoryOptions,
+}: {
+  primary?: { name?: string | null; displayName?: string | null } | null;
+  additional: Array<{ name?: string | null; displayName?: string | null }>;
+  categoryOptions: Array<{ name: string; displayName: string }>;
+}) {
+  const [open, setOpen] = useState(false);
+  const primaryLabel = primary?.displayName ?? primary?.name;
+  const additionalNames = additional
+    .map((c) => c.name)
+    .filter((n): n is string => Boolean(n));
+
+  return (
+    <div
+      id="wiz-field-primary_category"
+      className="wiz-field-row"
+    >
+      <span id="wiz-field-additional_categories" className="sr-only" />
+      <div className="wiz-field-label">Kategorie</div>
+      <div className="wiz-field-content">
+        <ul className="wiz-cat-chips">
+          {primaryLabel ? (
+            <li>
+              <span className="ui-pill wiz-cat-chip-primary">
+                <Star aria-hidden className="wiz-cat-chip-star" />
+                {primaryLabel}
+              </span>
+            </li>
+          ) : null}
+          {primaryLabel && additional.length > 0 ? (
+            <li className="wiz-cat-chips-sep" aria-hidden />
+          ) : null}
+          {additional.map((c) => {
+            const label = c.displayName ?? c.name;
+            if (!label) return null;
+            return (
+              <li key={c.name ?? label}>
+                <span className="ui-pill wiz-cat-chip-extra">{label}</span>
+              </li>
+            );
+          })}
+          {!primaryLabel && additional.length === 0 ? (
+            <li>
+              <span className="text-sm text-muted-foreground">Brak</span>
+            </li>
+          ) : null}
+        </ul>
+      </div>
+      <button
+        type="button"
+        className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
+        aria-label="Edytuj: Kategorie"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {open ? <X aria-hidden /> : <Pencil aria-hidden />}
+      </button>
+      {open ? (
+        <div className="wiz-field-editor">
+          <CategoriesEditor
+            mode="combined"
+            primaryName={primary?.name ?? ""}
+            additionalNames={additionalNames}
+            options={categoryOptions}
+            onDone={() => setOpen(false)}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
 function FieldRow({
   label,
+  anchorId,
   value,
   multiline,
   editor,
@@ -190,6 +242,7 @@ function FieldRow({
   categoryOptions,
 }: {
   label: string;
+  anchorId?: string;
   value: string;
   multiline?: boolean;
   editor: (args: { close: () => void }) => React.ReactNode;
@@ -201,33 +254,25 @@ function FieldRow({
 
   if (suggestion) {
     return (
-      <div className="wiz-field-row wiz-field-row-suggestion">
-        <div className="wiz-field-main">
-          <div className="wiz-field-label">
-            <WandSparkles aria-hidden className="wiz-field-ai-icon" />
-            {label}
-          </div>
-          <InlineSuggestion
-            suggestion={suggestion}
-            currentDisplay={suggestionCurrentFallback ?? value}
-            categoryOptions={categoryOptions}
-          />
-        </div>
+      <div id={anchorId} className="wiz-field-row wiz-field-row-suggestion">
+        <InlineSuggestion
+          suggestion={suggestion}
+          currentDisplay={suggestionCurrentFallback ?? value}
+          categoryOptions={categoryOptions}
+        />
       </div>
     );
   }
 
   return (
-    <div className="wiz-field-row">
-      <div className="wiz-field-main">
-        <div className="wiz-field-label">{label}</div>
-        <div className={`wiz-field-value ${multiline ? "multiline" : ""}`}>
-          {value}
-        </div>
+    <div id={anchorId} className="wiz-field-row">
+      <div className="wiz-field-label">{label}</div>
+      <div className={`wiz-field-content ${multiline ? "multiline" : ""}`}>
+        {value}
       </div>
       <button
         type="button"
-        className="ui-btn ui-btn-ghost ui-btn-sm"
+        className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
         aria-label={`Edytuj: ${label}`}
         onClick={() => setOpen((v) => !v)}
       >
@@ -239,6 +284,53 @@ function FieldRow({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function WebsiteForm({
+  initial,
+  onDone,
+}: {
+  initial: string;
+  onDone: () => void;
+}) {
+  const router = useRouter();
+  const [value, setValue] = useState(initial);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <form
+      className="wiz-edit-form"
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        startTransition(async () => {
+          const result = await updateGbpWebsite({ websiteUri: value });
+          if (!result.ok) {
+            toast.error({ title: "Nie zapisano", description: result.error });
+            return;
+          }
+          toast.success({ title: "Witryna zapisana w Google" });
+          onDone();
+          router.refresh();
+        });
+      }}
+    >
+      <input
+        className="ui-field"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="https://"
+      />
+      <button
+        type="submit"
+        className="ui-btn ui-btn-primary ui-btn-sm"
+        disabled={pending}
+      >
+        {pending ? <Loader2 aria-hidden className="ui-btn-spinner" /> : null}
+        Zapisz w Google
+      </button>
+    </form>
   );
 }
 
@@ -331,7 +423,38 @@ function DescriptionEditor({
   );
 }
 
-function OpenInfoEditor({
+const OPEN_STATUS_OPTIONS = [
+  { value: "OPEN", label: "Otwarte" },
+  { value: "CLOSED_TEMPORARILY", label: "Tymczasowo zamknięte" },
+  { value: "CLOSED_PERMANENTLY", label: "Trwale zamknięte" },
+] as const;
+
+function openStatusLabel(status?: string): string {
+  return (
+    OPEN_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? "-"
+  );
+}
+
+function displayOpeningDate(
+  date?: { year?: number; month?: number; day?: number },
+): string {
+  const iso = formatOpeningDate(date);
+  if (!iso) return "";
+  const [year, month, day] = iso.split("-");
+  return `${day}.${month}.${year}`;
+}
+
+function parseOpeningDate(date: string) {
+  const parts = date.split("-").map(Number);
+  if (!parts[0]) return undefined;
+  return {
+    year: parts[0],
+    month: parts[1] || undefined,
+    day: parts[2] || undefined,
+  };
+}
+
+function OpenStatusEditor({
   status,
   openingDate,
   onDone,
@@ -342,7 +465,6 @@ function OpenInfoEditor({
 }) {
   const router = useRouter();
   const [st, setSt] = useState(status ?? "OPEN");
-  const [date, setDate] = useState(openingDate);
   const [pending, startTransition] = useTransition();
 
   return (
@@ -352,26 +474,15 @@ function OpenInfoEditor({
       onSubmit={(e) => {
         e.preventDefault();
         startTransition(async () => {
-          const parts = date.split("-").map(Number);
-          const payload: {
-            status: "OPEN" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY";
-            openingDate?: { year: number; month?: number; day?: number };
-          } = {
-            status: st as "OPEN" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY",
-          };
-          if (parts[0]) {
-            payload.openingDate = {
-              year: parts[0],
-              month: parts[1] || undefined,
-              day: parts[2] || undefined,
-            };
-          }
-          const result = await updateGbpOpenInfo(payload);
+          const result = await updateGbpOpenInfo({
+            status: st,
+            openingDate: parseOpeningDate(openingDate),
+          });
           if (!result.ok) {
             toast.error({ title: "Nie zapisano", description: result.error });
             return;
           }
-          toast.success({ title: "Zapisano w Google" });
+          toast.success({ title: "Status zapisany w Google" });
           onDone();
           router.refresh();
         });
@@ -381,12 +492,51 @@ function OpenInfoEditor({
         aria-label="Status"
         value={st}
         onChange={setSt}
-        options={[
-          { value: "OPEN", label: "Otwarte" },
-          { value: "CLOSED_TEMPORARILY", label: "Tymczasowo zamknięte" },
-          { value: "CLOSED_PERMANENTLY", label: "Trwale zamknięte" },
-        ]}
+        options={[...OPEN_STATUS_OPTIONS]}
       />
+      <SaveButton pending={pending} />
+    </form>
+  );
+}
+
+function OpeningDateEditor({
+  status,
+  openingDate,
+  onDone,
+}: {
+  status?: string;
+  openingDate: string;
+  onDone: () => void;
+}) {
+  const router = useRouter();
+  const [date, setDate] = useState(openingDate);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <form
+      className="wiz-edit-form"
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!date) {
+          toast.error({ title: "Podaj datę otwarcia" });
+          return;
+        }
+        startTransition(async () => {
+          const result = await updateGbpOpenInfo({
+            status: status ?? "OPEN",
+            openingDate: parseOpeningDate(date),
+          });
+          if (!result.ok) {
+            toast.error({ title: "Nie zapisano", description: result.error });
+            return;
+          }
+          toast.success({ title: "Data otwarcia zapisana w Google" });
+          onDone();
+          router.refresh();
+        });
+      }}
+    >
       <input
         className="ui-field"
         type="date"
@@ -405,7 +555,7 @@ function CategoriesEditor({
   options,
   onDone,
 }: {
-  mode: "primary" | "additional";
+  mode: "primary" | "additional" | "combined";
   primaryName: string;
   additionalNames: string[];
   options: Array<{ name: string; displayName: string }>;
@@ -422,6 +572,9 @@ function CategoriesEditor({
       o.displayName.toLowerCase().includes(filter.toLowerCase().trim()),
     )
     .slice(0, 40);
+
+  const showPrimary = mode === "primary" || mode === "combined";
+  const showAdditional = mode === "additional" || mode === "combined";
 
   return (
     <form
@@ -452,8 +605,11 @@ function CategoriesEditor({
         });
       }}
     >
-      {mode === "primary" ? (
+      {showPrimary ? (
         <>
+          {mode === "combined" ? (
+            <p className="text-sm font-medium">Kategoria główna</p>
+          ) : null}
           <input
             className="ui-field"
             placeholder="Filtruj kategorie…"
@@ -471,8 +627,12 @@ function CategoriesEditor({
             placeholder="Wybierz kategorię"
           />
         </>
-      ) : (
+      ) : null}
+      {showAdditional ? (
         <>
+          {mode === "combined" ? (
+            <p className="text-sm font-medium">Kategorie dodatkowe</p>
+          ) : null}
           <p className="locked-note">
             Wklej identyfikatory kategorii (categories/gcid:…), po jednej w
             linii. Lista ze słownika Google.
@@ -483,12 +643,14 @@ function CategoriesEditor({
             value={additional}
             onChange={(e) => setAdditional(e.target.value)}
           />
-          <input
-            className="ui-field"
-            placeholder="Szukaj nazwy, kliknij aby dodać…"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
+          {mode !== "combined" ? (
+            <input
+              className="ui-field"
+              placeholder="Szukaj nazwy, kliknij aby dodać…"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          ) : null}
           <ul className="wiz-cat-suggest">
             {filtered.slice(0, 8).map((o) => (
               <li key={o.name}>
@@ -509,142 +671,7 @@ function CategoriesEditor({
             ))}
           </ul>
         </>
-      )}
-      <SaveButton pending={pending} />
-    </form>
-  );
-}
-
-function ServicesEditor({
-  initial,
-  primaryCategory,
-  serviceTypes,
-  onDone,
-}: {
-  initial: ServiceItemDraft[];
-  primaryCategory: string;
-  serviceTypes: Array<{
-    serviceTypeId: string;
-    displayName: string;
-    categoryName: string;
-  }>;
-  onDone: () => void;
-}) {
-  const router = useRouter();
-  const [items, setItems] = useState(initial);
-  const [pending, startTransition] = useTransition();
-
-  return (
-    <form
-      className="wiz-edit-form"
-      noValidate
-      onSubmit={(e) => {
-        e.preventDefault();
-        for (const item of items) {
-          if (item.displayName.length > 140) {
-            toast.error({ title: "Nazwa usługi max 140 znaków" });
-            return;
-          }
-          if ((item.description ?? "").length > 250) {
-            toast.error({ title: "Opis usługi max 250 znaków" });
-            return;
-          }
-        }
-        startTransition(async () => {
-          const result = await updateGbpServices({ services: items });
-          if (!result.ok) {
-            toast.error({ title: "Nie zapisano", description: result.error });
-            return;
-          }
-          toast.success({ title: "Usługi zapisane w Google" });
-          onDone();
-          router.refresh();
-        });
-      }}
-    >
-      <ul className="wiz-services-edit">
-        {items.map((item, index) => (
-          <li key={`${item.serviceTypeId ?? item.displayName}-${index}`}>
-            <input
-              className="ui-field"
-              value={item.displayName}
-              maxLength={140}
-              placeholder="Nazwa usługi"
-              onChange={(e) => {
-                const next = [...items];
-                next[index] = {
-                  ...item,
-                  displayName: e.target.value,
-                  kind: item.kind === "structured" ? "structured" : "freeForm",
-                };
-                setItems(next);
-              }}
-            />
-            <textarea
-              className="ui-textarea"
-              rows={2}
-              maxLength={250}
-              placeholder="Opis (opcjonalnie)"
-              value={item.description ?? ""}
-              onChange={(e) => {
-                const next = [...items];
-                next[index] = { ...item, description: e.target.value };
-                setItems(next);
-              }}
-            />
-            <button
-              type="button"
-              className="ui-btn ui-btn-ghost ui-btn-sm"
-              onClick={() => setItems(items.filter((_, i) => i !== index))}
-            >
-              Usuń
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div className="wiz-services-add">
-        <UiSelect
-          aria-label="Dodaj usługę ze słownika"
-          value=""
-          placeholder="Dodaj ze słownika Google…"
-          onChange={(serviceTypeId) => {
-            const found = serviceTypes.find(
-              (s) => s.serviceTypeId === serviceTypeId,
-            );
-            if (!found) return;
-            setItems([
-              ...items,
-              {
-                kind: "structured",
-                serviceTypeId: found.serviceTypeId,
-                displayName: found.displayName,
-                description: "",
-              },
-            ]);
-          }}
-          options={serviceTypes.map((s) => ({
-            value: s.serviceTypeId,
-            label: s.displayName,
-          }))}
-        />
-        <button
-          type="button"
-          className="ui-btn ui-btn-outline ui-btn-sm"
-          onClick={() =>
-            setItems([
-              ...items,
-              {
-                kind: "freeForm",
-                category: primaryCategory,
-                displayName: "",
-                description: "",
-              },
-            ])
-          }
-        >
-          Dodaj własną
-        </button>
-      </div>
+      ) : null}
       <SaveButton pending={pending} />
     </form>
   );

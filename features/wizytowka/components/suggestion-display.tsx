@@ -1,6 +1,7 @@
 "use client";
 
 import type { GbpSuggestion } from "@/lib/db/schema";
+import { CategorySearchPicker } from "@/features/wizytowka/components/category-search-picker";
 
 export type ServiceDraft = {
   kind?: string;
@@ -154,10 +155,12 @@ export function SuggestionValueEditor({
   field,
   value,
   onChange,
+  categoryOptions,
 }: {
   field: string;
   value: string;
   onChange: (next: string) => void;
+  categoryOptions?: Array<{ name: string; displayName: string }>;
 }) {
   if (field === "services") {
     const items = (parseJsonArray(value) as ServiceDraft[] | null) ?? [];
@@ -201,27 +204,32 @@ export function SuggestionValueEditor({
   if (field === "additional_categories") {
     const items = (parseJsonArray(value) as string[] | null) ?? [];
     return (
-      <textarea
-        className="ui-textarea wiz-suggestion-edit"
-        rows={4}
-        value={items.join("\n")}
-        onChange={(e) => {
-          const names = e.target.value
-            .split("\n")
-            .map((s) => s.trim())
-            .filter(Boolean);
-          onChange(JSON.stringify(names));
-        }}
-        placeholder={"categories/gcid:...\npo jednej w linii"}
+      <CategorySearchPicker
+        value={items}
+        options={categoryOptions ?? []}
+        onChange={(next) => onChange(JSON.stringify(next))}
+      />
+    );
+  }
+
+  if (field === "primary_category") {
+    const selected = value.trim() ? [value.trim()] : [];
+    return (
+      <CategorySearchPicker
+        single
+        value={selected}
+        options={categoryOptions ?? []}
+        onChange={(next) => onChange(next[0] ?? "")}
+        placeholder="Szukaj kategorii głównej…"
       />
     );
   }
 
   return (
     <textarea
-      className="ui-textarea wiz-suggestion-edit"
+      className="ui-textarea"
       value={value}
-      rows={field === "description" ? 6 : 3}
+      rows={field === "description" ? 8 : 3}
       onChange={(e) => onChange(e.target.value)}
     />
   );

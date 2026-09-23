@@ -60,7 +60,7 @@ export const placeholderRoutes: { href: string; title: string }[] = [
   { href: "/strona/analityka", title: "Analityka strony" },
   { href: "/wizytowka/informacje", title: "Informacje o firmie" },
   { href: "/wizytowka/kontakt", title: "Kontakt" },
-  { href: "/wizytowka/godziny", title: "Godziny otwarcia" },
+  { href: "/wizytowka/atrybuty", title: "Atrybuty" },
   { href: "/wizytowka/nap", title: "NAP i katalogi" },
   { href: "/wizytowka/raporty", title: "Raporty wizytówki" },
   { href: "/publikacje/inbox", title: "Do akceptacji" },

@@ -163,6 +163,8 @@ export const onboardingDrafts = pgTable(
       (): AnyPgColumn => oauthConnections.id,
       { onDelete: "set null" },
     ),
+    profileName: text("profile_name"),
+    websiteScrape: jsonb("website_scrape"),
     pendingGbpLocations: jsonb("pending_gbp_locations"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

@@ -20,8 +20,8 @@ import {
   scheduleGbpAnalysis,
   type GbpLocation,
 } from "@/lib/integrations/gbp/client";
-import { scrapeWebsite } from "@/lib/scrape/website";
-import { getActiveAccountId, listAccountProfiles } from "@/lib/session";
+import { scrapeWebsite, type ScrapeResult } from "@/lib/scrape/website";
+import { getActiveAccountId, listAccountProfileOptions } from "@/lib/session";
 
 const modeSchema = z.enum(["new", "add"]).default("new");
 
@@ -56,10 +56,70 @@ async function getDraft(mode: "new" | "add"): Promise<OnboardingDraft> {
   return created;
 }
 
+function storedScrape(scrape: ScrapeResult) {
+  return {
+    url: scrape.url,
+    title: scrape.title,
+    description: scrape.description,
+    headings: scrape.headings,
+    text: scrape.text,
+    ok: scrape.ok,
+    warning: scrape.warning ?? null,
+  };
+}
+
+function draftHasSource(draft: OnboardingDraft) {
+  return Boolean(
+    draft.profileName ||
+      draft.scrapeText ||
+      draft.websiteUrl ||
+      draft.manualDescription,
+  );
+}
+
+/** Drops a profile created before the brief was finished. A linked Google location stays. */
+async function discardPrematureProfile(
+  draft: OnboardingDraft,
+  accountId: string,
+) {
+  if (!draft.profileId) return;
+  const [existing] = await db
+    .select({ id: profiles.id, gbpLocationId: profiles.gbpLocationId })
+    .from(profiles)
+    .where(
+      and(eq(profiles.id, draft.profileId), eq(profiles.accountId, accountId)),
+    )
+    .limit(1);
+  if (!existing || existing.gbpLocationId) return;
+  await db.delete(profiles).where(eq(profiles.id, existing.id));
+}
+
+async function insertWebsiteContext(profileId: string, draft: OnboardingDraft) {
+  if (!draft.websiteScrape) return;
+  await db.insert(companyContext).values({
+    profileId,
+    source: "website",
+    rawData: draft.websiteScrape,
+    fetchedAt: now(),
+  });
+}
+
+async function insertBrief(profileId: string, draft: OnboardingDraft) {
+  await db.insert(profileBriefs).values({
+    profileId,
+    services: draft.services ?? "",
+    tone: draft.tone ?? "",
+    targetAudience: draft.targetAudience ?? "",
+    differentiators: draft.differentiators ?? "",
+    websiteUrl: draft.websiteUrl,
+    notes: draft.manualDescription,
+  });
+}
+
 export async function loadOnboardingState(modeRaw: string | undefined) {
   const mode = modeSchema.parse(modeRaw ?? "new");
   const draft = await getDraft(mode);
-  const accountProfiles = await listAccountProfiles();
+  const accountProfiles = await listAccountProfileOptions();
 
   return {
     mode,
@@ -77,7 +137,7 @@ export async function loadOnboardingState(modeRaw: string | undefined) {
       pendingLocations: (draft.pendingGbpLocations as GbpLocation[] | null) ?? [],
       hasConnection: !!draft.oauthConnectionId,
     },
-    profiles: accountProfiles.map((p) => ({ id: p.id, name: p.name })),
+    profiles: accountProfiles,
   };
 }
 
@@ -138,49 +198,18 @@ export async function submitOnboardingStep1(
     profileName = "Mój biznes";
   }
 
-  let profileId = draft.profileId;
-  if (!profileId) {
-    const [profile] = await db
-      .insert(profiles)
-      .values({
-        accountId,
-        name: profileName,
-        kind: "local_business",
-      })
-      .returning();
-    profileId = profile.id;
-  } else {
-    await db
-      .update(profiles)
-      .set({ name: profileName })
-      .where(and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)));
-  }
-
-  if (websiteScrape) {
-    await db.insert(companyContext).values({
-      profileId,
-      source: "website",
-      rawData: {
-        url: websiteScrape.url,
-        title: websiteScrape.title,
-        description: websiteScrape.description,
-        headings: websiteScrape.headings,
-        text: websiteScrape.text,
-        ok: websiteScrape.ok,
-        warning: websiteScrape.warning ?? null,
-      },
-      fetchedAt: now(),
-    });
-  }
+  await discardPrematureProfile(draft, accountId);
 
   await db
     .update(onboardingDrafts)
     .set({
-      profileId,
+      profileId: null,
+      profileName,
       websiteUrl,
       manualDescription,
       scrapeText,
       scrapeWarning,
+      websiteScrape: websiteScrape ? storedScrape(websiteScrape) : null,
       step: "2",
       services: null,
       tone: null,
@@ -245,7 +274,7 @@ export async function regenerateBriefAction(input: {
   const note = input.note.trim();
 
   const draft = await getDraft(mode);
-  if (!draft.profileId) {
+  if (!draftHasSource(draft)) {
     return { ok: false, error: "Najpierw ukończ krok 1" };
   }
 
@@ -301,43 +330,9 @@ export async function saveBriefAndContinue(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Błąd walidacji" };
   }
 
-  const accountId = await getActiveAccountId();
   const draft = await getDraft(parsed.data.mode);
-  if (!draft.profileId) {
-    return { ok: false, error: "Brak profilu w draftcie" };
-  }
-
-  await requireDraftProfile(draft.profileId, accountId);
-
-  const [existing] = await db
-    .select()
-    .from(profileBriefs)
-    .where(eq(profileBriefs.profileId, draft.profileId))
-    .limit(1);
-
-  if (existing) {
-    await db
-      .update(profileBriefs)
-      .set({
-        services: parsed.data.services,
-        tone: parsed.data.tone,
-        targetAudience: parsed.data.targetAudience,
-        differentiators: parsed.data.differentiators,
-        websiteUrl: draft.websiteUrl,
-        notes: draft.manualDescription,
-        updatedAt: now(),
-      })
-      .where(eq(profileBriefs.id, existing.id));
-  } else {
-    await db.insert(profileBriefs).values({
-      profileId: draft.profileId,
-      services: parsed.data.services,
-      tone: parsed.data.tone,
-      targetAudience: parsed.data.targetAudience,
-      differentiators: parsed.data.differentiators,
-      websiteUrl: draft.websiteUrl,
-      notes: draft.manualDescription,
-    });
+  if (!draftHasSource(draft)) {
+    return { ok: false, error: "Najpierw ukończ krok 1" };
   }
 
   await db
@@ -417,55 +412,30 @@ export async function disconnectGbpAction(
   return { ok: true };
 }
 
-async function requireDraftProfile(profileId: string, accountId: string) {
-  const [profile] = await db
-    .select()
-    .from(profiles)
-    .where(and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)))
-    .limit(1);
-  if (!profile) {
-    throw new Error("Profil draftu nie należy do konta");
-  }
-  return profile;
-}
-
 export async function skipGbpAndFinish(modeRaw: string) {
   const mode = modeSchema.parse(modeRaw);
   const accountId = await getActiveAccountId();
   const draft = await getDraft(mode);
-  if (!draft.profileId) {
+  if (!draftHasSource(draft)) {
     redirect(`/onboarding${mode === "add" ? "?mode=add" : ""}`);
   }
 
-  await requireDraftProfile(draft.profileId, accountId);
+  await discardPrematureProfile(draft, accountId);
 
-  // Ensure brief exists even if user jumped somehow
-  if (
-    draft.services != null ||
-    draft.tone != null ||
-    draft.targetAudience != null ||
-    draft.differentiators != null
-  ) {
-    const [existing] = await db
-      .select()
-      .from(profileBriefs)
-      .where(eq(profileBriefs.profileId, draft.profileId))
-      .limit(1);
-    if (!existing) {
-      await db.insert(profileBriefs).values({
-        profileId: draft.profileId,
-        services: draft.services ?? "",
-        tone: draft.tone ?? "",
-        targetAudience: draft.targetAudience ?? "",
-        differentiators: draft.differentiators ?? "",
-        websiteUrl: draft.websiteUrl,
-        notes: draft.manualDescription,
-      });
-    }
-  }
+  const [created] = await db
+    .insert(profiles)
+    .values({
+      accountId,
+      name: (draft.profileName || "Mój biznes").slice(0, 120),
+      kind: "local_business",
+    })
+    .returning();
+
+  await insertWebsiteContext(created.id, draft);
+  await insertBrief(created.id, draft);
 
   await unstable_update({
-    user: { activeProfileId: draft.profileId },
+    user: { activeProfileId: created.id },
   });
   await db
     .delete(onboardingDrafts)
@@ -502,9 +472,14 @@ export async function confirmGbpLocations(
 
   const accountId = await getActiveAccountId();
   const draft = await getDraft(parsed.data.mode);
-  if (!draft.profileId || !draft.oauthConnectionId) {
-    return { ok: false, error: "Brak połączenia Google lub profilu" };
+  if (!draft.oauthConnectionId) {
+    return { ok: false, error: "Brak połączenia Google" };
   }
+  if (!draftHasSource(draft)) {
+    return { ok: false, error: "Najpierw zapisz brief" };
+  }
+
+  await discardPrematureProfile(draft, accountId);
 
   const pending = (draft.pendingGbpLocations as GbpLocation[] | null) ?? [];
   const selected = pending.filter((loc) =>
@@ -595,38 +570,22 @@ export async function confirmGbpLocations(
   const createdProfileIds: string[] = [];
   const errors: string[] = [];
 
-  for (let i = 0; i < selected.length; i++) {
-    const loc = selected[i];
+  for (const loc of selected) {
     try {
       const details = await fetchGbpLocationDetails(accessToken, loc.name);
-      let profileId: string;
+      const [created] = await db
+        .insert(profiles)
+        .values({
+          accountId,
+          name: loc.title.slice(0, 120),
+          kind: "local_business",
+          gbpLocationId: loc.name,
+          oauthConnectionId: connection.id,
+        })
+        .returning();
+      const profileId = created.id;
 
-      if (i === 0 && draft.profileId) {
-        profileId = draft.profileId;
-        await db
-          .update(profiles)
-          .set({
-            name: loc.title.slice(0, 120),
-            gbpLocationId: loc.name,
-            oauthConnectionId: connection.id,
-          })
-          .where(
-            and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)),
-          );
-      } else {
-        const [created] = await db
-          .insert(profiles)
-          .values({
-            accountId,
-            name: loc.title.slice(0, 120),
-            kind: "local_business",
-            gbpLocationId: loc.name,
-            oauthConnectionId: connection.id,
-          })
-          .returning();
-        profileId = created.id;
-      }
-
+      await insertWebsiteContext(profileId, draft);
       await db.insert(companyContext).values({
         profileId,
         source: "gbp",

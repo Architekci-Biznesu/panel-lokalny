@@ -377,33 +377,79 @@ export type GbpAttributeMetadata = {
   displayName?: string;
   groupDisplayName?: string;
   repeatable?: boolean;
-  valueMetadata?: Array<{ value?: string; displayName?: string }>;
+  deprecated?: boolean;
+  valueMetadata?: Array<{ value?: string | boolean; displayName?: string }>;
 };
 
 export async function listGbpAttributesForCategory(
   accessToken: string,
   categoryName: string,
 ): Promise<GbpAttributeMetadata[]> {
-  const url = new URL(
-    "https://mybusinessbusinessinformation.googleapis.com/v1/attributes",
-  );
-  url.searchParams.set("categoryName", categoryName);
-  url.searchParams.set("regionCode", "PL");
-  url.searchParams.set("languageCode", "pl");
-
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+  return listGbpAttributeMetadata(accessToken, {
+    categoryName,
+    regionCode: "PL",
+    languageCode: "pl",
   });
+}
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`GBP attributes.list failed: ${body}`);
-  }
+/** Attributes actually available for this listing (primary category + country). */
+export async function listGbpAttributesForLocation(
+  accessToken: string,
+  locationName: string,
+): Promise<GbpAttributeMetadata[]> {
+  return listGbpAttributeMetadata(accessToken, { parent: locationName });
+}
 
-  const data = (await response.json()) as {
-    attributeMetadata?: GbpAttributeMetadata[];
-  };
-  return data.attributeMetadata ?? [];
+async function listGbpAttributeMetadata(
+  accessToken: string,
+  params: {
+    parent?: string;
+    categoryName?: string;
+    regionCode?: string;
+    languageCode?: string;
+  },
+): Promise<GbpAttributeMetadata[]> {
+  const collected: GbpAttributeMetadata[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const url = new URL(
+      "https://mybusinessbusinessinformation.googleapis.com/v1/attributes",
+    );
+    if (params.parent) {
+      url.searchParams.set("parent", params.parent);
+    } else {
+      if (params.categoryName) {
+        url.searchParams.set("categoryName", params.categoryName);
+      }
+      if (params.regionCode) {
+        url.searchParams.set("regionCode", params.regionCode);
+      }
+      if (params.languageCode) {
+        url.searchParams.set("languageCode", params.languageCode);
+      }
+    }
+    url.searchParams.set("pageSize", "200");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`GBP attributes.list failed: ${body}`);
+    }
+
+    const data = (await response.json()) as {
+      attributeMetadata?: GbpAttributeMetadata[];
+      nextPageToken?: string;
+    };
+    collected.push(...(data.attributeMetadata ?? []));
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return collected;
 }
 
 export async function getGbpLocationAttributes(
@@ -411,7 +457,7 @@ export async function getGbpLocationAttributes(
   locationName: string,
 ): Promise<{ name?: string; attributes?: Array<Record<string, unknown>> }> {
   const response = await fetch(
-    `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}:getAttributes`,
+    `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/attributes`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
 
@@ -433,7 +479,7 @@ export async function updateGbpLocationAttributes(
   attributeMask: string[],
 ): Promise<unknown> {
   const url = new URL(
-    `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}:updateAttributes`,
+    `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/attributes`,
   );
   if (attributeMask.length) {
     url.searchParams.set("attributeMask", attributeMask.join(","));
@@ -512,6 +558,39 @@ export type GbpMediaItem = {
  * Legacy v4 media list. locationName is v1 form `locations/{id}`;
  * we resolve `accounts/{aid}/locations/{id}` via Account Management.
  */
+type MediaListResponse = {
+  mediaItems?: GbpMediaItem[];
+  nextPageToken?: string;
+};
+
+/** Owner media plus customer photos. `null` on the first page means the account does not own this location. */
+async function listMediaCollection(
+  accessToken: string,
+  endpoint: string,
+  limit: number,
+): Promise<GbpMediaItem[] | null> {
+  const items: GbpMediaItem[] = [];
+  let pageToken: string | undefined;
+
+  for (let page = 0; page < 3 && items.length < limit; page++) {
+    const url = new URL(endpoint);
+    url.searchParams.set("pageSize", "50");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) return page === 0 ? null : items;
+
+    const data = (await response.json()) as MediaListResponse;
+    items.push(...(data.mediaItems ?? []));
+    pageToken = data.nextPageToken;
+    if (!pageToken) break;
+  }
+
+  return items;
+}
+
 export async function listGbpLocationMedia(
   accessToken: string,
   locationName: string,
@@ -531,35 +610,68 @@ export async function listGbpLocationMedia(
   const accounts = accountsData.accounts ?? [];
 
   for (const account of accounts) {
-    const parent = `${account.name}/locations/${locationId}`;
-    const response = await fetch(
-      `https://mybusiness.googleapis.com/v4/${parent}/media`,
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-    if (!response.ok) {
-      // Wrong account for this location - try next
-      continue;
-    }
-    const data = (await response.json()) as { mediaItems?: GbpMediaItem[] };
-    return data.mediaItems ?? [];
+    const parent = `https://mybusiness.googleapis.com/v4/${account.name}/locations/${locationId}/media`;
+    const owner = await listMediaCollection(accessToken, parent, 40);
+    if (!owner) continue;
+
+    const customers =
+      (await listMediaCollection(accessToken, `${parent}/customers`, 40)) ?? [];
+    return [...owner, ...customers];
   }
 
   return [];
 }
 
+function mediaDisplayUrl(item: GbpMediaItem): string | null {
+  const raw = item.thumbnailUrl || item.googleUrl;
+  if (!raw) return null;
+  if (!/googleusercontent\.com/i.test(raw)) return raw;
+  if (/=[swh]\d/.test(raw)) return raw;
+  return `${raw}=w800-h800-c`;
+}
+
+const MEDIA_CATEGORY_RANK: Record<string, number> = {
+  COVER: 0,
+  PROFILE: 1,
+  LOGO: 2,
+  EXTERIOR: 3,
+  INTERIOR: 4,
+  PRODUCT: 5,
+  FOOD_AND_DRINK: 6,
+  ADDITIONAL: 7,
+};
+
+/** Cover first, then other photos. Skips video. */
+export function pickGbpCollageUrls(
+  items: GbpMediaItem[],
+  limit = 6,
+): string[] {
+  const photos = items.filter((item) => {
+    if (item.mediaFormat && item.mediaFormat !== "PHOTO") return false;
+    return Boolean(item.googleUrl || item.thumbnailUrl);
+  });
+
+  photos.sort((a, b) => {
+    const rankA = MEDIA_CATEGORY_RANK[a.locationAssociation?.category ?? ""] ?? 8;
+    const rankB = MEDIA_CATEGORY_RANK[b.locationAssociation?.category ?? ""] ?? 8;
+    return rankA - rankB;
+  });
+
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  for (const item of photos) {
+    const url = mediaDisplayUrl(item);
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    urls.push(url);
+    if (urls.length >= limit) break;
+  }
+  return urls;
+}
+
 /** Prefer COVER, then PROFILE, then first photo with a usable URL. */
 export function pickGbpCoverUrl(items: GbpMediaItem[]): string | null {
-  const withUrl = items.filter((i) => i.googleUrl || i.thumbnailUrl);
-  const cover = withUrl.find(
-    (i) => i.locationAssociation?.category === "COVER",
-  );
-  if (cover) return cover.googleUrl ?? cover.thumbnailUrl ?? null;
-  const profile = withUrl.find(
-    (i) => i.locationAssociation?.category === "PROFILE",
-  );
-  if (profile) return profile.googleUrl ?? profile.thumbnailUrl ?? null;
-  const first = withUrl[0];
-  return first ? (first.googleUrl ?? first.thumbnailUrl ?? null) : null;
+  return pickGbpCollageUrls(items, 1)[0] ?? null;
 }
 
 /** Hook point for Phase 3 - GBP analysis after connect. */

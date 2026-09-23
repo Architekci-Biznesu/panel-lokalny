@@ -23,9 +23,17 @@ export async function getActiveGbpProfile(): Promise<Profile> {
   return profile;
 }
 
+export function isGbpUnauthenticatedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : "";
+  return (
+    message.includes("UNAUTHENTICATED") || message.includes('"code": 401')
+  );
+}
+
 /** Returns a fresh access token for the profile's OAuth connection. */
 export async function getGbpAccessTokenForProfile(
   profile: Profile,
+  options?: { force?: boolean },
 ): Promise<string> {
   if (!profile.oauthConnectionId) {
     throw new GbpNotConnectedError();
@@ -47,6 +55,7 @@ export async function getGbpAccessTokenForProfile(
   }
 
   const needsRefresh =
+    options?.force ||
     !connection.expiresAt ||
     connection.expiresAt.getTime() < Date.now() + 60_000;
 
@@ -60,9 +69,22 @@ export async function getGbpAccessTokenForProfile(
     );
   }
 
-  const refreshed = await refreshGbpAccessToken(
-    connection.encryptedRefreshToken,
-  );
+  let refreshed;
+  try {
+    refreshed = await refreshGbpAccessToken(connection.encryptedRefreshToken);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (
+      message.includes("invalid_grant") ||
+      message.includes("invalid_token") ||
+      message.includes("unauthorized_client")
+    ) {
+      throw new GbpNotConnectedError(
+        "Sesja Google wygasła - połącz wizytówkę ponownie",
+      );
+    }
+    throw error;
+  }
   const sealed = sealTokens(refreshed);
   await db
     .update(oauthConnections)

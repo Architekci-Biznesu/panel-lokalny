@@ -3,6 +3,7 @@ import {
   listPublishGroupsForAccount,
   loadOnboardingState,
 } from "@/features/onboarding/actions";
+import { resolveSwitcherProfileId } from "@/lib/session";
 import { OnboardingWizard } from "@/features/onboarding/onboarding-wizard";
 import { ProfileSwitcher } from "@/features/shell/profile-switcher";
 import { SplitScreenLayout } from "@/features/shell/split-screen";
@@ -39,8 +40,10 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
     ? state.draft.step
     : "1") as "1" | "2" | "3";
   const hero = HERO_BY_STEP[step];
-  const showProfileSwitcher =
-    state.profiles.length > 0 && !!session?.user?.activeProfileId;
+  const activeProfileId = await resolveSwitcherProfileId(
+    session?.user?.activeProfileId ?? null,
+  );
+  const showProfileSwitcher = state.profiles.length > 0 && !!activeProfileId;
 
   return (
     <SplitScreenLayout
@@ -57,7 +60,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
         showProfileSwitcher ? (
           <ProfileSwitcher
             profiles={state.profiles}
-            activeProfileId={session?.user?.activeProfileId ?? null}
+            activeProfileId={activeProfileId}
             compact
           />
         ) : null

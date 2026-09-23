@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import { GBP_AUDIT_SYSTEM_PROMPT } from "@/lib/ai/gbp-audit-guidelines";
 import type {
   BriefFields,
   GbpAuditSuggestion,
@@ -138,27 +139,7 @@ Bez markdownu, bez dodatkowych kluczy.`;
   async generateGbpAuditSuggestions(
     input: GenerateGbpAuditInput,
   ): Promise<GbpAuditSuggestion[]> {
-    const system = `Jesteś ekspertem od Google Business Profile dla lokalnych firm w Polsce.
-Na podstawie briefu właściciela i aktualnej wizytówki zaproponuj poprawki treści.
-Zwróć WYŁĄCZNIE JSON: { "suggestions": [ { "field", "suggestedValue", "rationale" } ] }.
-suggestedValue ZAWSZE jako string (dla additional_categories i services: string z JSON-em, nie surowa tablica).
-
-Dozwolone field: title, description, primary_category, additional_categories, services.
-Zasady:
-- title: opcjonalna propozycja SEO (nazwa + usługa/lokalizacja). Tylko jeśli obecna nazwa jest słaba SEO; rationale ma wyjaśnić ryzyko.
-- description: opis profilu po polsku, konkretny, bez pustych fraz; max ~750 znaków.
-- primary_category: TYLKO name ze słownika availableCategories (np. categories/gcid:xxx). Proponuj zmianę tylko przy mocnym uzasadnieniu konsekwencji.
-- additional_categories: suggestedValue = string JSON-tablicy name ze słownika (bez głównej), np. "[\\"categories/gcid:cafe\\"]". Możesz zaproponować 1-5.
-- services: suggestedValue = string JSON-tablicy obiektów. Preferuj structured: {"kind":"structured","serviceTypeId":"...","description":"..."}.
-  Spoza słownika serviceTypes: {"kind":"freeForm","displayName":"...","description":"...","category":"<primary category name>"}.
-  Nazwa max 140 znaków, opis max 250. Zawsze zwracaj KOMPLETNĄ listę usług po zmianie (nie tylko zmieniony element).
-  Jeśli lista usług jest pusta - zaproponuj kompletną listę z briefu.
-- NIE wymyślaj kategorii ani serviceTypeId spoza podanych list.
-- NIE proponuj atrybutów (to osobny mechanizm faktów).
-- Unikaj propozycji identycznych z rejectedSuggestions.
-- Uwzględnij avoid / outOfScope z briefu.
-- Pomiń pole, jeśli obecna wartość jest już dobra - nie generuj pustych zmian.
-Bez markdownu.`;
+    const system = GBP_AUDIT_SYSTEM_PROMPT;
 
     const user = [
       "Brief właściciela:",

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { exitAdminMode } from "@/features/admin/actions";
 import { switchActiveProfile } from "@/features/onboarding/actions";
 
-type ProfileOption = { id: string; name: string };
+type ProfileOption = { id: string; name: string; location?: string | null };
 
 export function ProfileSwitcher({
   profiles,
@@ -79,12 +79,11 @@ export function ProfileSwitcher({
           </>
         ) : (
           <>
-            <span className="profile-switcher-label">
-              Aktywny profil
-              {adminImpersonating ? (
+            {adminImpersonating ? (
+              <span className="profile-switcher-label">
                 <span className="ui-pill ui-pill-warn">admin</span>
-              ) : null}
-            </span>
+              </span>
+            ) : null}
             <span className="profile-switcher-value">
               {active?.name ?? "Brak profilu"}
             </span>
@@ -117,20 +116,29 @@ export function ProfileSwitcher({
             <button
               key={profile.id}
               type="button"
-              className={profile.id === activeProfileId ? "active" : undefined}
+              className={
+                profile.id === activeProfileId
+                  ? "profile-menu-option active"
+                  : "profile-menu-option"
+              }
               role="menuitem"
               disabled={pending}
               onClick={() => selectProfile(profile.id)}
             >
-              {profile.name}
+              <span className="profile-menu-name">{profile.name}</span>
+              {profile.location ? (
+                <span className="profile-menu-loc">{profile.location}</span>
+              ) : null}
             </button>
           ))}
           {!adminImpersonating ? (
             <Link
               href="/onboarding?mode=add"
+              className="profile-menu-add"
               role="menuitem"
               onClick={() => setOpen(false)}
             >
+              <Plus aria-hidden />
               Dodaj profil
             </Link>
           ) : null}
