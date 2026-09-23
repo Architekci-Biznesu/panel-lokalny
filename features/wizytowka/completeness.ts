@@ -4,6 +4,9 @@ import { attributeId, isFactAttr } from "@/features/wizytowka/attributes";
 import type { GbpLocation } from "@/features/wizytowka/types";
 import { formatAddress } from "@/features/wizytowka/types";
 
+/** Minimum owner-uploaded photos for the profile to count as complete. */
+export const GBP_PHOTO_MIN = 10;
+
 export type CompletenessCheck = {
   id: string;
   label: string;
@@ -17,6 +20,7 @@ export type CompletenessSummary = {
   filledTotal: number;
   pendingSuggestions: number;
   factsToConfirm: number;
+  photoCount: number;
   outsidePanelGaps: Array<{
     id: string;
     label: string;
@@ -32,8 +36,22 @@ export function computeCompleteness(input: {
   attributeMetadata: GbpAttributeMetadata[];
   pendingSuggestions: GbpSuggestion[];
   lastAnalyzedAt: Date | null;
+  /** Owner-uploaded photo count (excludes customer media). */
+  photoCount?: number;
 }): CompletenessSummary {
   const { location } = input;
+  const photoCount = input.photoCount ?? 0;
+
+  const filledAttributes = new Set(
+    input.attributes
+      .map((a) => (typeof a.name === "string" ? attributeId(a.name) : null))
+      .filter((n): n is string => Boolean(n)),
+  );
+
+  const factsToConfirm = input.attributeMetadata.filter(
+    (meta) =>
+      isFactAttr(meta) && !filledAttributes.has(attributeId(meta.parent)),
+  ).length;
 
   const checks: CompletenessCheck[] = [
     {
@@ -84,18 +102,19 @@ export function computeCompleteness(input: {
       filled: Boolean((location.serviceItems ?? []).length > 0),
       href: "/wizytowka/uslugi#wiz-field-services",
     },
+    {
+      id: "attributes",
+      label: "Atrybuty",
+      filled: factsToConfirm === 0,
+      href: "/wizytowka/atrybuty",
+    },
+    {
+      id: "photos",
+      label: "Zdjęcia",
+      filled: photoCount >= GBP_PHOTO_MIN,
+      href: "/wizytowka",
+    },
   ];
-
-  const filledAttributes = new Set(
-    input.attributes
-      .map((a) => (typeof a.name === "string" ? attributeId(a.name) : null))
-      .filter((n): n is string => Boolean(n)),
-  );
-
-  const factsToConfirm = input.attributeMetadata.filter(
-    (meta) =>
-      isFactAttr(meta) && !filledAttributes.has(attributeId(meta.parent)),
-  ).length;
 
   const outsidePanelGaps: CompletenessSummary["outsidePanelGaps"] = [];
 
@@ -117,6 +136,14 @@ export function computeCompleteness(input: {
     });
   }
 
+  if (photoCount < GBP_PHOTO_MIN) {
+    outsidePanelGaps.push({
+      id: "photos",
+      label: "Za mało zdjęć",
+      why: `Masz ${photoCount} z ${GBP_PHOTO_MIN} zdjęć właściciela. Dodaj je w Profilu Firmy Google - w panelu nie da się jeszcze wgrywać mediów.`,
+    });
+  }
+
   if (location.metadata?.hasPendingEdits) {
     outsidePanelGaps.push({
       id: "pending_edits",
@@ -131,6 +158,7 @@ export function computeCompleteness(input: {
     filledTotal: checks.length,
     pendingSuggestions: input.pendingSuggestions.length,
     factsToConfirm,
+    photoCount,
     outsidePanelGaps,
     lastAnalyzedAt: input.lastAnalyzedAt,
   };

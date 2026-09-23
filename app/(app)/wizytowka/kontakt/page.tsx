@@ -1,4 +1,4 @@
-﻿import { KontaktEditor } from "@/features/wizytowka/components/kontakt-editor";
+import { KontaktEditor } from "@/features/wizytowka/components/kontakt-editor";
 import { tryLoadActiveGbpBundle } from "@/features/wizytowka/load-location";
 
 export default async function KontaktPage() {
@@ -9,7 +9,7 @@ export default async function KontaktPage() {
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div>
-          <h2 className="text-base font-semibold">Kontakt</h2>
+          <h2 className="text-lg font-semibold">Kontakt</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Witryna i profile społecznościowe. Kliknij ołówek, aby edytować.
           </p>

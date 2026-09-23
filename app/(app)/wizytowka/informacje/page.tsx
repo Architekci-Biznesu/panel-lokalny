@@ -3,17 +3,33 @@ import { InformacjeEditor } from "@/features/wizytowka/components/informacje-edi
 import { OutsideGaps } from "@/features/wizytowka/components/outside-gaps";
 import { computeCompleteness } from "@/features/wizytowka/completeness";
 import { tryLoadActiveGbpBundle } from "@/features/wizytowka/load-location";
-import { listGbpCategories } from "@/lib/integrations/gbp/client";
+import {
+  countGbpOwnerPhotos,
+  listGbpCategories,
+  listGbpLocationMedia,
+} from "@/lib/integrations/gbp/client";
 
 export default async function InformacjePage() {
   const bundle = await tryLoadActiveGbpBundle();
   if (!bundle) return null;
+
+  let photoCount = 0;
+  try {
+    const media = await listGbpLocationMedia(
+      bundle.accessToken,
+      bundle.locationName,
+    );
+    photoCount = countGbpOwnerPhotos(media.owner);
+  } catch {
+    photoCount = 0;
+  }
 
   const summary = computeCompleteness({
     location: bundle.location,
     attributes: bundle.attributes,
     attributeMetadata: bundle.attributeMetadata,
     pendingSuggestions: bundle.pendingSuggestions,
+    photoCount,
     lastAnalyzedAt: bundle.latestAuditRun?.finishedAt ?? null,
   });
 
@@ -29,7 +45,7 @@ export default async function InformacjePage() {
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div>
-          <h2 className="text-base font-semibold">Informacje o firmie</h2>
+          <h2 className="text-lg font-semibold">Informacje o firmie</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Kliknij ołówek, aby edytować. Propozycje AI są wyróżnione przy
             polach.

@@ -2,7 +2,7 @@ import { GbpPreviewCard } from "@/features/wizytowka/components/gbp-preview-card
 import { LastAnalysisLabel } from "@/features/wizytowka/components/last-analysis-label";
 import { ProposalCards } from "@/features/wizytowka/components/proposal-cards";
 import { WizytowkaSubnav } from "@/features/wizytowka/components/wizytowka-subnav";
-import { computeCompleteness } from "@/features/wizytowka/completeness";
+import { computeCompleteness, GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
 import { loadActiveGbpBundle } from "@/features/wizytowka/load-location";
 import { getUpcomingHolidayHint } from "@/features/wizytowka/polish-holidays";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/features/wizytowka/proposal-meta";
 import { GbpNotConnectedError } from "@/lib/integrations/gbp/access";
 import {
+  countGbpOwnerPhotos,
   listGbpLocationMedia,
   pickGbpCollageUrls,
 } from "@/lib/integrations/gbp/client";
@@ -39,11 +40,29 @@ export default async function WizytowkaLayout({
     const bundle = await loadActiveGbpBundle();
     location = bundle.location;
     analyzing = bundle.latestAuditRun?.status === "running";
+
+    let photoCount = 0;
+    try {
+      const media = await listGbpLocationMedia(
+        bundle.accessToken,
+        bundle.locationName,
+      );
+      photoCount = countGbpOwnerPhotos(media.owner);
+      photoUrls = pickGbpCollageUrls(
+        [...media.owner, ...media.customers],
+        6,
+      );
+    } catch {
+      photoUrls = [];
+      photoCount = 0;
+    }
+
     summary = computeCompleteness({
       location: bundle.location,
       attributes: bundle.attributes,
       attributeMetadata: bundle.attributeMetadata,
       pendingSuggestions: bundle.pendingSuggestions,
+      photoCount,
       lastAnalyzedAt:
         bundle.latestAuditRun?.status === "done"
           ? bundle.latestAuditRun.finishedAt
@@ -61,16 +80,6 @@ export default async function WizytowkaLayout({
         : analyzedAt
           ? new Date(analyzedAt).toISOString()
           : null;
-
-    try {
-      const media = await listGbpLocationMedia(
-        bundle.accessToken,
-        bundle.locationName,
-      );
-      photoUrls = pickGbpCollageUrls(media, 6);
-    } catch {
-      photoUrls = [];
-    }
   } catch (error) {
     if (error instanceof GbpNotConnectedError || error instanceof AuthError) {
       connected = false;
@@ -118,6 +127,9 @@ export default async function WizytowkaLayout({
           <ProposalCards
             suggestions={pendingSuggestions}
             specialHoursHint={specialHoursHint}
+            factsToConfirm={summary?.factsToConfirm ?? 0}
+            photoCount={summary?.photoCount ?? GBP_PHOTO_MIN}
+            mapsUri={location?.metadata?.mapsUri ?? null}
           />
           {analyzing ? (
             <div className="banner wiz-analyzing">

@@ -111,7 +111,7 @@ export function AtrybutyView({
       <div className="wiz-stack">
         <div className="wiz-tab-head">
           <div className="wiz-tab-head-text">
-            <h2 className="text-base font-semibold">Atrybuty</h2>
+            <h2 className="text-lg font-semibold">Atrybuty</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Potwierdź fakty o firmie Tak / Nie.
             </p>
@@ -130,7 +130,7 @@ export function AtrybutyView({
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div className="wiz-tab-head-text">
-          <h2 className="text-base font-semibold">Atrybuty</h2>
+          <h2 className="text-lg font-semibold">Atrybuty</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {open
               ? "Edycja - po zmianach zapisz zbiorczo na dole"

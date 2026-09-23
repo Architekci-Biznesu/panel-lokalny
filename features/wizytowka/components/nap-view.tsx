@@ -78,7 +78,7 @@ export function NapView({ requestsCount }: { requestsCount: number }) {
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div>
-          <h2 className="text-base font-semibold">NAP i katalogi</h2>
+          <h2 className="text-lg font-semibold">NAP i katalogi</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Spójne wpisy Name / Address / Phone w katalogach zewnętrznych
             realizuje zespół agencji. Tutaj widzisz status i możesz zgłosić

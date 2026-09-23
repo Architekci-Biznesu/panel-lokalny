@@ -598,9 +598,9 @@ async function listMediaCollection(
 export async function listGbpLocationMedia(
   accessToken: string,
   locationName: string,
-): Promise<GbpMediaItem[]> {
+): Promise<{ owner: GbpMediaItem[]; customers: GbpMediaItem[] }> {
   const locationId = locationName.replace(/^locations\//, "");
-  if (!locationId) return [];
+  if (!locationId) return { owner: [], customers: [] };
 
   const accountsRes = await fetch(
     "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
@@ -620,10 +620,10 @@ export async function listGbpLocationMedia(
 
     const customers =
       (await listMediaCollection(accessToken, `${parent}/customers`, 40)) ?? [];
-    return [...owner, ...customers];
+    return { owner, customers };
   }
 
-  return [];
+  return { owner: [], customers: [] };
 }
 
 function mediaDisplayUrl(item: GbpMediaItem): string | null {
@@ -645,15 +645,22 @@ const MEDIA_CATEGORY_RANK: Record<string, number> = {
   ADDITIONAL: 7,
 };
 
+function isGbpPhotoItem(item: GbpMediaItem): boolean {
+  if (item.mediaFormat && item.mediaFormat !== "PHOTO") return false;
+  return Boolean(item.googleUrl || item.thumbnailUrl);
+}
+
+/** Owner-uploaded photos only (excludes customer media and video). */
+export function countGbpOwnerPhotos(items: GbpMediaItem[]): number {
+  return items.filter(isGbpPhotoItem).length;
+}
+
 /** Cover first, then other photos. Skips video. */
 export function pickGbpCollageUrls(
   items: GbpMediaItem[],
   limit = 6,
 ): string[] {
-  const photos = items.filter((item) => {
-    if (item.mediaFormat && item.mediaFormat !== "PHOTO") return false;
-    return Boolean(item.googleUrl || item.thumbnailUrl);
-  });
+  const photos = items.filter(isGbpPhotoItem);
 
   photos.sort((a, b) => {
     const rankA = MEDIA_CATEGORY_RANK[a.locationAssociation?.category ?? ""] ?? 8;

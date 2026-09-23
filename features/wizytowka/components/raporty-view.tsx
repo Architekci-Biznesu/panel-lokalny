@@ -68,7 +68,7 @@ export function RaportyView({
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div className="wiz-tab-head-text">
-          <h2 className="text-base font-semibold">Raporty wizytówki</h2>
+          <h2 className="text-lg font-semibold">Raporty wizytówki</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Dane z Google Business Profile · {rangeLabel}
           </p>

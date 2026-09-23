@@ -58,7 +58,7 @@ export function UslugiEditor({
     <>
       <div className="wiz-tab-head">
         <div className="wiz-tab-head-text">
-          <h2 className="text-base font-semibold wiz-uslugi-title">
+          <h2 className="text-lg font-semibold wiz-uslugi-title">
             Usługi
             {open ? (
               <span className="mono wiz-uslugi-count-badge">{count}</span>

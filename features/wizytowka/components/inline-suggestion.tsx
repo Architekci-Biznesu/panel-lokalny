@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Check, Loader2, Pencil, Sparkles, X } from "lucide-react";
+import { Check, Loader2, Pencil, WandSparkles, X } from "lucide-react";
 import { toast } from "gooey-toast";
 import {
   acceptGbpSuggestion,
@@ -179,7 +179,7 @@ export function InlineSuggestion({
       <div className="wiz-inline-rail">
         <span className="wiz-field-label">{fieldLabel}</span>
         <span className="wiz-ai-pill">
-          <Sparkles aria-hidden />
+          <WandSparkles aria-hidden />
           Propozycja AI
         </span>
       </div>
@@ -266,7 +266,7 @@ export function InlineSuggestion({
         {!editing ? (
           <div className="wiz-inline-rationale">
             <span className="wiz-inline-rationale-icon-wrap" aria-hidden>
-              <Sparkles className="wiz-inline-rationale-icon" />
+              <WandSparkles className="wiz-inline-rationale-icon" />
             </span>
             <div className="wiz-inline-rationale-body">
               <span className="wiz-inline-rationale-label">
@@ -361,7 +361,7 @@ export function InlineSuggestion({
 
         {riskOpen ? (
           <div className="wiz-risk-dialog" role="dialog" aria-modal="true">
-            <h3 className="text-base font-semibold">Ryzyko zmiany nazwy</h3>
+            <h3 className="text-lg font-semibold">Ryzyko zmiany nazwy</h3>
             <p className="text-sm text-muted-foreground mt-2">
               Wytyczne Google wymagają nazwy faktycznie używanej przez firmę.
               Dodawanie słów kluczowych i lokalizacji jest ich naruszeniem. W razie

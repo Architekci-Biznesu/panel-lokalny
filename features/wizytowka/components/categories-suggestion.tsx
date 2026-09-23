@@ -6,8 +6,8 @@ import {
   Check,
   Loader2,
   Pencil,
-  Sparkles,
   Star,
+  WandSparkles,
   X,
 } from "lucide-react";
 import { toast } from "gooey-toast";
@@ -149,7 +149,7 @@ export function CategoriesSuggestion({
       <div className="wiz-inline-rail">
         <span className="wiz-field-label">Kategorie</span>
         <span className="wiz-ai-pill">
-          <Sparkles aria-hidden />
+          <WandSparkles aria-hidden />
           Propozycja AI
         </span>
       </div>
@@ -269,7 +269,7 @@ export function CategoriesSuggestion({
         {!editing ? (
           <div className="wiz-inline-rationale">
             <span className="wiz-inline-rationale-icon-wrap" aria-hidden>
-              <Sparkles className="wiz-inline-rationale-icon" />
+              <WandSparkles className="wiz-inline-rationale-icon" />
             </span>
             <div className="wiz-inline-rationale-body">
               <span className="wiz-inline-rationale-label">

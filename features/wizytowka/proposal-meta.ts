@@ -1,4 +1,5 @@
 import type { GbpSuggestion } from "@/lib/db/schema";
+import { GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
 
 export const PROPOSAL_ORDER = [
   "title",
@@ -82,11 +83,32 @@ export type ProposalCardItem =
       primary?: GbpSuggestion;
       additional?: GbpSuggestion;
     }
-  | { kind: "special_hours"; hint: string };
+  | { kind: "special_hours"; hint: string }
+  | { kind: "attributes"; count: number }
+  | { kind: "photos"; count: number };
+
+export type ProposalCardHints = {
+  specialHoursHint?: string | null;
+  factsToConfirm?: number;
+  photoCount?: number;
+};
+
+export function isNudgeProposalCard(
+  item: ProposalCardItem,
+): item is
+  | { kind: "special_hours"; hint: string }
+  | { kind: "attributes"; count: number }
+  | { kind: "photos"; count: number } {
+  return (
+    item.kind === "special_hours" ||
+    item.kind === "attributes" ||
+    item.kind === "photos"
+  );
+}
 
 export function proposalCardItems(
   suggestions: GbpSuggestion[],
-  specialHoursHint?: string | null,
+  hints: ProposalCardHints = {},
 ): ProposalCardItem[] {
   const pending = uniquePendingByField(suggestions);
   const primary = pending.find((s) => s.field === "primary_category");
@@ -111,8 +133,17 @@ export function proposalCardItems(
     if (suggestion) items.push({ kind: "field", suggestion });
   }
 
-  if (specialHoursHint) {
-    items.push({ kind: "special_hours", hint: specialHoursHint });
+  if (hints.specialHoursHint) {
+    items.push({ kind: "special_hours", hint: hints.specialHoursHint });
+  }
+
+  if ((hints.factsToConfirm ?? 0) > 0) {
+    items.push({ kind: "attributes", count: hints.factsToConfirm ?? 0 });
+  }
+
+  const photoCount = hints.photoCount ?? 0;
+  if (photoCount < GBP_PHOTO_MIN) {
+    items.push({ kind: "photos", count: photoCount });
   }
 
   return items;

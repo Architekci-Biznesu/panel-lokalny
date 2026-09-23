@@ -1,21 +1,23 @@
 "use client";
 
 import {
-  ArrowUpRight,
   CalendarDays,
   ClipboardList,
   FileText,
+  ImageIcon,
+  ListChecks,
   Tags,
   Type,
   WandSparkles,
 } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { acceptAllGbpSuggestions } from "@/features/wizytowka/actions";
+import { GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
 import { aiHintForSuggestion } from "@/features/wizytowka/components/suggestion-display";
 import {
+  isNudgeProposalCard,
   isProposalField,
   PROPOSAL_META,
   proposalCardItems,
@@ -30,6 +32,7 @@ const FIELD_ICONS = {
 } as const;
 
 const SPECIAL_HOURS_HREF = "/wizytowka/informacje#wiz-field-special-hours";
+const ATTRIBUTES_HREF = "/wizytowka/atrybuty";
 
 function scrollToHash() {
   const id = window.location.hash.replace(/^#/, "");
@@ -45,6 +48,10 @@ function goToHref(
   router: ReturnType<typeof useRouter>,
   href: string,
 ) {
+  if (/^https?:\/\//i.test(href)) {
+    window.open(href, "_blank", "noopener,noreferrer");
+    return;
+  }
   const hashIndex = href.indexOf("#");
   const path = hashIndex === -1 ? href : href.slice(0, hashIndex);
   const id = hashIndex === -1 ? "" : href.slice(hashIndex + 1);
@@ -59,12 +66,18 @@ function goToHref(
   router.push(href);
 }
 
-function cardHref(item: ProposalCardItem): string {
+function cardHref(item: ProposalCardItem, mapsUri?: string | null): string {
   if (item.kind === "categories") {
     return "/wizytowka/informacje#wiz-field-primary_category";
   }
   if (item.kind === "special_hours") {
     return SPECIAL_HOURS_HREF;
+  }
+  if (item.kind === "attributes") {
+    return ATTRIBUTES_HREF;
+  }
+  if (item.kind === "photos") {
+    return mapsUri?.trim() || "/wizytowka";
   }
   return PROPOSAL_META[item.suggestion.field as keyof typeof PROPOSAL_META].href;
 }
@@ -74,6 +87,12 @@ function cardTitle(item: ProposalCardItem): string {
   if (item.kind === "special_hours") {
     return "Brak nadchodzących dni specjalnych";
   }
+  if (item.kind === "attributes") {
+    return "Atrybuty do potwierdzenia";
+  }
+  if (item.kind === "photos") {
+    return "Za mało zdjęć na wizytówce";
+  }
   return PROPOSAL_META[item.suggestion.field as keyof typeof PROPOSAL_META]
     .label;
 }
@@ -81,6 +100,12 @@ function cardTitle(item: ProposalCardItem): string {
 function cardBlurb(item: ProposalCardItem): string {
   if (item.kind === "special_hours") {
     return `Najbliższe święta: ${item.hint}. Ustaw godziny, żeby klienci nie trafili na zamknięte drzwi.`;
+  }
+  if (item.kind === "attributes") {
+    return `${item.count} faktów o firmie czeka na potwierdzenie. Zaznacz, co jest prawdą - AI tego nie zgadnie.`;
+  }
+  if (item.kind === "photos") {
+    return `Masz ${item.count} z ${GBP_PHOTO_MIN} zdjęć właściciela. Dodaj je w Profilu Firmy Google - w panelu nie da się jeszcze wgrywać mediów.`;
   }
   if (item.kind === "categories") {
     const parts = [item.primary, item.additional]
@@ -98,17 +123,23 @@ function cardTabLabel(item: ProposalCardItem): string {
   if (item.kind === "categories" || item.kind === "special_hours") {
     return "Informacje";
   }
+  if (item.kind === "attributes") return "Atrybuty";
+  if (item.kind === "photos") return "Google";
   return PROPOSAL_META[item.suggestion.field as keyof typeof PROPOSAL_META]
     .tabLabel;
 }
 
 function cardActionLabel(item: ProposalCardItem): string {
   if (item.kind === "special_hours") return "Uzupełnij godziny →";
+  if (item.kind === "attributes") return "Potwierdź atrybuty →";
+  if (item.kind === "photos") return "Otwórz w Google →";
   return "Porównaj zmiany →";
 }
 
 function cardIcon(item: ProposalCardItem) {
   if (item.kind === "special_hours") return CalendarDays;
+  if (item.kind === "attributes") return ListChecks;
+  if (item.kind === "photos") return ImageIcon;
   if (item.kind === "categories") return Tags;
   if (isProposalField(item.suggestion.field)) {
     return (
@@ -118,22 +149,43 @@ function cardIcon(item: ProposalCardItem) {
   return Tags;
 }
 
+function cardKey(item: ProposalCardItem): string {
+  if (item.kind === "categories") {
+    return `cat-${item.primary?.id ?? ""}-${item.additional?.id ?? ""}`;
+  }
+  if (item.kind === "special_hours") return "special-hours";
+  if (item.kind === "attributes") return "attributes";
+  if (item.kind === "photos") return "photos";
+  return item.suggestion.id;
+}
+
 export function ProposalCards({
   suggestions,
   specialHoursHint = null,
+  factsToConfirm = 0,
+  photoCount = GBP_PHOTO_MIN,
+  mapsUri = null,
 }: {
   suggestions: GbpSuggestion[];
   specialHoursHint?: string | null;
+  factsToConfirm?: number;
+  photoCount?: number;
+  mapsUri?: string | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const items = useMemo(
-    () => proposalCardItems(suggestions, specialHoursHint),
-    [suggestions, specialHoursHint],
+    () =>
+      proposalCardItems(suggestions, {
+        specialHoursHint,
+        factsToConfirm,
+        photoCount,
+      }),
+    [suggestions, specialHoursHint, factsToConfirm, photoCount],
   );
   const aiCount = useMemo(
-    () => items.filter((item) => item.kind !== "special_hours").length,
+    () => items.filter((item) => !isNudgeProposalCard(item)).length,
     [items],
   );
   const [sessionTotal] = useState(() => items.length);
@@ -146,12 +198,12 @@ export function ProposalCards({
   if (items.length === 0 && resolved === 0) return null;
 
   const remaining = items.length;
-  const cols = Math.min(Math.max(remaining, 1), 3);
+  const cols = Math.min(Math.max(remaining, 1), 5);
 
   function reviewNext() {
     const first = items[0];
     if (!first) return;
-    goToHref(pathname, router, cardHref(first));
+    goToHref(pathname, router, cardHref(first, mapsUri));
   }
 
   return (
@@ -213,18 +265,13 @@ export function ProposalCards({
           style={{ ["--proposal-cols" as string]: String(cols) }}
         >
           {items.map((item) => {
-            const key =
-              item.kind === "categories"
-                ? `cat-${item.primary?.id ?? ""}-${item.additional?.id ?? ""}`
-                : item.kind === "special_hours"
-                  ? "special-hours"
-                  : item.suggestion.id;
             const Icon = cardIcon(item);
+            const warn = isNudgeProposalCard(item);
 
             return (
               <li
-                key={key}
-                className={`wiz-proposal-card${item.kind === "special_hours" ? " is-warn" : ""}`}
+                key={cardKey(item)}
+                className={`wiz-proposal-card${warn ? " is-warn" : ""}`}
               >
                 <div className="wiz-proposal-card-top">
                   <span className="wiz-proposal-icon" aria-hidden>
@@ -239,7 +286,9 @@ export function ProposalCards({
                 <button
                   type="button"
                   className="wiz-proposal-compare"
-                  onClick={() => goToHref(pathname, router, cardHref(item))}
+                  onClick={() =>
+                    goToHref(pathname, router, cardHref(item, mapsUri))
+                  }
                 >
                   {cardActionLabel(item)}
                 </button>
@@ -247,15 +296,6 @@ export function ProposalCards({
             );
           })}
         </ul>
-      ) : null}
-
-      {sessionTotal > 0 ? (
-        <div className="wiz-proposals-foot">
-          <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-outline ui-btn-sm">
-            <span>Zaktualizuj kontekst firmy</span>
-            <ArrowUpRight aria-hidden />
-          </Link>
-        </div>
       ) : null}
     </div>
   );

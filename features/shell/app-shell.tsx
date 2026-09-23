@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, X } from "lucide-react";
+import { ArrowUpRight, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { logoutAction } from "@/features/auth/actions";
 import { navGroups } from "@/features/shell/nav-config";
@@ -144,6 +144,15 @@ export function AppShell({
           </div>
           <div className="topbar-right">
             {onWizytowka ? <div id="wiz-topbar-slot" /> : null}
+            {onWizytowka ? (
+              <Link
+                href="/ustawienia/kontekst"
+                className="ui-btn ui-btn-outline ui-btn-sm"
+              >
+                <span>Zaktualizuj kontekst firmy</span>
+                <ArrowUpRight aria-hidden />
+              </Link>
+            ) : null}
             {onWizytowka ? <ReanalyzeButton /> : null}
           </div>
         </header>
