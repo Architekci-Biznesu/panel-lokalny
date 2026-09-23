@@ -1,5 +1,15 @@
-﻿import { PlaceholderPage } from "@/features/shell/placeholder-page";
+﻿import { GodzinyAtrybutyView } from "@/features/wizytowka/components/godziny-view";
+import { tryLoadActiveGbpBundle } from "@/features/wizytowka/load-location";
 
-export default function Page() {
-  return <PlaceholderPage title="Godziny otwarcia" />;
+export default async function GodzinyPage() {
+  const bundle = await tryLoadActiveGbpBundle();
+  if (!bundle) return null;
+
+  return (
+    <GodzinyAtrybutyView
+      location={bundle.location}
+      attributes={bundle.attributes}
+      attributeMetadata={bundle.attributeMetadata}
+    />
+  );
 }

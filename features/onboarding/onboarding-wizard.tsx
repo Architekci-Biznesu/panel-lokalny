@@ -795,9 +795,9 @@ export function OnboardingWizard({
               ) : (
                 <>
                   <GoogleGlyph />
-                  {selected.length === 1
-                    ? "Podłącz profil"
-                    : "Podłącz profile"}
+                  {selected.length > 1
+                    ? "Podłącz profile"
+                    : "Podłącz profil"}
                 </>
               )}
             </button>

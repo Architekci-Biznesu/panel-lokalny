@@ -262,3 +262,74 @@ export type ProfileBrief = typeof profileBriefs.$inferSelect;
 export type CompanyContext = typeof companyContext.$inferSelect;
 export type OAuthConnection = typeof oauthConnections.$inferSelect;
 export type OnboardingDraft = typeof onboardingDrafts.$inferSelect;
+
+export const gbpSuggestionFieldEnum = pgEnum("gbp_suggestion_field", [
+  "title",
+  "description",
+  "primary_category",
+  "additional_categories",
+  "services",
+]);
+
+export const gbpSuggestionRiskEnum = pgEnum("gbp_suggestion_risk", [
+  "none",
+  "high",
+]);
+
+export const gbpSuggestionStatusEnum = pgEnum("gbp_suggestion_status", [
+  "pending",
+  "accepted",
+  "rejected",
+  "superseded",
+]);
+
+export const gbpAuditRunStatusEnum = pgEnum("gbp_audit_run_status", [
+  "running",
+  "done",
+  "failed",
+]);
+
+export const gbpSuggestions = pgTable("gbp_suggestions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  field: gbpSuggestionFieldEnum("field").notNull(),
+  currentValue: text("current_value"),
+  suggestedValue: text("suggested_value").notNull(),
+  rationale: text("rationale"),
+  risk: gbpSuggestionRiskEnum("risk").notNull().default("none"),
+  status: gbpSuggestionStatusEnum("status").notNull().default("pending"),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  riskAckAt: timestamp("risk_ack_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const gbpAuditRuns = pgTable("gbp_audit_runs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  status: gbpAuditRunStatusEnum("status").notNull().default("running"),
+  error: text("error"),
+  startedAt: timestamp("started_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+});
+
+export const napInterestRequests = pgTable("nap_interest_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export type GbpSuggestion = typeof gbpSuggestions.$inferSelect;
+export type GbpAuditRun = typeof gbpAuditRuns.$inferSelect;
+export type NapInterestRequest = typeof napInterestRequests.$inferSelect;

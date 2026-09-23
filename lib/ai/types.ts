@@ -42,11 +42,48 @@ export type GeneratedImage = {
   mimeType: string;
 };
 
+export type GbpAuditSuggestionField =
+  | "title"
+  | "description"
+  | "primary_category"
+  | "additional_categories"
+  | "services";
+
+export type GbpAuditSuggestion = {
+  field: GbpAuditSuggestionField;
+  /** Plain text for title/description; JSON string for categories/services */
+  suggestedValue: string;
+  rationale: string;
+};
+
+export type GenerateGbpAuditInput = {
+  brief: BriefFields & {
+    serviceArea?: string | null;
+    avoid?: string | null;
+    outOfScope?: string | null;
+    websiteUrl?: string | null;
+    notes?: string | null;
+  };
+  websiteContext?: string | null;
+  gbpContext?: string | null;
+  locationSnapshot: string;
+  availableCategories: Array<{ name: string; displayName: string }>;
+  serviceTypes: Array<{ serviceTypeId: string; displayName: string }>;
+  availableAttributes: Array<{ parent: string; displayName?: string }>;
+  rejectedSuggestions: Array<{
+    field: string;
+    suggestedValue: string;
+  }>;
+};
+
 export interface TextProvider {
   generateBrief(input: GenerateBriefInput): Promise<BriefFields>;
   generateTopic(input: GenerateTopicInput): Promise<string>;
   generateContent(input: GenerateContentInput): Promise<string>;
   generateReviewReply(input: GenerateReviewReplyInput): Promise<string>;
+  generateGbpAuditSuggestions(
+    input: GenerateGbpAuditInput,
+  ): Promise<GbpAuditSuggestion[]>;
 }
 
 export interface ImageProvider {

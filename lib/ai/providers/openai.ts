@@ -2,8 +2,10 @@ import OpenAI from "openai";
 import { z } from "zod";
 import type {
   BriefFields,
+  GbpAuditSuggestion,
   GenerateBriefInput,
   GenerateContentInput,
+  GenerateGbpAuditInput,
   GenerateImageInput,
   GenerateReviewReplyInput,
   GenerateTopicInput,
@@ -131,6 +133,100 @@ Bez markdownu, bez dodatkowych kluczy.`;
       "Piszesz odpowiedź na opinię klienta lokalnej firmy po polsku. Zwróć samą odpowiedź.",
       `Ocena: ${input.rating}/5\nOpinia: ${input.reviewText}\n${briefContext(input.brief)}`,
     );
+  },
+
+  async generateGbpAuditSuggestions(
+    input: GenerateGbpAuditInput,
+  ): Promise<GbpAuditSuggestion[]> {
+    const system = `Jesteś ekspertem od Google Business Profile dla lokalnych firm w Polsce.
+Na podstawie briefu właściciela i aktualnej wizytówki zaproponuj poprawki treści.
+Zwróć WYŁĄCZNIE JSON: { "suggestions": [ { "field", "suggestedValue", "rationale" } ] }.
+suggestedValue ZAWSZE jako string (dla additional_categories i services: string z JSON-em, nie surowa tablica).
+
+Dozwolone field: title, description, primary_category, additional_categories, services.
+Zasady:
+- title: opcjonalna propozycja SEO (nazwa + usługa/lokalizacja). Tylko jeśli obecna nazwa jest słaba SEO; rationale ma wyjaśnić ryzyko.
+- description: opis profilu po polsku, konkretny, bez pustych fraz; max ~750 znaków.
+- primary_category: TYLKO name ze słownika availableCategories (np. categories/gcid:xxx). Proponuj zmianę tylko przy mocnym uzasadnieniu konsekwencji.
+- additional_categories: suggestedValue = string JSON-tablicy name ze słownika (bez głównej), np. "[\\"categories/gcid:cafe\\"]". Możesz zaproponować 1-5.
+- services: suggestedValue = string JSON-tablicy obiektów. Preferuj structured: {"kind":"structured","serviceTypeId":"...","description":"..."}.
+  Spoza słownika serviceTypes: {"kind":"freeForm","displayName":"...","description":"...","category":"<primary category name>"}.
+  Nazwa max 140 znaków, opis max 250. Zawsze zwracaj KOMPLETNĄ listę usług po zmianie (nie tylko zmieniony element).
+  Jeśli lista usług jest pusta - zaproponuj kompletną listę z briefu.
+- NIE wymyślaj kategorii ani serviceTypeId spoza podanych list.
+- NIE proponuj atrybutów (to osobny mechanizm faktów).
+- Unikaj propozycji identycznych z rejectedSuggestions.
+- Uwzględnij avoid / outOfScope z briefu.
+- Pomiń pole, jeśli obecna wartość jest już dobra - nie generuj pustych zmian.
+Bez markdownu.`;
+
+    const user = [
+      "Brief właściciela:",
+      `Usługi: ${input.brief.services}`,
+      `Ton: ${input.brief.tone}`,
+      `Grupa: ${input.brief.targetAudience}`,
+      `Wyróżniki: ${input.brief.differentiators}`,
+      `Obszar: ${input.brief.serviceArea ?? ""}`,
+      `Unikać: ${input.brief.avoid ?? ""}`,
+      `Poza zakresem: ${input.brief.outOfScope ?? ""}`,
+      `WWW: ${input.brief.websiteUrl ?? ""}`,
+      `Uwagi: ${input.brief.notes ?? ""}`,
+      "",
+      "Kontekst ze strony:",
+      (input.websiteContext ?? "").slice(0, 6000),
+      "",
+      "Kontekst GBP (snapshot):",
+      (input.gbpContext ?? "").slice(0, 4000),
+      "",
+      "Aktualna wizytówka:",
+      input.locationSnapshot.slice(0, 8000),
+      "",
+      "Dostępne kategorie (wybierz name):",
+      JSON.stringify(input.availableCategories.slice(0, 400)),
+      "",
+      "Typy usług ze słownika:",
+      JSON.stringify(input.serviceTypes.slice(0, 200)),
+      "",
+      "Atrybuty dostępne (tylko kontekst, nie proponuj):",
+      JSON.stringify(input.availableAttributes.slice(0, 80)),
+      "",
+      "Odrzucone wcześniej (nie powtarzaj tej samej formy):",
+      JSON.stringify(input.rejectedSuggestions.slice(0, 40)),
+    ].join("\n");
+
+    const raw = await completeJson(system, user);
+    const suggestedValueSchema = z.preprocess((value) => {
+      if (typeof value === "string") return value;
+      if (value == null) return "";
+      return JSON.stringify(value);
+    }, z.string());
+
+    const parsed = z
+      .object({
+        suggestions: z.array(
+          z.object({
+            field: z.enum([
+              "title",
+              "description",
+              "primary_category",
+              "additional_categories",
+              "services",
+            ]),
+            suggestedValue: suggestedValueSchema,
+            rationale: z.preprocess(
+              (v) => (typeof v === "string" ? v : v == null ? "" : String(v)),
+              z.string(),
+            ),
+          }),
+        ),
+      })
+      .parse(JSON.parse(raw));
+
+    return parsed.suggestions.map((s) => ({
+      field: s.field,
+      suggestedValue: s.suggestedValue.trim(),
+      rationale: s.rationale.trim(),
+    }));
   },
 };
 
