@@ -7,6 +7,7 @@ import { unstable_update } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   accounts,
+  napInterestRequests,
   profileGroups,
   profiles,
   publishGroups,
@@ -28,6 +29,14 @@ export type AdminProfileRow = {
   name: string;
   createdAt: Date;
   groupName: string | null;
+};
+
+export type AdminNapInterestRow = {
+  id: string;
+  createdAt: Date;
+  profileId: string;
+  profileName: string;
+  ownerEmail: string;
 };
 
 export async function listAdminAccounts(): Promise<AdminAccountRow[]> {
@@ -88,6 +97,41 @@ export async function listAdminAccounts(): Promise<AdminAccountRow[]> {
   });
 }
 
+export async function listNapInterestRequests(): Promise<AdminNapInterestRow[]> {
+  await requireStaff();
+
+  const rows = await db
+    .select({
+      id: napInterestRequests.id,
+      createdAt: napInterestRequests.createdAt,
+      profileId: profiles.id,
+      profileName: profiles.name,
+      ownerEmail: users.email,
+    })
+    .from(napInterestRequests)
+    .innerJoin(profiles, eq(profiles.id, napInterestRequests.profileId))
+    .innerJoin(accounts, eq(accounts.id, profiles.accountId))
+    .innerJoin(
+      users,
+      and(
+        eq(users.accountId, accounts.id),
+        eq(users.role, "owner"),
+        eq(users.isStaff, false),
+      ),
+    )
+    .orderBy(desc(napInterestRequests.createdAt));
+
+  return rows.map((row) => ({
+    id: row.id,
+    createdAt: row.createdAt,
+    profileId: row.profileId,
+    profileName: row.profileName,
+    ownerEmail: row.ownerEmail,
+  }));
+}
+
+export type AdminEnterResult = { ok: true } | { ok: false; error: string };
+
 const enterProfileSchema = z.object({
   profileId: z.string().uuid(),
 });
@@ -96,14 +140,16 @@ const enterAccountSchema = z.object({
   accountId: z.string().uuid(),
 });
 
-export async function enterAdminProfile(profileId: string) {
+export async function enterAdminProfile(
+  profileId: string,
+): Promise<AdminEnterResult> {
   if (!(await isCurrentUserStaff())) {
     redirect("/");
   }
 
   const parsed = enterProfileSchema.safeParse({ profileId });
   if (!parsed.success) {
-    redirect("/admin");
+    return { ok: false, error: "Nieprawidłowy profil." };
   }
 
   const [profile] = await db
@@ -113,7 +159,7 @@ export async function enterAdminProfile(profileId: string) {
     .limit(1);
 
   if (!profile) {
-    redirect("/admin");
+    return { ok: false, error: "Nie znaleziono profilu." };
   }
 
   const [owner] = await db
@@ -123,7 +169,10 @@ export async function enterAdminProfile(profileId: string) {
     .limit(1);
 
   if (!owner || owner.isStaff) {
-    redirect("/admin");
+    return {
+      ok: false,
+      error: "Nie można wejść w konto wewnętrzne (staff).",
+    };
   }
 
   await unstable_update({
@@ -136,14 +185,16 @@ export async function enterAdminProfile(profileId: string) {
   redirect("/pulpit");
 }
 
-export async function enterAdminAccount(accountId: string) {
+export async function enterAdminAccount(
+  accountId: string,
+): Promise<AdminEnterResult> {
   if (!(await isCurrentUserStaff())) {
     redirect("/");
   }
 
   const parsed = enterAccountSchema.safeParse({ accountId });
   if (!parsed.success) {
-    redirect("/admin");
+    return { ok: false, error: "Nieprawidłowe konto." };
   }
 
   const [owner] = await db
@@ -158,7 +209,10 @@ export async function enterAdminAccount(accountId: string) {
     .limit(1);
 
   if (!owner || owner.isStaff) {
-    redirect("/admin");
+    return {
+      ok: false,
+      error: "Nie można wejść w konto wewnętrzne (staff).",
+    };
   }
 
   const [firstProfile] = await db
@@ -169,7 +223,7 @@ export async function enterAdminAccount(accountId: string) {
     .limit(1);
 
   if (!firstProfile) {
-    redirect("/admin");
+    return { ok: false, error: "To konto nie ma jeszcze profili." };
   }
 
   await unstable_update({

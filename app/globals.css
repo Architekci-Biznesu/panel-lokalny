@@ -1965,19 +1965,25 @@
     padding: 1.75rem 1.5rem 3rem;
   }
 
-  .admin-page-header {
-    margin-bottom: 1.25rem;
+  .admin-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
-  .admin-page-header h1 {
-    margin: 0.25rem 0 0.5rem;
-    font-size: 1.75rem;
+  .admin-section-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  .admin-page-lead {
-    margin: 0;
-    color: var(--muted-foreground);
-    max-width: 42rem;
+  .admin-table-body {
+    padding: 0;
+    gap: 0;
+  }
+
+  .admin-accounts-search {
+    width: min(100%, 20rem);
   }
 
   /* --- Wizytówka Google --- */
@@ -2595,36 +2601,10 @@
 
   .wiz-proposals-foot {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .wiz-proposals-foot-row {
-    display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 0.65rem;
-  }
-
-  .wiz-proposals-progress {
-    height: 0.25rem;
-    border-radius: 999px;
-    background: var(--secondary);
-    overflow: hidden;
-  }
-
-  .wiz-proposals-progress > span {
-    display: block;
-    height: 100%;
-    background: var(--brand);
-    border-radius: inherit;
-  }
-
-  .wiz-proposals-progress-label {
-    margin: 0;
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
   }
 
   .wiz-last-analysis {
@@ -2857,11 +2837,6 @@
   .wiz-inline-suggestion > .wiz-proposal-panel {
     grid-column: 2;
     grid-row: 2;
-  }
-
-  .wiz-inline-suggestion-risk .wiz-proposal-panel {
-    background: color-mix(in srgb, #fef2f2 70%, var(--card));
-    border-color: color-mix(in srgb, #fecaca 60%, var(--border));
   }
 
   .wiz-proposal-panel {
@@ -3675,14 +3650,6 @@
     padding-top: 0;
   }
 
-  .wiz-suggestion-risk {
-    background: #fef2f2;
-    margin: 0 -0.5rem;
-    padding: 0.875rem 0.5rem;
-    border-radius: var(--radius);
-    border-top: none;
-  }
-
   .wiz-suggestion-top {
     display: flex;
     flex-wrap: wrap;
@@ -3797,13 +3764,12 @@
 
   .wiz-reject-box,
   .wiz-risk-dialog {
-    margin-top: 0.75rem;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background: var(--secondary);
-    border-radius: var(--radius);
+    gap: 0.65rem;
+    padding: 0;
+    background: transparent;
   }
 
   .wiz-facts-list,
@@ -4846,8 +4812,304 @@
     }
   }
 
+  .wiz-report-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .wiz-report-summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 900px) {
+    .wiz-report-summary {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .wiz-report-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .wiz-report-kpi-label {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-report-kpi-value {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--foreground);
+  }
+
+  .wiz-report-kpi-desc,
+  .wiz-report-kpi-foot {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-report-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wiz-report-bar-row {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .wiz-report-bar-label {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-report-bar-track {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--secondary);
+    overflow: hidden;
+  }
+
+  .wiz-report-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    min-width: 0;
+  }
+
+  .wiz-report-bar-value {
+    font-size: 0.75rem;
+    color: var(--foreground);
+    text-align: right;
+  }
+
+  .wiz-report-charts {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 900px) {
+    .wiz-report-charts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .wiz-report-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .wiz-report-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-report-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .wiz-report-legend-swatch {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .wiz-report-chart-body {
+    width: 100%;
+    min-height: 260px;
+  }
+
+  .wiz-range-picker {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .wiz-range-popover {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    z-index: 40;
+    width: min(36rem, calc(100vw - 2rem));
+    padding: 0.85rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 2px);
+    box-shadow: 0 12px 32px -16px rgba(15, 15, 20, 0.28);
+  }
+
+  .wiz-range-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .wiz-range-nav {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .wiz-range-months {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .wiz-range-months {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .wiz-range-month-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .wiz-range-weekdays,
+  .wiz-range-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.15rem;
+  }
+
+  .wiz-range-weekdays span {
+    text-align: center;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    padding: 0.2rem 0;
+  }
+
+  .wiz-range-day {
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    height: 2rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--radius) - 2px);
+    background: transparent;
+    color: var(--foreground);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .wiz-range-day.is-empty {
+    pointer-events: none;
+  }
+
+  .wiz-range-day.is-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .wiz-range-day:hover:not(:disabled):not(.is-empty) {
+    background: var(--accent);
+    color: var(--brand-deep);
+  }
+
+  .wiz-range-day.is-in-range {
+    background: color-mix(in srgb, var(--brand) 12%, var(--card));
+    color: var(--brand-deep);
+  }
+
+  .wiz-range-day.is-selected {
+    background: var(--brand);
+    color: #fff;
+  }
+
+  .wiz-range-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .wiz-range-hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-uslugi .wiz-attr-row:last-child {
+    border-bottom: none;
+  }
+
+  .wiz-nap-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .wiz-nap-main .wiz-field-label {
+    margin: 0;
+  }
+
+  .wiz-nap-url {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+    text-decoration: none;
+  }
+
+  .wiz-nap-url:hover {
+    color: var(--brand-deep);
+  }
+
+  .wiz-nap-url svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    stroke-width: 2;
+  }
+
   .wiz-nap-status {
-    padding: 0.75rem 0;
+    padding: 0 0 0.75rem;
     border-bottom: 1px solid var(--border);
   }
 
@@ -4862,44 +5124,40 @@
     flex-direction: column;
   }
 
-  .admin-page-section {
-    padding: 1rem;
-  }
-
-  .admin-accounts-search {
-    margin-bottom: 1rem;
-    max-width: 28rem;
-  }
-
-  .admin-accounts-table {
+  .admin-table-wrap {
     overflow-x: auto;
   }
 
-  .admin-accounts-table table {
+  .admin-table-wrap table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
   }
 
-  .admin-accounts-table th,
-  .admin-accounts-table td {
-    padding: 0.75rem 0.875rem;
+  .admin-table-wrap th,
+  .admin-table-wrap td {
+    padding: 0.875rem 1.25rem;
     text-align: left;
     vertical-align: middle;
     border-bottom: 1px solid var(--border);
   }
 
-  .admin-accounts-table th {
-    font-size: 0.75rem;
+  .admin-table-wrap th {
+    font-size: 0.6875rem;
     font-weight: 600;
     color: var(--muted-foreground);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    background: var(--secondary);
+    letter-spacing: 0.04em;
+    background: transparent;
+  }
+
+  .admin-table-wrap tbody tr:last-child td {
+    border-bottom: 0;
   }
 
   .admin-col-toggle {
     width: 2.5rem;
+    padding-right: 0;
   }
 
   .admin-expand-btn {
@@ -4941,7 +5199,7 @@
   }
 
   .admin-profile-row td {
-    background: color-mix(in srgb, var(--secondary) 40%, var(--card));
+    background: color-mix(in srgb, var(--secondary) 35%, var(--card));
   }
 
   .admin-profile-cell {

@@ -1,5 +1,11 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { getTextProvider } from "@/lib/ai";
+import {
+  GBP_DESCRIPTION_MAX,
+  GBP_SERVICE_DESC_MAX,
+  GBP_SERVICE_NAME_MAX,
+  clampTextToLimit,
+} from "@/lib/ai/gbp-limits";
 import { db } from "@/lib/db";
 import {
   companyContext,
@@ -314,20 +320,25 @@ async function executeAudit(profile: Profile): Promise<void> {
   const serviceTypeSet = new Set(serviceTypes.map((s) => s.serviceTypeId));
 
   for (const suggestion of suggestions) {
-    const key = `${suggestion.field}::${normalizeSuggestionValue(suggestion.suggestedValue)}`;
+    let suggestedValue = suggestion.suggestedValue;
+    if (suggestion.field === "description") {
+      suggestedValue = clampTextToLimit(suggestedValue, GBP_DESCRIPTION_MAX);
+    }
+
+    const key = `${suggestion.field}::${normalizeSuggestionValue(suggestedValue)}`;
     if (rejectedSet.has(key)) continue;
-    if (!suggestion.suggestedValue) continue;
+    if (!suggestedValue) continue;
 
     if (
       suggestion.field === "primary_category" &&
-      !categoryNameSet.has(suggestion.suggestedValue)
+      !categoryNameSet.has(suggestedValue)
     ) {
       continue;
     }
 
     if (suggestion.field === "additional_categories") {
       try {
-        const names = JSON.parse(suggestion.suggestedValue) as unknown;
+        const names = JSON.parse(suggestedValue) as unknown;
         if (
           !Array.isArray(names) ||
           names.some((n) => typeof n !== "string" || !categoryNameSet.has(n))
@@ -341,7 +352,7 @@ async function executeAudit(profile: Profile): Promise<void> {
 
     if (suggestion.field === "services") {
       try {
-        const items = JSON.parse(suggestion.suggestedValue) as Array<{
+        const items = JSON.parse(suggestedValue) as Array<{
           kind?: string;
           serviceTypeId?: string;
           displayName?: string;
@@ -358,7 +369,10 @@ async function executeAudit(profile: Profile): Promise<void> {
           }
           const name = item.displayName ?? "";
           const desc = item.description ?? "";
-          return name.length > 140 || desc.length > 250;
+          return (
+            name.length > GBP_SERVICE_NAME_MAX ||
+            desc.length > GBP_SERVICE_DESC_MAX
+          );
         });
         if (invalid) continue;
       } catch {
@@ -367,9 +381,7 @@ async function executeAudit(profile: Profile): Promise<void> {
     }
 
     const currentValue = currentValueForField(location, suggestion.field);
-    if (
-      isNoopSuggestion(suggestion.field, currentValue, suggestion.suggestedValue)
-    ) {
+    if (isNoopSuggestion(suggestion.field, currentValue, suggestedValue)) {
       continue;
     }
 
@@ -377,7 +389,7 @@ async function executeAudit(profile: Profile): Promise<void> {
       profileId: profile.id,
       field: suggestion.field,
       currentValue,
-      suggestedValue: suggestion.suggestedValue,
+      suggestedValue,
       rationale: suggestion.rationale || null,
       risk: suggestion.field === "title" ? "high" : "none",
       status: "pending",

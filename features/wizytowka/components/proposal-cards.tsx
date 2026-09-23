@@ -146,10 +146,6 @@ export function ProposalCards({
   if (items.length === 0 && resolved === 0) return null;
 
   const remaining = items.length;
-  const shownResolved = Math.min(
-    sessionTotal,
-    Math.max(resolved, sessionTotal - remaining),
-  );
   const cols = Math.min(Math.max(remaining, 1), 3);
 
   function reviewNext() {
@@ -255,22 +251,10 @@ export function ProposalCards({
 
       {sessionTotal > 0 ? (
         <div className="wiz-proposals-foot">
-          <div className="wiz-proposals-progress" aria-hidden>
-            <span
-              style={{
-                width: `${sessionTotal ? (shownResolved / sessionTotal) * 100 : 0}%`,
-              }}
-            />
-          </div>
-          <div className="wiz-proposals-foot-row">
-            <p className="wiz-proposals-progress-label">
-              {shownResolved} z {sessionTotal} rozpatrzonych
-            </p>
-            <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-outline ui-btn-sm">
-              <span>Zaktualizuj kontekst firmy</span>
-              <ArrowUpRight aria-hidden />
-            </Link>
-          </div>
+          <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-outline ui-btn-sm">
+            <span>Zaktualizuj kontekst firmy</span>
+            <ArrowUpRight aria-hidden />
+          </Link>
         </div>
       ) : null}
     </div>

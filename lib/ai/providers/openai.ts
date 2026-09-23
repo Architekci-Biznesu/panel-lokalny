@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { GBP_AUDIT_SYSTEM_PROMPT } from "@/lib/ai/gbp-audit-guidelines";
+import {
+  GBP_DESCRIPTION_MAX,
+  clampTextToLimit,
+} from "@/lib/ai/gbp-limits";
 import type {
   BriefFields,
   GbpAuditSuggestion,
@@ -203,11 +207,17 @@ Bez markdownu, bez dodatkowych kluczy.`;
       })
       .parse(JSON.parse(raw));
 
-    return parsed.suggestions.map((s) => ({
-      field: s.field,
-      suggestedValue: s.suggestedValue.trim(),
-      rationale: s.rationale.trim(),
-    }));
+    return parsed.suggestions.map((s) => {
+      const trimmed = s.suggestedValue.trim();
+      return {
+        field: s.field,
+        suggestedValue:
+          s.field === "description"
+            ? clampTextToLimit(trimmed, GBP_DESCRIPTION_MAX)
+            : trimmed,
+        rationale: s.rationale.trim(),
+      };
+    });
   },
 };
 

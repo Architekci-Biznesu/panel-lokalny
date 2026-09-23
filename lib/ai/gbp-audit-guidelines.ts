@@ -25,7 +25,7 @@ Zasady kategorii dodatkowych (additional_categories):
 - Segmenty nazwy mapuj na kategorie ze słownika, nie wymyślaj nazw poza listą.
 
 Zasady opisu (description):
-- 500-750 znaków, bez emotikon. Po polsku, albo w języku klientów, jeśli brief tak mówi.
+- MAKSIMUM 750 znaków włącznie - nigdy więcej. Celuj w 500-700. Bez emotikon. Po polsku, albo w języku klientów, jeśli brief tak mówi.
 - Pierwsze zdanie: marka, czym się zajmuje, gdzie.
 - Dalej zakres, który pokrywa się z nazwą i kategoriami.
 - Na końcu dowód tylko z danych wejściowych: staż, adres, marki, NFZ albo prywatnie, obszar dojazdu. Bez takiego faktu w wejściu - pomiń go.

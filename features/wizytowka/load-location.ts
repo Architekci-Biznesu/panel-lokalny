@@ -22,6 +22,10 @@ import {
   type GbpSuggestion,
   type Profile,
 } from "@/lib/db/schema";
+import {
+  GBP_DESCRIPTION_MAX,
+  clampTextToLimit,
+} from "@/lib/ai/gbp-limits";
 import { parseLocation, type GbpLocation } from "@/features/wizytowka/types";
 
 export type LoadedGbpBundle = {
@@ -108,7 +112,17 @@ export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
     attributes: attrPayload.attributes ?? [],
     attributeMetadata,
     categoryDetails,
-    pendingSuggestions,
+    pendingSuggestions: pendingSuggestions.map((s) =>
+      s.field === "description"
+        ? {
+            ...s,
+            suggestedValue: clampTextToLimit(
+              s.suggestedValue,
+              GBP_DESCRIPTION_MAX,
+            ),
+          }
+        : s,
+    ),
     latestAuditRun: latestRuns[0] ?? null,
   };
 }

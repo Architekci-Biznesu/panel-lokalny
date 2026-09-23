@@ -317,7 +317,7 @@ export function CategoriesSuggestion({
         {rejectOpen ? (
           <div className="wiz-reject-box">
             <label className="text-sm font-medium" htmlFor="reject-categories">
-              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać”)
+              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać” w kontekście)
             </label>
             <textarea
               id="reject-categories"

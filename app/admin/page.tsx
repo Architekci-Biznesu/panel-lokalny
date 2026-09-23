@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { AdminAccountsTable } from "@/features/admin/admin-accounts-table";
-import { listAdminAccounts } from "@/features/admin/actions";
+import { AdminNapRequests } from "@/features/admin/admin-nap-requests";
+import {
+  listAdminAccounts,
+  listNapInterestRequests,
+} from "@/features/admin/actions";
 import { isCurrentUserStaff } from "@/lib/session";
 
 export default async function AdminPage() {
@@ -8,24 +12,25 @@ export default async function AdminPage() {
     notFound();
   }
 
-  const accounts = await listAdminAccounts();
+  const [accounts, napRequests] = await Promise.all([
+    listAdminAccounts(),
+    listNapInterestRequests(),
+  ]);
 
   return (
     <div className="admin-page">
-      <header className="admin-page-header">
+      <header className="page-header">
         <div>
           <p className="split-step">PANEL WEWNĘTRZNY</p>
-          <h1>Konta klientów</h1>
-          <p className="admin-page-lead">
-            Wejdź w konto lub profil, żeby pomóc klientowi - bez proszenia o
-            hasło.
+          <h1>Panel wewnętrzny</h1>
+          <p>
+            Konta klientów i zgłoszenia - wejście bez hasła, tylko dla zespołu.
           </p>
         </div>
       </header>
 
-      <section className="ui-section admin-page-section">
-        <AdminAccountsTable accounts={accounts} />
-      </section>
+      <AdminAccountsTable accounts={accounts} />
+      <AdminNapRequests requests={napRequests} />
     </div>
   );
 }

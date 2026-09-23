@@ -512,7 +512,11 @@ export type DailyMetric =
   | "BUSINESS_IMPRESSIONS_MOBILE_SEARCH"
   | "CALL_CLICKS"
   | "WEBSITE_CLICKS"
-  | "BUSINESS_DIRECTION_REQUESTS";
+  | "BUSINESS_DIRECTION_REQUESTS"
+  | "BUSINESS_CONVERSATIONS"
+  | "BUSINESS_BOOKINGS"
+  | "BUSINESS_FOOD_ORDERS"
+  | "BUSINESS_FOOD_MENU_CLICKS";
 
 export async function fetchGbpMultiDailyMetrics(
   accessToken: string,

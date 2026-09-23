@@ -10,6 +10,10 @@ import {
   parseTime,
   type ServiceItemDraft,
 } from "@/features/wizytowka/types";
+import {
+  GBP_DESCRIPTION_MAX,
+  clampTextToLimit,
+} from "@/lib/ai/gbp-limits";
 import { db } from "@/lib/db";
 import {
   gbpSuggestions,
@@ -570,7 +574,13 @@ export async function acceptGbpSuggestion(
       };
     }
 
-    const value = parsed.data.editedValue?.trim() || suggestion.suggestedValue;
+    const value =
+      suggestion.field === "description"
+        ? clampTextToLimit(
+            parsed.data.editedValue?.trim() || suggestion.suggestedValue,
+            GBP_DESCRIPTION_MAX,
+          )
+        : parsed.data.editedValue?.trim() || suggestion.suggestedValue;
     const token = await getGbpAccessTokenForProfile(profile);
     const locationName = profile.gbpLocationId!;
     const raw = await fetchGbpLocationDetails(token, locationName);

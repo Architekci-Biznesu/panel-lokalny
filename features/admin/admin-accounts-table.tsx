@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { ChevronDown, LogIn, Search } from "lucide-react";
+import { toast } from "gooey-toast";
 import {
   enterAdminAccount,
   enterAdminProfile,
@@ -59,70 +60,96 @@ export function AdminAccountsTable({
   }
 
   return (
-    <div className="admin-accounts">
-      <div className="ui-search admin-accounts-search">
-        <Search aria-hidden className="ui-search-icon" />
-        <input
-          type="search"
-          className="ui-field ui-search-input"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Szukaj po e-mailu lub nazwie profilu"
-          aria-label="Szukaj kont"
-        />
-      </div>
+    <section className="ui-section">
+      <header className="ui-section-header">
+        <div>
+          <div className="admin-section-heading">
+            <h2 className="ui-section-title">Konta klientów</h2>
+            <span className="ui-pill ui-pill-neutral mono">{accounts.length}</span>
+          </div>
+          <p className="ui-section-desc">
+            Wejdź w konto lub profil, żeby pomóc klientowi - bez proszenia o
+            hasło.
+          </p>
+        </div>
+        <div className="ui-search admin-accounts-search">
+          <Search aria-hidden className="ui-search-icon" />
+          <input
+            type="search"
+            className="ui-field ui-search-input"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Szukaj po e-mailu lub nazwie profilu"
+            aria-label="Szukaj kont"
+          />
+        </div>
+      </header>
 
-      <div className="ui-table-shell admin-accounts-table">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col" className="admin-col-toggle">
-                <span className="sr-only">Rozwiń</span>
-              </th>
-              <th scope="col">E-mail właściciela</th>
-              <th scope="col">Profile</th>
-              <th scope="col">Rejestracja</th>
-              <th scope="col">Ostatnia aktywność</th>
-              <th scope="col">
-                <span className="sr-only">Akcje</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
+      <div className="ui-section-body admin-table-body">
+        <div className="admin-table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td colSpan={6} className="admin-empty">
-                  Brak kont pasujących do wyszukiwania.
-                </td>
+                <th scope="col" className="admin-col-toggle">
+                  <span className="sr-only">Rozwiń</span>
+                </th>
+                <th scope="col">Właściciel</th>
+                <th scope="col">Profile</th>
+                <th scope="col">Rejestracja</th>
+                <th scope="col">Ostatnia aktywność</th>
+                <th scope="col">
+                  <span className="sr-only">Akcje</span>
+                </th>
               </tr>
-            ) : (
-              filtered.map((account) => {
-                const open = isExpanded(account.id);
-                return (
-                  <AccountBlock
-                    key={account.id}
-                    account={account}
-                    open={open}
-                    pending={pending}
-                    onToggle={() => toggle(account.id)}
-                    onEnterAccount={() => {
-                      startTransition(async () => {
-                        await enterAdminAccount(account.id);
-                      });
-                    }}
-                    onEnterProfile={(profileId) => {
-                      startTransition(async () => {
-                        await enterAdminProfile(profileId);
-                      });
-                    }}
-                  />
-                );
-              })
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="admin-empty">
+                    Brak kont pasujących do wyszukiwania.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((account) => {
+                  const open = isExpanded(account.id);
+                  return (
+                    <AccountBlock
+                      key={account.id}
+                      account={account}
+                      open={open}
+                      pending={pending}
+                      onToggle={() => toggle(account.id)}
+                      onEnterAccount={() => {
+                        startTransition(async () => {
+                          const result = await enterAdminAccount(account.id);
+                          if (result && !result.ok) {
+                            toast.error({
+                              title: "Nie udało się wejść",
+                              description: result.error,
+                            });
+                          }
+                        });
+                      }}
+                      onEnterProfile={(profileId) => {
+                        startTransition(async () => {
+                          const result = await enterAdminProfile(profileId);
+                          if (result && !result.ok) {
+                            toast.error({
+                              title: "Nie udało się wejść",
+                              description: result.error,
+                            });
+                          }
+                        });
+                      }}
+                    />
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 

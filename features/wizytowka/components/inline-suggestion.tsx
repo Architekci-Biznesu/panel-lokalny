@@ -17,6 +17,7 @@ import {
   resolveCategoryDisplay,
 } from "@/features/wizytowka/components/suggestion-display";
 import { PROPOSAL_META, isProposalField } from "@/features/wizytowka/proposal-meta";
+import { GBP_DESCRIPTION_MAX } from "@/lib/ai/gbp-limits";
 import type { GbpSuggestion } from "@/lib/db/schema";
 
 type Props = {
@@ -25,11 +26,9 @@ type Props = {
   categoryOptions?: Array<{ name: string; displayName: string }>;
 };
 
-const DESC_LIMIT = 750;
-
 function CharMeter({ value }: { value: string }) {
   const len = value.length;
-  const ratio = Math.min(1, len / DESC_LIMIT);
+  const ratio = Math.min(1, len / GBP_DESCRIPTION_MAX);
   const tone = ratio >= 0.95 ? "warn" : "ok";
 
   return (
@@ -44,7 +43,7 @@ function CharMeter({ value }: { value: string }) {
         />
       </span>
       <span className="mono wiz-compare-count">
-        {len} / {DESC_LIMIT}
+        {len} / {GBP_DESCRIPTION_MAX}
       </span>
     </span>
   );
@@ -176,9 +175,7 @@ export function InlineSuggestion({
   }
 
   return (
-    <div
-      className={`wiz-inline-suggestion ${isHighRisk ? "wiz-inline-suggestion-risk" : ""}`}
-    >
+    <div className="wiz-inline-suggestion">
       <div className="wiz-inline-rail">
         <span className="wiz-field-label">{fieldLabel}</span>
         <span className="wiz-ai-pill">
@@ -326,7 +323,7 @@ export function InlineSuggestion({
               className="text-sm font-medium"
               htmlFor={`reject-${suggestion.id}`}
             >
-              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać”)
+              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać” w kontekście)
             </label>
             <textarea
               id={`reject-${suggestion.id}`}
