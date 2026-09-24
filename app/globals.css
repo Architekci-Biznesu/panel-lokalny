@@ -2168,8 +2168,8 @@
   }
 
   .wiz-profile-header {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: row;
     align-items: stretch;
     gap: 0;
     padding: 0;
@@ -2180,26 +2180,33 @@
   }
 
   /* Full-height square flush with card edges.
-     Row height comes from .wiz-profile-main; thumb width = that height via
-     aspect-ratio. min-width floor prevents 0×0 collapse; max-width caps
-     scroll blowup; absolute img avoids intrinsic-size contribution. */
+     In-flow 1×1 SVG sizer (not ::before / not aspect-ratio on the flex item):
+     stretch gives a definite height; replaced SVG with viewBox 1×1 and height 100%
+     resolves width = height. Absolute photo avoids intrinsic scroll blowup.
+     Do not set min-width: 0 - that collapses the flex item to 0×H. */
   .wiz-profile-thumb {
     position: relative;
-    box-sizing: border-box;
+    flex: 0 0 auto;
     align-self: stretch;
-    justify-self: start;
-    height: auto;
+    box-sizing: border-box;
     width: auto;
-    min-width: 10rem;
-    max-width: min(20rem, 42%);
-    min-height: 10rem;
-    aspect-ratio: 1 / 1;
+    max-width: min(20rem, 45%);
+    height: auto;
     border-radius: 0;
     overflow: hidden;
     background: var(--secondary);
   }
 
-  .wiz-profile-thumb img {
+  .wiz-profile-thumb-sizer {
+    display: block;
+    height: 100%;
+    width: auto;
+    max-width: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .wiz-profile-thumb-img {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -2221,6 +2228,7 @@
   }
 
   .wiz-profile-main {
+    flex: 1 1 auto;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -2240,17 +2248,20 @@
 
   @media (max-width: 639px) {
     .wiz-profile-header {
-      grid-template-columns: 1fr;
+      flex-direction: column;
     }
 
     .wiz-profile-thumb {
       width: 100%;
       max-width: none;
-      min-width: 0;
-      min-height: 0;
+      height: auto;
+      align-self: stretch;
+    }
+
+    .wiz-profile-thumb-sizer {
+      width: 100%;
       height: auto;
       aspect-ratio: 16 / 9;
-      justify-self: stretch;
     }
   }
 

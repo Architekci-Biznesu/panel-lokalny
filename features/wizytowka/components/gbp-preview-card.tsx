@@ -54,9 +54,21 @@ export function GbpPreviewCard({
   return (
     <div className="wiz-profile-header">
       <div className="wiz-profile-thumb" aria-hidden>
+        {/* In-flow 1×1 SVG: stretch height → equal width (avoids flex collapse). */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="wiz-profile-thumb-sizer"
+          alt=""
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'/%3E"
+        />
         {thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt="" referrerPolicy="no-referrer" />
+          <img
+            className="wiz-profile-thumb-img"
+            src={thumb}
+            alt=""
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <span className="wiz-profile-thumb-ph">[ZDJĘCIE]</span>
         )}
