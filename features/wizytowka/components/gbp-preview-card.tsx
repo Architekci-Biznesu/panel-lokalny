@@ -1,4 +1,4 @@
-import { Check, Globe, MapPin, Phone, SquareArrowOutUpRight } from "lucide-react";
+import { Check, SquareArrowOutUpRight } from "lucide-react";
 import type { CompletenessSummary } from "@/features/wizytowka/completeness";
 import { formatAddress, type GbpLocation } from "@/features/wizytowka/types";
 
@@ -97,9 +97,6 @@ export function GbpPreviewCard({
 
           <div className="wiz-profile-tiles">
             <div className="wiz-profile-tile">
-              <span className="wiz-profile-tile-icon" aria-hidden>
-                <MapPin />
-              </span>
               <div className="wiz-profile-tile-body">
                 <span className="wiz-profile-tile-label">Adres</span>
                 <span className="wiz-profile-tile-value">
@@ -108,20 +105,14 @@ export function GbpPreviewCard({
               </div>
             </div>
             <div className="wiz-profile-tile">
-              <span className="wiz-profile-tile-icon" aria-hidden>
-                <Phone />
-              </span>
               <div className="wiz-profile-tile-body">
                 <span className="wiz-profile-tile-label">Telefon</span>
-                <span className="wiz-profile-tile-value mono">
+                <span className="wiz-profile-tile-value wiz-profile-tile-phone">
                   {phone || "Brak telefonu"}
                 </span>
               </div>
             </div>
             <div className="wiz-profile-tile">
-              <span className="wiz-profile-tile-icon" aria-hidden>
-                <Globe />
-              </span>
               <div className="wiz-profile-tile-body">
                 <span className="wiz-profile-tile-label">Strona WWW</span>
                 {website ? (
@@ -171,7 +162,7 @@ export function GbpPreviewCard({
                 }}
               />
             </svg>
-            <span className="wiz-profile-ring-label mono">
+            <span className="wiz-profile-ring-label">
               {summary.filledCount}/{summary.filledTotal}
             </span>
             <span className="wiz-profile-ring-caption">Kompletność</span>

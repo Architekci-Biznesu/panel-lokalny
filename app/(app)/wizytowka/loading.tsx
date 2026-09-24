@@ -27,7 +27,7 @@ export default function WizytowkaLoading() {
           </div>
           <div className="wiz-profile-tiles">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="wiz-skel-block" style={{ height: "3.25rem" }} />
+              <div key={i} className="wiz-skel-block" style={{ height: "2.25rem" }} />
             ))}
           </div>
         </div>

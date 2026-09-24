@@ -292,7 +292,7 @@ export function CategoriesSuggestion({
           </button>
           <button
             type="button"
-            className="ui-btn ui-btn-ghost ui-btn-sm"
+            className="ui-btn ui-btn-soft-danger ui-btn-sm"
             disabled={pending}
             onClick={() => setRejectOpen((v) => !v)}
           >

@@ -273,25 +273,27 @@ export function ProposalCards({
                 key={cardKey(item)}
                 className={`wiz-proposal-card${warn ? " is-warn" : ""}`}
               >
-                <div className="wiz-proposal-card-top">
+                <div className="wiz-proposal-card-title-row">
                   <span className="wiz-proposal-icon" aria-hidden>
                     <Icon />
                   </span>
+                  <p className="wiz-proposal-card-title">{cardTitle(item)}</p>
+                </div>
+                <p className="wiz-proposal-card-blurb">{cardBlurb(item)}</p>
+                <div className="wiz-proposal-card-foot">
+                  <button
+                    type="button"
+                    className="wiz-proposal-compare"
+                    onClick={() =>
+                      goToHref(pathname, router, cardHref(item, mapsUri))
+                    }
+                  >
+                    {cardActionLabel(item)}
+                  </button>
                   <span className="wiz-proposal-tab">
-                    Zakładka: {cardTabLabel(item)}
+                    {cardTabLabel(item)}
                   </span>
                 </div>
-                <p className="wiz-proposal-card-title">{cardTitle(item)}</p>
-                <p className="wiz-proposal-card-blurb">{cardBlurb(item)}</p>
-                <button
-                  type="button"
-                  className="wiz-proposal-compare"
-                  onClick={() =>
-                    goToHref(pathname, router, cardHref(item, mapsUri))
-                  }
-                >
-                  {cardActionLabel(item)}
-                </button>
               </li>
             );
           })}
