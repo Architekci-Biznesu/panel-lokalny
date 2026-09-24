@@ -2062,7 +2062,7 @@
   }
 
   .wiz-page .ui-btn-outline {
-    background: var(--secondary);
+    background: var(--card);
     border-color: var(--border);
     color: var(--foreground);
   }
