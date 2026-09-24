@@ -31,7 +31,7 @@ export default function RootLayout({
       className={`${montserrat.variable} ${jetbrainsMono.variable} h-full`}
       suppressHydrationWarning
     >
-      <body className="min-h-full" suppressHydrationWarning>
+      <body className="h-full overflow-hidden" suppressHydrationWarning>
         {children}
         <GooeyToaster />
       </body>
