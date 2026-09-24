@@ -1934,7 +1934,7 @@
     display: block;
   }
 
-  .profile-menu-panel a.profile-menu-add {
+  .profile-menu-panel button.profile-menu-add {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1959,7 +1959,7 @@
     flex-shrink: 0;
   }
 
-  .profile-menu-panel a.profile-menu-add:hover {
+  .profile-menu-panel button.profile-menu-add:hover {
     background: color-mix(in srgb, var(--brand) 12%, var(--accent));
     color: var(--brand-deep);
   }

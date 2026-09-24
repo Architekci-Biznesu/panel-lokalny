@@ -677,6 +677,33 @@ export async function switchActiveProfile(profileId: string) {
   return { ok: true as const };
 }
 
+/**
+ * „Dodaj profil” always starts a clean add-mode wizard at step 1.
+ * Deletes any abandoned onboarding_drafts row for mode=add (and its premature profile).
+ */
+export async function startFreshAddProfile() {
+  const accountId = await getActiveAccountId();
+  const [existing] = await db
+    .select()
+    .from(onboardingDrafts)
+    .where(
+      and(
+        eq(onboardingDrafts.accountId, accountId),
+        eq(onboardingDrafts.mode, "add"),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    await discardPrematureProfile(existing, accountId);
+    await db
+      .delete(onboardingDrafts)
+      .where(eq(onboardingDrafts.id, existing.id));
+  }
+
+  redirect("/onboarding?mode=add");
+}
+
 export async function listPublishGroupsForAccount() {
   const accountId = await getActiveAccountId();
   return db

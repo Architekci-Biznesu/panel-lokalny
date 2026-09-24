@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, Plus } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { exitAdminMode } from "@/features/admin/actions";
-import { switchActiveProfile } from "@/features/onboarding/actions";
+import {
+  startFreshAddProfile,
+  switchActiveProfile,
+} from "@/features/onboarding/actions";
 
 type ProfileOption = { id: string; name: string; location?: string | null };
 
@@ -149,15 +151,21 @@ export function ProfileSwitcher({
             </button>
           ))}
           {!adminImpersonating ? (
-            <Link
-              href="/onboarding?mode=add"
+            <button
+              type="button"
               className="profile-menu-add"
               role="menuitem"
-              onClick={() => setOpen(false)}
+              disabled={pending}
+              onClick={() => {
+                setOpen(false);
+                startTransition(async () => {
+                  await startFreshAddProfile();
+                });
+              }}
             >
               <Plus aria-hidden />
               Dodaj profil
-            </Link>
+            </button>
           ) : null}
         </div>
       ) : null}
