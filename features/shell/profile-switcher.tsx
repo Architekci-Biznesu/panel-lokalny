@@ -151,21 +151,17 @@ export function ProfileSwitcher({
             </button>
           ))}
           {!adminImpersonating ? (
-            <button
-              type="button"
-              className="profile-menu-add"
-              role="menuitem"
-              disabled={pending}
-              onClick={() => {
-                setOpen(false);
-                startTransition(async () => {
-                  await startFreshAddProfile();
-                });
-              }}
-            >
-              <Plus aria-hidden />
-              Dodaj profil
-            </button>
+            <form action={startFreshAddProfile}>
+              <button
+                type="submit"
+                className="profile-menu-add"
+                role="menuitem"
+                disabled={pending}
+              >
+                <Plus aria-hidden />
+                Dodaj profil
+              </button>
+            </form>
           ) : null}
         </div>
       ) : null}

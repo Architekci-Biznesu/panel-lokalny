@@ -1884,6 +1884,11 @@
     cursor: pointer;
   }
 
+  .profile-menu-panel form {
+    width: 100%;
+    margin: 0;
+  }
+
   .profile-menu-panel button:hover,
   .profile-menu-panel a:hover {
     background: var(--secondary);
