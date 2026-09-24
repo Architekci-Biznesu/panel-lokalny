@@ -1596,22 +1596,23 @@
   .onboarding-actions .ui-btn {
     min-width: 0;
     white-space: nowrap;
-    flex: 1 1 0;
     height: var(--btn-height);
     min-height: var(--btn-height);
-    padding: 0 var(--space-4);
     box-sizing: border-box;
   }
 
+  /* Wstecz / Dalej: content-sized so the long regen label gets the leftover width */
   .onboarding-actions > .ui-btn:first-child,
   .onboarding-actions-next {
-    flex: 1 1 0;
+    flex: 0 0 auto;
+    padding: 0 var(--space-3);
   }
 
-  /* Longer label needs a bit more share so padding stays readable */
+  /* Wygeneruj ponownie: fills remaining row + roomy inline padding */
   .onboarding-actions .regen-trigger {
-    flex: 1.35 1 0;
-    padding: 0 var(--space-4);
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 var(--space-5);
   }
 
   .onboarding-actions-pair > .ui-btn,
