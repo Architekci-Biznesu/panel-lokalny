@@ -2180,14 +2180,16 @@
   }
 
   .wiz-profile-thumb {
-    flex: 0 0 8.5rem;
-    align-self: stretch;
-    width: 8.5rem;
-    min-width: 8.5rem;
-    max-width: 8.5rem;
-    min-height: 0;
-    height: auto;
-    aspect-ratio: auto;
+    flex: 0 0 9rem;
+    align-self: flex-start;
+    box-sizing: border-box;
+    width: 9rem;
+    height: 9rem;
+    min-width: 9rem;
+    max-width: 9rem;
+    min-height: 9rem;
+    max-height: 9rem;
+    aspect-ratio: 1 / 1;
     border-radius: 0;
     overflow: hidden;
     background: var(--secondary);
@@ -2201,7 +2203,6 @@
     object-fit: cover;
     object-position: center;
     display: block;
-    max-width: none;
   }
 
   .wiz-profile-thumb-ph {
@@ -2237,11 +2238,13 @@
 
     .wiz-profile-thumb {
       width: 100%;
+      height: auto;
       min-width: 0;
       max-width: none;
-      flex-basis: auto;
+      min-height: 0;
+      max-height: none;
+      flex: 0 0 auto;
       aspect-ratio: 16 / 9;
-      height: auto;
       align-self: stretch;
     }
   }
