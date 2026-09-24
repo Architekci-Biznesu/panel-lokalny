@@ -85,10 +85,10 @@ function cardHref(item: ProposalCardItem, mapsUri?: string | null): string {
 function cardTitle(item: ProposalCardItem): string {
   if (item.kind === "categories") return "Kategorie";
   if (item.kind === "special_hours") {
-    return "Brak nadchodzących dni specjalnych";
+    return "Brak dni specjalnych";
   }
   if (item.kind === "attributes") {
-    return "Atrybuty do potwierdzenia";
+    return "Atrybuty";
   }
   if (item.kind === "photos") {
     return "Za mało zdjęć na wizytówce";
