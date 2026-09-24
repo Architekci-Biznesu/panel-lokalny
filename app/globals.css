@@ -1855,6 +1855,13 @@
     overflow: visible;
   }
 
+  /* Onboarding top-right trigger: open menu leftward (right edges align). */
+  .profile-menu-end .profile-menu-panel {
+    left: auto;
+    right: 0;
+    transform-origin: top right;
+  }
+
   .profile-menu-panel button,
   .profile-menu-panel a {
     display: -webkit-box;
