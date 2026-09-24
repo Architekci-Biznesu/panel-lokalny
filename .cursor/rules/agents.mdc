@@ -26,16 +26,16 @@ Wszystkie tokeny (kolory, radius, fonty) w jednym pliku `app/globals.css`, jako 
   --muted:#f4f4f5; --muted-foreground:#71717a;
   --accent:#f5f3ff; --accent-foreground:#4c2fd4;
   --destructive:#dc2626; --border:#e4e4e7; --input:#d4d4d8; --ring:#6d4de8;
-  --radius:0.5rem;
-  --btn-height:2.75rem; --btn-height-sm:2.25rem;
+  --radius:0.5rem; --radius-card:1rem;
+  --btn-height:2.5rem; --btn-height-sm:2.25rem;
   --font-sans:'Montserrat', system-ui, sans-serif;
   --font-mono:'JetBrains Mono', ui-monospace, monospace;
 }
 ```
 
-Promienie: `var(--radius)` na standardowe elementy (przyciski, inputy), `calc(var(--radius) + 2px)` na kontenery najwyższego poziomu (karty/sekcje/panele), `calc(var(--radius) - 2px)` na elementy zagnieżdżone. Ikony: obrys, `stroke-width:2`, zaokrąglone końce - `lucide-react`. Font 14px bazowo, `font-variant-numeric:tabular-nums` na liczby/daty (klasa `.mono`).
+Promienie: `var(--radius)` na standardowe elementy (przyciski, inputy), `var(--radius-card)` (`1rem`) na kontenery najwyższego poziomu (karty/sekcje/panele), `calc(var(--radius) - 2px)` na elementy zagnieżdżone. Ikony: obrys, `stroke-width:2`, zaokrąglone końce - `lucide-react`. Font 14px bazowo (`--type-xs:12px`, `--type-base/lg:14px`, `--type-xl:1.5rem`); `font-variant-numeric:tabular-nums` na liczby/daty (klasa `.tabular`; `.mono` tylko gdy potrzebna czcionka monospace).
 
-Przyciski: zawsze klasy globalne `.ui-btn` (+ `-primary` / `-outline` / `-ghost` / `-danger`, opcjonalnie `-sm`). Wysokość ustalona tokenami w `globals.css`: `--btn-height: 2.75rem` (domyślny) i `--btn-height-sm: 2.25rem` (`.ui-btn-sm`). Nie nadpisuj lokalnie `padding` / `height` / `font-size` na przyciskach - ikony wewnątrz też przez `.ui-btn svg` (1rem). Pełna szerokość tylko gdy layout tego wymaga (`width: 100%` na kontenerze), bez osobnych klas typu „duży przycisk”.
+Przyciski: zawsze klasy globalne `.ui-btn` (+ `-primary` / `-outline` / `-ghost` / `-danger`, opcjonalnie `-sm`). Wysokość ustalona tokenami w `globals.css`: `--btn-height: 2.5rem` (domyślny) i `--btn-height-sm: 2.25rem` (`.ui-btn-sm`). Nie nadpisuj lokalnie `padding` / `height` / `font-size` na przyciskach - ikony wewnątrz też przez `.ui-btn svg` (1rem). Pełna szerokość tylko gdy layout tego wymaga (`width: 100%` na kontenerze), bez osobnych klas typu „duży przycisk”.
 
 Globalne klasy komponentowe w `@layer components` - nie powtarzaj tego samego zestawu klas Tailwind w każdym miejscu z kartą/przyciskiem/statusem. Minimalny zestaw: `.ui-card`, `.ui-section`, `.ui-btn` (+ `-primary`/`-outline`/`-ghost`/`-danger`, + `-sm`), `.ui-field`/`.ui-select`/`.ui-textarea`, `.ui-check`, `.ui-search`, `.ui-pill` (+ `-success`/`-danger`/`-warn`/`-info`/`-neutral`), `.ui-kpi`, `.ui-table-shell`, `.banner`, `.locked-note`.
 

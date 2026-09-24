@@ -42,7 +42,7 @@ function CharMeter({ value }: { value: string }) {
           style={{ width: `${ratio * 100}%` }}
         />
       </span>
-      <span className="mono wiz-compare-count">
+      <span className="tabular wiz-compare-count">
         {len} / {GBP_DESCRIPTION_MAX}
       </span>
     </span>
@@ -91,35 +91,34 @@ function CategoryDiff({
           <span>Po zmianie</span>
         </div>
         <ul className="wiz-preview-chips">
-          {newNames.length || removed.length ? (
-            <>
-              {newNames.map((name) => (
-                <li key={`new-${name}`}>
-                  <span
-                    className={
-                      oldSet.has(name)
-                        ? "ui-pill ui-pill-neutral"
-                        : "ui-pill ui-pill-success wiz-chip-added"
-                    }
-                  >
-                    {oldSet.has(name) ? "" : "+ "}
-                    {resolveCategoryDisplay(name, categoryOptions)}
-                  </span>
-                </li>
-              ))}
-              {removed.map((name) => (
-                <li key={`rm-${name}`}>
-                  <span className="ui-pill ui-pill-danger wiz-chip-removed">
-                    {resolveCategoryDisplay(name, categoryOptions)}
-                  </span>
-                </li>
-              ))}
-            </>
-          ) : (
+          {newNames.length ? (
+            newNames.map((name) => (
+              <li key={`new-${name}`}>
+                <span
+                  className={
+                    oldSet.has(name)
+                      ? "ui-pill ui-pill-neutral"
+                      : "ui-pill ui-pill-success wiz-chip-added"
+                  }
+                >
+                  {oldSet.has(name) ? "" : "+ "}
+                  {resolveCategoryDisplay(name, categoryOptions)}
+                </span>
+              </li>
+            ))
+          ) : removed.length === 0 ? (
             <li>
               <span className="text-sm text-muted-foreground">Brak</span>
             </li>
-          )}
+          ) : null}
+          {removed.length > 0 ? (
+            <li className="wiz-chip-removed-line">
+              Usunięte:{" "}
+              {removed
+                .map((name) => resolveCategoryDisplay(name, categoryOptions))
+                .join(", ")}
+            </li>
+          ) : null}
         </ul>
       </div>
     </div>
@@ -298,7 +297,7 @@ export function InlineSuggestion({
           </button>
           <button
             type="button"
-            className="ui-btn ui-btn-primary ui-btn-sm"
+            className="ui-btn ui-btn-primary"
             disabled={pending}
             onClick={() => {
               if (isHighRisk) {

@@ -238,7 +238,7 @@ export function DateRangePicker({ start, end }: Props) {
               </button>
               <button
                 type="button"
-                className="ui-btn ui-btn-primary ui-btn-sm"
+                className="ui-btn ui-btn-primary"
                 disabled={!draft.start || !draft.end}
                 onClick={apply}
               >

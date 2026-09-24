@@ -15,7 +15,9 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { acceptAllGbpSuggestions } from "@/features/wizytowka/actions";
 import { GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
-import { aiHintForSuggestion } from "@/features/wizytowka/components/suggestion-display";
+import {
+  parseJsonArray,
+} from "@/features/wizytowka/components/suggestion-display";
 import {
   isNudgeProposalCard,
   isProposalField,
@@ -99,24 +101,40 @@ function cardTitle(item: ProposalCardItem): string {
 
 function cardBlurb(item: ProposalCardItem): string {
   if (item.kind === "special_hours") {
-    return `Najbliższe święta: ${item.hint}. Ustaw godziny, żeby klienci nie trafili na zamknięte drzwi.`;
+    return `Najbliższe: ${item.hint}`;
   }
   if (item.kind === "attributes") {
-    return `${item.count} faktów o firmie czeka na potwierdzenie. Zaznacz, co jest prawdą - AI tego nie zgadnie.`;
+    return `${item.count} do potwierdzenia`;
   }
   if (item.kind === "photos") {
-    return `Masz ${item.count} z ${GBP_PHOTO_MIN} zdjęć właściciela. Dodaj je w Profilu Firmy Google - w panelu nie da się jeszcze wgrywać mediów.`;
+    return `${item.count} z ${GBP_PHOTO_MIN} zdjęć`;
   }
   if (item.kind === "categories") {
-    const parts = [item.primary, item.additional]
-      .map((s) => s?.rationale?.trim() || (s ? aiHintForSuggestion(s) : ""))
-      .filter(Boolean);
-    return parts[0] || "AI proponuje zmianę kategorii";
+    const bits: string[] = [];
+    if (item.primary) bits.push("kategoria główna");
+    if (item.additional) {
+      const oldNames =
+        (parseJsonArray(item.additional.currentValue ?? "[]") as
+          | string[]
+          | null) ?? [];
+      const newNames =
+        (parseJsonArray(item.additional.suggestedValue) as string[] | null) ??
+        [];
+      const oldSet = new Set(oldNames);
+      const newSet = new Set(newNames);
+      const added = newNames.filter((n) => !oldSet.has(n)).length;
+      const removed = oldNames.filter((n) => !newSet.has(n)).length;
+      if (added) bits.push(`+${added}`);
+      if (removed) bits.push(`-${removed}`);
+      if (!added && !removed && !item.primary) bits.push("kategorie dodatkowe");
+    }
+    return bits.join(", ") || "Zmiana kategorii";
   }
-  return (
+  const text =
     item.suggestion.rationale?.trim() ||
-    aiHintForSuggestion(item.suggestion)
-  );
+    item.suggestion.suggestedValue.trim() ||
+    "Propozycja AI";
+  return text;
 }
 
 function cardTabLabel(item: ProposalCardItem): string {
@@ -228,7 +246,7 @@ export function ProposalCards({
             {aiCount > 0 ? (
               <button
                 type="button"
-                className="ui-btn ui-btn-primary ui-btn-sm"
+                className="ui-btn ui-btn-primary"
                 disabled={pending}
                 onClick={() => {
                   startTransition(async () => {
@@ -277,21 +295,23 @@ export function ProposalCards({
                   <span className="wiz-proposal-icon" aria-hidden>
                     <Icon />
                   </span>
-                  <span className="wiz-proposal-tab">
-                    Zakładka: {cardTabLabel(item)}
-                  </span>
                 </div>
                 <p className="wiz-proposal-card-title">{cardTitle(item)}</p>
                 <p className="wiz-proposal-card-blurb">{cardBlurb(item)}</p>
-                <button
-                  type="button"
-                  className="wiz-proposal-compare"
-                  onClick={() =>
-                    goToHref(pathname, router, cardHref(item, mapsUri))
-                  }
-                >
-                  {cardActionLabel(item)}
-                </button>
+                <div className="wiz-proposal-card-foot">
+                  <span className="wiz-proposal-tab">
+                    Zakładka: {cardTabLabel(item)}
+                  </span>
+                  <button
+                    type="button"
+                    className="wiz-proposal-compare"
+                    onClick={() =>
+                      goToHref(pathname, router, cardHref(item, mapsUri))
+                    }
+                  >
+                    {cardActionLabel(item)}
+                  </button>
+                </div>
               </li>
             );
           })}

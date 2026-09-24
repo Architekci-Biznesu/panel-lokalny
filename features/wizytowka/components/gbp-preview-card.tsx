@@ -113,7 +113,7 @@ export function GbpPreviewCard({
               </span>
               <div className="wiz-profile-tile-body">
                 <span className="wiz-profile-tile-label">Telefon</span>
-                <span className="wiz-profile-tile-value mono">
+                <span className="wiz-profile-tile-value tabular">
                   {phone || "Brak telefonu"}
                 </span>
               </div>
@@ -171,7 +171,7 @@ export function GbpPreviewCard({
                 }}
               />
             </svg>
-            <span className="wiz-profile-ring-label mono">
+            <span className="wiz-profile-ring-label tabular">
               {summary.filledCount}/{summary.filledTotal}
             </span>
             <span className="wiz-profile-ring-caption">Kompletność</span>

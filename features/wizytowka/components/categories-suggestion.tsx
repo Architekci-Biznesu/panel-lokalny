@@ -243,17 +243,20 @@ export function CategoriesSuggestion({
                     </span>
                   </li>
                 ))}
-                {removedAdditional.map((name) => (
-                  <li key={`rm-${name}`}>
-                    <span className="ui-pill ui-pill-danger wiz-chip-removed">
-                      {chipLabel(
-                        name,
-                        categoryOptions,
-                        additional.find((c) => c.name === name)?.displayName,
-                      )}
-                    </span>
+                {removedAdditional.length > 0 ? (
+                  <li className="wiz-chip-removed-line">
+                    Usunięte:{" "}
+                    {removedAdditional
+                      .map((name) =>
+                        chipLabel(
+                          name,
+                          categoryOptions,
+                          additional.find((c) => c.name === name)?.displayName,
+                        ),
+                      )
+                      .join(", ")}
                   </li>
-                ))}
+                ) : null}
                 {!nextPrimary &&
                 nextAdditional.length === 0 &&
                 removedAdditional.length === 0 ? (
@@ -301,7 +304,7 @@ export function CategoriesSuggestion({
           </button>
           <button
             type="button"
-            className="ui-btn ui-btn-primary ui-btn-sm"
+            className="ui-btn ui-btn-primary"
             disabled={pending}
             onClick={runAccept}
           >

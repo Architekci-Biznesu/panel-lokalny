@@ -428,7 +428,7 @@ function ServicesEditor({
           </button>
           <button
             type="submit"
-            className="ui-btn ui-btn-primary ui-btn-sm"
+            className="ui-btn ui-btn-primary"
             disabled={pending || !dirty}
           >
             {pending ? <Loader2 aria-hidden className="ui-btn-spinner" /> : null}

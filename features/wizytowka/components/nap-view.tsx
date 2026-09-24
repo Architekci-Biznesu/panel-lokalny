@@ -125,7 +125,7 @@ export function NapView({ requestsCount }: { requestsCount: number }) {
         <div className="wiz-tab-panel-actions">
           <button
             type="button"
-            className="ui-btn ui-btn-primary ui-btn-sm"
+            className="ui-btn ui-btn-primary"
             disabled={pending}
             onClick={() => {
               startTransition(async () => {

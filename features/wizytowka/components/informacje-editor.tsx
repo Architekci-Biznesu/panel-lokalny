@@ -324,7 +324,7 @@ function WebsiteForm({
       />
       <button
         type="submit"
-        className="ui-btn ui-btn-primary ui-btn-sm"
+        className="ui-btn ui-btn-primary"
         disabled={pending}
       >
         {pending ? <Loader2 aria-hidden className="ui-btn-spinner" /> : null}
@@ -679,7 +679,7 @@ function CategoriesEditor({
 
 function SaveButton({ pending }: { pending: boolean }) {
   return (
-    <button type="submit" className="ui-btn ui-btn-primary ui-btn-sm" disabled={pending}>
+    <button type="submit" className="ui-btn ui-btn-primary" disabled={pending}>
       {pending ? <Loader2 aria-hidden className="ui-btn-spinner" /> : null}
       Zapisz w Google
     </button>

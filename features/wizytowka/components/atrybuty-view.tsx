@@ -297,7 +297,7 @@ export function AtrybutyView({
               </button>
               <button
                 type="button"
-                className="ui-btn ui-btn-primary ui-btn-sm"
+                className="ui-btn ui-btn-primary"
                 disabled={pending || !dirty}
                 onClick={saveDrafts}
               >
