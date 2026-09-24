@@ -1591,21 +1591,27 @@
   .onboarding-actions .ui-btn {
     min-width: 0;
     white-space: nowrap;
-    flex: 1 1 0;
     height: var(--btn-height);
     min-height: var(--btn-height);
-    padding: 0 var(--space-3);
   }
 
+  /* Wstecz / Dalej: content-sized, tighter px (less bloated) */
   .onboarding-actions > .ui-btn:first-child,
-  .onboarding-actions-next,
+  .onboarding-actions-next {
+    flex: 0 0 auto;
+    padding: 0 var(--space-2);
+  }
+
+  /* Wygeneruj ponownie: takes remaining width + roomier px */
   .onboarding-actions .regen-trigger {
-    flex: 1 1 0;
+    flex: 1 1 auto;
+    padding: 0 var(--space-4);
   }
 
   .onboarding-actions-pair > .ui-btn,
   .onboarding-actions-pair > .ui-btn:first-child {
     flex: 1 1 0;
+    padding: 0 var(--space-3);
   }
 
   .gbp-connect-block {
