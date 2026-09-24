@@ -53,14 +53,16 @@ export function GbpPreviewCard({
 
   return (
     <div className="wiz-profile-header">
+      {/* In-flow 1×1 SVG is the flex item (intrinsic ratio → width = stretch height).
+          Photo overlays it absolutely so it does not affect flex base size. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="wiz-profile-thumb-sizer"
+        alt=""
+        aria-hidden
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'/%3E"
+      />
       <div className="wiz-profile-thumb" aria-hidden>
-        {/* In-flow 1×1 SVG: stretch height → equal width (avoids flex collapse). */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className="wiz-profile-thumb-sizer"
-          alt=""
-          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'/%3E"
-        />
         {thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

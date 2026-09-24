@@ -2168,6 +2168,7 @@
   }
 
   .wiz-profile-header {
+    position: relative;
     display: flex;
     flex-direction: row;
     align-items: stretch;
@@ -2180,30 +2181,35 @@
   }
 
   /* Full-height square flush with card edges.
-     In-flow 1×1 SVG sizer (not ::before / not aspect-ratio on the flex item):
-     stretch gives a definite height; replaced SVG with viewBox 1×1 and height 100%
-     resolves width = height. Absolute photo avoids intrinsic scroll blowup.
-     Do not set min-width: 0 - that collapses the flex item to 0×H. */
-  .wiz-profile-thumb {
-    position: relative;
+     The in-flow flex item is a replaced 1×1 SVG (not a wrapper div): stretch
+     gives definite height, intrinsic ratio resolves width = height. Absolute
+     .wiz-profile-thumb overlays that reserved square (photo does not affect
+     flex base size / scroll). Nested-sizer-in-wrapper collapses to 0×H. */
+  .wiz-profile-thumb-sizer {
     flex: 0 0 auto;
     align-self: stretch;
     box-sizing: border-box;
+    display: block;
+    height: auto;
     width: auto;
     max-width: min(20rem, 45%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .wiz-profile-thumb {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    box-sizing: border-box;
     height: auto;
+    width: auto;
+    aspect-ratio: 1 / 1;
+    max-width: min(20rem, 45%);
     border-radius: 0;
     overflow: hidden;
     background: var(--secondary);
-  }
-
-  .wiz-profile-thumb-sizer {
-    display: block;
-    height: 100%;
-    width: auto;
-    max-width: none;
-    visibility: hidden;
-    pointer-events: none;
   }
 
   .wiz-profile-thumb-img {
@@ -2251,15 +2257,18 @@
       flex-direction: column;
     }
 
-    .wiz-profile-thumb {
-      width: 100%;
-      max-width: none;
-      height: auto;
-      align-self: stretch;
+    /* Sizer unused on mobile - thumb becomes in-flow 16/9. */
+    .wiz-profile-thumb-sizer {
+      display: none;
     }
 
-    .wiz-profile-thumb-sizer {
+    .wiz-profile-thumb {
+      position: relative;
+      top: auto;
+      bottom: auto;
+      left: auto;
       width: 100%;
+      max-width: none;
       height: auto;
       aspect-ratio: 16 / 9;
     }
