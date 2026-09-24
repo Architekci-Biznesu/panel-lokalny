@@ -278,12 +278,13 @@
 
   .ui-btn-soft-danger {
     background: transparent;
-    border-color: transparent;
+    border-color: var(--destructive);
     color: var(--foreground);
   }
 
   .ui-btn-soft-danger:hover:not(:disabled) {
     background: color-mix(in srgb, var(--destructive) 12%, var(--card));
+    border-color: var(--destructive);
     color: var(--destructive);
   }
 
@@ -2835,11 +2836,13 @@
   }
 
   .wiz-page .wiz-suggestion-actions .ui-btn-soft-danger {
+    border-color: var(--destructive);
     color: var(--foreground);
   }
 
   .wiz-page .wiz-suggestion-actions .ui-btn-soft-danger:hover:not(:disabled) {
     background: color-mix(in srgb, var(--destructive) 12%, var(--card));
+    border-color: var(--destructive);
     color: var(--destructive);
   }
 
