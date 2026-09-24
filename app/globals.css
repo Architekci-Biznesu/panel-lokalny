@@ -2168,8 +2168,8 @@
   }
 
   .wiz-profile-header {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: row;
     align-items: stretch;
     gap: 0;
     padding: 0;
@@ -2179,17 +2179,17 @@
     border-radius: calc(var(--radius) + 2px);
   }
 
-  /* Full-height square flush with card edges; width derived from row height.
-     Absolute img avoids intrinsic-size flex/grid blowup (excess scroll). */
+  /* Square flush with card top/bottom: stretch height, width from aspect-ratio.
+     Absolute img + min-size 0 prevents intrinsic-size scroll blowup. */
   .wiz-profile-thumb {
     position: relative;
-    box-sizing: border-box;
+    flex: 0 0 auto;
     align-self: stretch;
-    height: auto;
+    box-sizing: border-box;
     width: auto;
+    height: auto;
     min-width: 0;
     min-height: 0;
-    max-height: none;
     aspect-ratio: 1 / 1;
     border-radius: 0;
     overflow: hidden;
@@ -2238,19 +2238,16 @@
 
   @media (max-width: 639px) {
     .wiz-profile-header {
-      grid-template-columns: 1fr;
+      flex-direction: column;
     }
 
     .wiz-profile-thumb {
       width: 100%;
       height: auto;
       min-height: 0;
+      flex: 0 0 auto;
       aspect-ratio: 16 / 9;
-    }
-
-    .wiz-profile-thumb img,
-    .wiz-profile-thumb-ph {
-      position: absolute;
+      align-self: stretch;
     }
   }
 
