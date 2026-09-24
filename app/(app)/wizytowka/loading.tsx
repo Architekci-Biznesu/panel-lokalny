@@ -32,15 +32,13 @@ export default function WizytowkaLoading() {
           </div>
         </div>
         <div className="wiz-profile-complete">
-          <div className="wiz-profile-complete-head">
-            <div className="wiz-skel-block" style={{ width: "3.25rem", height: "3.25rem", borderRadius: "999px" }} />
-            <div style={{ flex: 1 }}>
-              <div className="wiz-skel-line" style={{ width: "70%", height: "0.85rem" }} />
-              <div
-                className="wiz-skel-line"
-                style={{ width: "90%", height: "0.65rem", marginTop: "0.4rem" }}
-              />
-            </div>
+          <div className="wiz-skel-line" style={{ width: "60%", height: "0.65rem" }} />
+          <div className="wiz-skel-line" style={{ width: "4rem", height: "1.5rem", marginTop: "0.35rem" }} />
+          <div className="wiz-skel-block" style={{ height: "0.5rem", marginTop: "0.5rem" }} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem 1rem", marginTop: "0.75rem" }}>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="wiz-skel-line" style={{ width: "90%", height: "0.7rem" }} />
+            ))}
           </div>
         </div>
       </div>

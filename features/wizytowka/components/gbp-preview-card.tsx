@@ -42,14 +42,9 @@ export function GbpPreviewCard({
   const website = location.websiteUri;
   const mapsUri = location.metadata?.mapsUri;
   const thumb = photoUrls[0] ?? null;
-  const complete =
-    summary.filledCount >= summary.filledTotal && summary.filledTotal > 0;
-  const pct =
-    summary.filledTotal > 0
-      ? Math.round((summary.filledCount / summary.filledTotal) * 100)
-      : 0;
-  const ring = 2 * Math.PI * 18;
-  const dash = (pct / 100) * ring;
+  const filled = summary.filledCount;
+  const total = Math.max(summary.filledTotal, 1);
+  const segments = Array.from({ length: total }, (_, i) => i < filled);
 
   const byId = new Map(summary.checks.map((check) => [check.id, check]));
   const orderedChecks = CHECK_DISPLAY_ORDER.map((id) => byId.get(id)).filter(
@@ -136,36 +131,35 @@ export function GbpPreviewCard({
           </div>
         </div>
 
-        <div className="wiz-profile-complete" aria-label="Kompletność profilu">
-          <div
-            className={`wiz-profile-ring${complete ? " is-complete" : pct >= 80 ? " is-high" : pct >= 50 ? " is-mid" : ""}`}
-            role="progressbar"
-            aria-valuenow={pct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Kompletność ${summary.filledCount} z ${summary.filledTotal}`}
-          >
-            <svg viewBox="0 0 44 44" aria-hidden>
-              <circle
-                className="wiz-profile-ring-track"
-                cx="22"
-                cy="22"
-                r="18"
-              />
-              <circle
-                className="wiz-profile-ring-fill"
-                cx="22"
-                cy="22"
-                r="18"
-                style={{
-                  strokeDasharray: `${dash} ${ring}`,
-                }}
-              />
-            </svg>
-            <span className="wiz-profile-ring-label">
-              {summary.filledCount}/{summary.filledTotal}
+        <div
+          className="wiz-profile-complete"
+          aria-label={`Kompletność profilu ${filled} z ${summary.filledTotal}`}
+        >
+          <p className="wiz-profile-complete-label">Kompletność profilu</p>
+          <p className="wiz-profile-complete-score">
+            <span className="wiz-profile-complete-score-n">{filled}</span>
+            <span className="wiz-profile-complete-score-d">
+              /{summary.filledTotal}
             </span>
-            <span className="wiz-profile-ring-caption">Kompletność</span>
+          </p>
+          <div
+            className="wiz-profile-complete-bar"
+            role="progressbar"
+            aria-valuenow={filled}
+            aria-valuemin={0}
+            aria-valuemax={summary.filledTotal}
+            aria-label={`Kompletność ${filled} z ${summary.filledTotal}`}
+          >
+            {segments.map((on, i) => (
+              <span
+                key={i}
+                className={
+                  on
+                    ? "wiz-profile-complete-seg is-on"
+                    : "wiz-profile-complete-seg"
+                }
+              />
+            ))}
           </div>
 
           <ul className="wiz-profile-checks">
