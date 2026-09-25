@@ -46,6 +46,13 @@
   --text-lg: var(--type-lg);
   --text-xl: var(--type-xl);
   --text-2xl: var(--type-xl);
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-6: var(--space-5);
+  --spacing-8: var(--space-6);
+  --spacing-10: var(--space-7);
 }
 
 :root {
@@ -72,10 +79,22 @@
   --btn-height-sm: 28px;
   --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
-  --type-xs: 11px;
-  --type-base: 12px;
-  --type-lg: 14px;
-  --type-xl: 20px;
+  /* Type scale (7): page 24 / section 18 / card 15 / body 14 / label 13 / meta 12 / badge 10 */
+  --type-xl: 24px;
+  --type-lg: 18px;
+  --type-md: 15px;
+  --type-base: 14px;
+  --type-sm: 13px;
+  --type-xs: 12px;
+  --type-badge: 10px;
+  /* Spacing scale: 4, 8, 12, 16, 24, 32, 40 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
   --sidebar: #ffffff;
   --sidebar-foreground: #3f3f46;
   --sidebar-accent: #f5f3ff;
@@ -90,16 +109,19 @@
 
   html {
     font-size: var(--type-base);
+    height: 100%;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
     line-height: 1.4;
+    min-height: 100%;
+    height: 100%;
+    overflow: hidden;
   }
 
   .mono {
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
 }
@@ -110,7 +132,7 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: calc(var(--radius) + 2px);
-    padding: 20px;
+    padding: var(--space-5);
     box-shadow: none;
   }
 
@@ -131,8 +153,8 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 16px 20px;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
     border-bottom: 1px solid var(--border);
   }
 
@@ -145,8 +167,8 @@
   }
 
   .ui-section-desc {
-    margin: 0.2rem 0 0;
-    font-size: var(--type-base);
+    margin: var(--space-1) 0 0;
+    font-size: var(--type-sm);
     line-height: 1.35;
     color: var(--muted-foreground);
   }
@@ -155,8 +177,8 @@
   .ui-card-body {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
+    gap: var(--space-3);
+    padding: var(--space-5);
   }
 
   .ui-btn {
@@ -165,10 +187,10 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--space-2);
     height: var(--btn-height);
     min-height: var(--btn-height);
-    padding: 0 10px;
+    padding: 0 var(--space-3);
     border-radius: var(--radius);
     border: 1px solid transparent;
     font-weight: 500;
@@ -209,8 +231,8 @@
   .ui-btn-sm {
     height: var(--btn-height-sm);
     min-height: var(--btn-height-sm);
-    gap: 4px;
-    padding: 0 10px;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
     font-size: var(--type-base);
   }
 
@@ -252,6 +274,22 @@
   .ui-btn-danger {
     background: var(--destructive);
     color: #fff;
+  }
+
+  .ui-btn-soft-danger {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--destructive) 12%, var(--card));
+    color: var(--foreground);
+  }
+
+  .ui-btn-soft-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--destructive) 12%, var(--card));
+    border-color: color-mix(in srgb, var(--destructive) 28%, var(--border));
+    color: var(--destructive);
+  }
+
+  .ui-btn-soft-danger:hover:not(:disabled) svg {
+    color: currentColor;
   }
 
   .ui-field,
@@ -445,7 +483,7 @@
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    font-size: var(--type-xs);
+    font-size: var(--type-badge);
   }
 
   .ui-check {
@@ -530,7 +568,7 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: calc(var(--radius) + 2px);
-    padding: 1rem;
+    padding: var(--space-5);
   }
 
   .ui-table-shell {
@@ -545,12 +583,12 @@
     color: var(--accent-foreground);
     border: 1px solid var(--brand-soft);
     border-radius: var(--radius);
-    padding: 0.75rem 1rem;
+    padding: var(--space-3) var(--space-4);
   }
 
   .locked-note {
     color: var(--muted-foreground);
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
   }
 
   .app-shell {
@@ -637,9 +675,9 @@
   .profile-switcher-label {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: var(--type-xs);
-    font-weight: 500;
+    gap: var(--space-2);
+    font-size: var(--type-badge);
+    font-weight: 600;
     color: var(--muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -699,10 +737,10 @@
   }
 
   .nav-group-label {
-    font-size: var(--type-xs);
-    font-weight: 500;
+    font-size: var(--type-badge);
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: var(--muted-foreground);
     padding: 0 0.5rem 0.25rem;
     margin-bottom: 0;
@@ -897,21 +935,18 @@
   }
 
   .app-content {
-    padding: 20px 16px;
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    padding: var(--space-6) var(--space-7);
     flex: 1;
     min-height: 0;
     overflow-y: auto;
   }
 
-  @media (min-width: 900px) {
+  @media (max-width: 899px) {
     .app-content {
-      padding: 32px;
-    }
-  }
-
-  @media (min-width: 1200px) {
-    .app-content {
-      padding: 36px 40px;
+      padding: var(--space-4) var(--space-4);
     }
   }
 
@@ -1553,28 +1588,37 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
     width: 100%;
   }
 
   .onboarding-actions .ui-btn {
     min-width: 0;
     white-space: nowrap;
+    height: var(--btn-height);
+    min-height: var(--btn-height);
+    box-sizing: border-box;
   }
 
+  /* Wstecz / Dalej: content-sized so the long regen label gets the leftover width */
   .onboarding-actions > .ui-btn:first-child,
   .onboarding-actions-next {
-    flex: 1 1 0;
+    flex: 0 0 auto;
+    padding: 0 var(--space-3);
   }
 
+  /* Wygeneruj ponownie: fills remaining row + roomy inline padding */
   .onboarding-actions .regen-trigger {
-    flex: 1.4 1 0;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 var(--space-5);
   }
 
   .onboarding-actions-pair > .ui-btn,
   .onboarding-actions-pair > .ui-btn:first-child {
     flex: 1 1 0;
+    padding: 0 var(--space-4);
   }
 
   .gbp-connect-block {
@@ -1812,6 +1856,13 @@
     overflow: visible;
   }
 
+  /* Onboarding top-right trigger: open menu leftward (right edges align). */
+  .profile-menu-end .profile-menu-panel {
+    left: auto;
+    right: 0;
+    transform-origin: top right;
+  }
+
   .profile-menu-panel button,
   .profile-menu-panel a {
     display: -webkit-box;
@@ -1831,6 +1882,11 @@
     color: var(--foreground);
     text-decoration: none;
     cursor: pointer;
+  }
+
+  .profile-menu-panel form {
+    width: 100%;
+    margin: 0;
   }
 
   .profile-menu-panel button:hover,
@@ -1884,7 +1940,7 @@
     display: block;
   }
 
-  .profile-menu-panel a.profile-menu-add {
+  .profile-menu-panel button.profile-menu-add {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1909,7 +1965,7 @@
     flex-shrink: 0;
   }
 
-  .profile-menu-panel a.profile-menu-add:hover {
+  .profile-menu-panel button.profile-menu-add:hover {
     background: color-mix(in srgb, var(--brand) 12%, var(--accent));
     color: var(--brand-deep);
   }
@@ -2000,17 +2056,19 @@
   .wiz-page {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--space-6);
+    width: 100%;
+    max-width: none;
   }
 
   .wiz-page .ui-btn,
   .wiz-page .ui-btn-sm {
     height: var(--btn-height-sm);
     min-height: var(--btn-height-sm);
-    padding: 0 0.75rem;
+    padding: 0 var(--space-3);
     font-size: var(--type-base);
     font-weight: 600;
-    gap: 0.35rem;
+    gap: var(--space-2);
   }
 
   a.ui-btn {
@@ -2065,32 +2123,40 @@
     color: var(--foreground);
   }
 
-  /* Topbar actions on Wizytówka (Reanalyze) sit outside .wiz-page */
+  /* Topbar secondary actions: gray default (not white), dark text/icon */
   .topbar-right .ui-btn,
   .topbar-right .ui-btn-sm {
     height: var(--btn-height-sm);
     min-height: var(--btn-height-sm);
-    padding: 0 0.75rem;
+    padding: 0 var(--space-3);
     font-size: var(--type-base);
-    font-weight: 600;
-    gap: 0.35rem;
+    font-weight: 500;
+    gap: var(--space-2);
   }
 
   .topbar-right .ui-btn svg,
   .topbar-right .ui-btn-sm svg {
     width: 0.95rem;
     height: 0.95rem;
+    color: var(--foreground);
   }
 
-  .topbar-right .ui-btn-outline {
-    background: var(--card);
+  .topbar-right .ui-btn-outline,
+  .topbar-right a.ui-btn-outline {
+    background: var(--secondary);
     border-color: var(--border);
     color: var(--foreground);
   }
 
-  .topbar-right .ui-btn-outline:hover:not(:disabled) {
-    border-color: var(--brand-soft);
+  .topbar-right .ui-btn-outline:hover:not(:disabled),
+  .topbar-right a.ui-btn-outline:hover:not(:disabled) {
     background: var(--accent);
+    border-color: var(--brand-soft);
+    color: var(--brand-deep);
+  }
+
+  .topbar-right .ui-btn-outline:hover:not(:disabled) svg,
+  .topbar-right a.ui-btn-outline:hover:not(:disabled) svg {
     color: var(--brand-deep);
   }
 
@@ -2100,28 +2166,29 @@
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-4);
   }
 
   .page-header h1,
   .wiz-header h1 {
     margin: 0;
     font-size: var(--type-xl);
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: -0.025em;
-    line-height: 2rem;
+    line-height: 1.25;
     color: var(--foreground);
   }
 
   .page-header p,
   .wiz-header > div > p {
-    margin: 0.25rem 0 0;
-    font-size: var(--type-base);
+    margin: var(--space-1) 0 0;
+    font-size: var(--type-sm);
     color: var(--muted-foreground);
-    line-height: 1.25rem;
+    line-height: 1.35;
   }
 
   .wiz-profile-header {
+    position: relative;
     display: flex;
     flex-direction: row;
     align-items: stretch;
@@ -2133,27 +2200,53 @@
     border-radius: calc(var(--radius) + 2px);
   }
 
-  .wiz-profile-thumb {
+  /* Full-height square flush with card edges.
+     The in-flow flex item is a replaced 1×1 SVG (not a wrapper div): stretch
+     gives definite height, intrinsic ratio resolves width = height. Absolute
+     .wiz-profile-thumb overlays that reserved square (photo does not affect
+     flex base size / scroll). Nested-sizer-in-wrapper collapses to 0×H. */
+  .wiz-profile-thumb-sizer {
     flex: 0 0 auto;
     align-self: stretch;
-    width: auto;
+    box-sizing: border-box;
+    display: block;
     height: auto;
+    width: auto;
+    max-width: min(20rem, 45%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .wiz-profile-thumb {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    box-sizing: border-box;
+    height: auto;
+    width: auto;
     aspect-ratio: 1 / 1;
+    max-width: min(20rem, 45%);
     border-radius: 0;
     overflow: hidden;
     background: var(--secondary);
-    display: grid;
-    place-items: center;
   }
 
-  .wiz-profile-thumb img {
+  .wiz-profile-thumb-img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     display: block;
   }
 
   .wiz-profile-thumb-ph {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
     font-size: var(--type-xs);
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -2165,8 +2258,8 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    padding: 1.15rem 1.25rem;
+    gap: var(--space-5);
+    padding: var(--space-5);
   }
 
   @media (min-width: 900px) {
@@ -2174,8 +2267,8 @@
       flex-direction: row;
       align-items: stretch;
       justify-content: space-between;
-      gap: 1.5rem;
-      padding: 1.15rem 1.35rem 1.15rem 1.15rem;
+      gap: var(--space-6);
+      padding: var(--space-5);
     }
   }
 
@@ -2184,19 +2277,27 @@
       flex-direction: column;
     }
 
+    /* Sizer unused on mobile - thumb becomes in-flow 16/9. */
+    .wiz-profile-thumb-sizer {
+      display: none;
+    }
+
     .wiz-profile-thumb {
+      position: relative;
+      top: auto;
+      bottom: auto;
+      left: auto;
       width: 100%;
       max-width: none;
-      aspect-ratio: 16 / 9;
       height: auto;
-      align-self: stretch;
+      aspect-ratio: 16 / 9;
     }
   }
 
   .wiz-profile-left {
     display: flex;
     flex-direction: column;
-    gap: 1.35rem;
+    gap: var(--space-5);
     min-width: 0;
     flex: 1 1 auto;
   }
@@ -2206,13 +2307,13 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.3rem;
+    gap: var(--space-1);
   }
 
   .wiz-profile-title {
     margin: 0;
-    font-size: var(--type-lg);
-    font-weight: 700;
+    font-size: var(--type-md);
+    font-weight: 600;
     line-height: 1.3;
     color: var(--foreground);
   }
@@ -2222,8 +2323,8 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem;
-    font-size: var(--type-base);
+    gap: var(--space-2);
+    font-size: var(--type-sm);
     color: var(--muted-foreground);
   }
 
@@ -2233,16 +2334,17 @@
 
   .wiz-profile-tiles {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 0.65rem 1.5rem;
-    padding-top: 0.65rem;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding-top: var(--space-3);
   }
 
   .wiz-profile-tile {
     display: flex;
     align-items: flex-start;
-    gap: 0.6rem;
+    gap: var(--space-2);
     min-width: 0;
     max-width: 100%;
     padding: 0;
@@ -2250,34 +2352,15 @@
     background: transparent;
   }
 
-  .wiz-profile-tile-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    flex-shrink: 0;
-    margin-top: 0.1rem;
-    border-radius: calc(var(--radius) - 2px);
-    background: color-mix(in srgb, var(--brand-soft) 28%, var(--card));
-    color: var(--brand-deep);
-  }
-
-  .wiz-profile-tile-icon svg {
-    width: 1.05rem;
-    height: 1.05rem;
-    stroke-width: 1.75;
-  }
-
   .wiz-profile-tile-body {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: var(--space-1);
   }
 
   .wiz-profile-tile-label {
-    font-size: var(--type-xs);
+    font-size: var(--type-badge);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -2293,151 +2376,126 @@
     overflow-wrap: anywhere;
   }
 
+  .wiz-profile-tile-phone {
+    font-variant-numeric: tabular-nums;
+  }
+
   .wiz-profile-complete {
     width: 100%;
     flex: 0 0 auto;
     display: flex;
-    align-items: center;
-    gap: 1.1rem;
-    padding-top: 0.85rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
     border-top: 1px solid var(--border);
   }
 
   @media (min-width: 900px) {
     .wiz-profile-complete {
-      width: 24rem;
+      width: 20rem;
       align-self: stretch;
-      margin-block: -1.15rem;
-      margin-right: -1.35rem;
+      justify-content: flex-start;
+      margin-block: calc(var(--space-5) * -1);
+      margin-right: calc(var(--space-5) * -1);
       border-top: 0;
       border-left: 1px solid var(--border);
-      padding-block: 1.15rem;
-      padding-left: 1.35rem;
-      padding-right: 1.35rem;
-      padding-top: 1.15rem;
+      padding: var(--space-5);
     }
   }
 
-  .wiz-profile-ring {
-    position: relative;
-    width: 5.5rem;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-  }
-
-  .wiz-profile-ring svg {
-    width: 5.25rem;
-    height: 5.25rem;
-    transform: rotate(-90deg);
-  }
-
-  .wiz-profile-ring-track,
-  .wiz-profile-ring-fill {
-    fill: none;
-    stroke-width: 4.25;
-  }
-
-  .wiz-profile-ring-track {
-    stroke: color-mix(in srgb, var(--secondary) 85%, #bbf7d0);
-  }
-
-  .wiz-profile-ring-fill {
-    stroke: #65a30d;
-    stroke-linecap: round;
-  }
-
-  .wiz-profile-ring.is-mid .wiz-profile-ring-fill {
-    stroke: #ca8a04;
-  }
-
-  .wiz-profile-ring.is-high .wiz-profile-ring-fill,
-  .wiz-profile-ring.is-complete .wiz-profile-ring-fill {
-    stroke: #22c55e;
-  }
-
-  .wiz-profile-ring-label {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 5.25rem;
-    height: 5.25rem;
-    display: grid;
-    place-items: center;
-    font-size: var(--type-lg);
-    font-weight: 700;
-    color: #4d7c0f;
-    line-height: 1;
-  }
-
-  .wiz-profile-ring.is-mid .wiz-profile-ring-label {
-    color: #a16207;
-  }
-
-  .wiz-profile-ring.is-high .wiz-profile-ring-label,
-  .wiz-profile-ring.is-complete .wiz-profile-ring-label {
-    color: #15803d;
-  }
-
-  .wiz-profile-ring-caption {
-    font-size: var(--type-base);
-    font-weight: 500;
+  .wiz-profile-complete-label {
+    margin: 0;
+    font-size: var(--type-badge);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--muted-foreground);
     line-height: 1.2;
-    text-align: center;
+  }
+
+  .wiz-profile-complete-score {
+    margin: 0;
+    font-size: var(--type-xl);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-sans);
+  }
+
+  .wiz-profile-complete-score-n {
+    color: var(--foreground);
+  }
+
+  .wiz-profile-complete-score-d {
+    color: var(--muted-foreground);
+    font-weight: 600;
+  }
+
+  .wiz-profile-complete-bar {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-1);
+    width: 100%;
+    height: 0.5rem;
+  }
+
+  .wiz-profile-complete-seg {
+    flex: 1 1 0;
+    min-width: 0;
+    border-radius: 999px;
+    background: var(--secondary);
+  }
+
+  .wiz-profile-complete-seg.is-on {
+    background: #22c55e;
   }
 
   .wiz-profile-checks {
     list-style: none;
-    margin: 0;
+    margin: var(--space-2) 0 0;
     padding: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-auto-flow: column;
     grid-template-rows: repeat(5, auto);
-    gap: 0.55rem 1rem;
-    flex: 1 1 auto;
+    gap: var(--space-2) var(--space-4);
+    flex: 0 1 auto;
     min-width: 0;
   }
 
   .wiz-profile-check {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: var(--space-2);
     min-width: 0;
-    font-size: var(--type-base);
-    color: var(--muted-foreground);
+    font-size: var(--type-sm);
+    color: var(--foreground);
   }
 
   .wiz-profile-check-mark {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1rem;
-    height: 1rem;
+    width: 1.125rem;
+    height: 1.125rem;
     flex-shrink: 0;
     border-radius: 999px;
     border: 1.5px solid var(--border);
-    background: var(--card);
+    background: transparent;
+    color: var(--foreground);
   }
 
   .wiz-profile-check-mark svg {
     width: 0.7rem;
     height: 0.7rem;
-    stroke-width: 3;
-  }
-
-  .wiz-profile-check.is-done {
-    color: var(--foreground);
+    stroke-width: 2.5;
   }
 
   .wiz-profile-check.is-done .wiz-profile-check-mark {
     border-color: transparent;
-    background: color-mix(in srgb, #16a34a 16%, var(--card));
-    color: #16a34a;
+    background: var(--secondary);
+    color: var(--foreground);
   }
 
   .wiz-profile-check-label {
@@ -2448,7 +2506,7 @@
 
   .wiz-profile-check-add {
     flex-shrink: 0;
-    margin-left: 0.45rem;
+    margin-left: var(--space-2);
     font-size: var(--type-base);
     font-weight: 600;
     color: var(--brand-deep);
@@ -2463,7 +2521,7 @@
   .wiz-proposals {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: var(--space-4);
   }
 
   .wiz-proposals-head {
@@ -2471,13 +2529,14 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--space-3);
+    margin-bottom: 0;
   }
 
   .wiz-proposals-heading {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: var(--space-2);
     min-width: 0;
   }
 
@@ -2504,11 +2563,10 @@
     justify-content: center;
     min-width: 1.25rem;
     height: 1.25rem;
-    padding: 0 0.35rem;
+    padding: 0 var(--space-2);
     border-radius: 999px;
     background: var(--brand);
     color: #fff;
-    font-family: var(--font-mono);
     font-size: var(--type-xs);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -2517,7 +2575,7 @@
   .wiz-proposals-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: var(--space-2);
   }
 
   .wiz-proposals-grid {
@@ -2526,7 +2584,7 @@
     padding: 0;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.65rem;
+    gap: var(--space-4);
   }
 
   @media (min-width: 640px) {
@@ -2550,8 +2608,8 @@
   .wiz-proposal-card {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
-    padding: 0.85rem;
+    gap: var(--space-3);
+    padding: var(--space-5);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--card);
@@ -2564,9 +2622,9 @@
   }
 
   .wiz-proposal-card.is-warn .wiz-proposal-icon {
-    background: color-mix(in srgb, #fef3c7 80%, var(--card));
+    background: transparent;
     border: none;
-    border-radius: calc(var(--radius) - 2px);
+    border-radius: 0;
     color: #b45309;
   }
 
@@ -2578,28 +2636,31 @@
     color: #92400e;
   }
 
-  .wiz-proposal-card-top {
+  .wiz-proposal-card-title-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--space-2);
+    min-width: 0;
   }
 
   .wiz-proposal-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: calc(var(--radius) - 2px);
-    background: var(--accent);
+    flex-shrink: 0;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
     color: var(--brand-deep);
   }
 
   .wiz-proposal-icon svg {
     display: block;
-    width: 0.9rem;
-    height: 0.9rem;
+    width: 1rem;
+    height: 1rem;
     stroke-width: 2;
     flex-shrink: 0;
   }
@@ -2608,17 +2669,20 @@
     font-size: var(--type-xs);
     color: var(--muted-foreground);
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .wiz-proposal-card-title {
     margin: 0;
-    font-size: var(--type-base);
+    font-size: var(--type-md);
     font-weight: 600;
+    min-width: 0;
+    line-height: 1.3;
   }
 
   .wiz-proposal-card-blurb {
     margin: 0;
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
     line-height: 1.4;
     color: var(--muted-foreground);
     display: -webkit-box;
@@ -2627,9 +2691,18 @@
     overflow: hidden;
   }
 
-  .wiz-proposal-compare {
+  .wiz-proposal-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
     margin-top: auto;
-    align-self: flex-start;
+    min-width: 0;
+  }
+
+  .wiz-proposal-compare {
+    margin-top: 0;
+    align-self: auto;
     border: 0;
     background: transparent;
     padding: 0;
@@ -2638,6 +2711,8 @@
     font-weight: 600;
     color: var(--brand-deep);
     cursor: pointer;
+    white-space: nowrap;
+    min-width: 0;
   }
 
   .wiz-proposal-compare:hover {
@@ -2649,7 +2724,7 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.65rem;
+    gap: var(--space-2);
   }
 
   .wiz-last-analysis {
@@ -2661,7 +2736,8 @@
   .wiz-subnav {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.15rem 0.25rem;
+    gap: var(--space-1) var(--space-2);
+    margin-top: var(--space-2);
     border-bottom: 1px solid var(--border);
     background: transparent;
     border: 0;
@@ -2673,8 +2749,8 @@
   .wiz-subnav-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.65rem 0.75rem;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-3);
     font-size: var(--type-base);
     font-weight: 500;
     color: var(--muted-foreground);
@@ -2699,13 +2775,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.15rem;
-    height: 1.15rem;
-    padding: 0 0.3rem;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 var(--space-2);
     border-radius: 999px;
-    background: var(--secondary);
-    color: var(--muted-foreground);
-    font-family: var(--font-mono);
+    background: var(--brand);
+    color: #fff;
     font-size: var(--type-xs);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -2723,7 +2798,7 @@
   .wiz-stack {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--space-6);
   }
 
   .wiz-tab-head {
@@ -2731,7 +2806,13 @@
     flex-wrap: wrap;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--space-3);
+    margin-bottom: 0;
+  }
+
+  /* Header → first content ≈ 16px (avoid double gap with .wiz-stack) */
+  .wiz-stack > .wiz-tab-head {
+    margin-bottom: calc(var(--space-4) - var(--space-6));
   }
 
   .wiz-tab-head-text {
@@ -2743,7 +2824,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--space-3);
   }
 
   .wiz-tab-head-edit {
@@ -2757,14 +2838,45 @@
     color: var(--foreground);
   }
 
+  .wiz-field-edit {
+    color: var(--foreground);
+  }
+
+  .wiz-field-edit svg {
+    color: var(--foreground);
+  }
+
+  .wiz-suggestion-actions .ui-btn-outline {
+    color: var(--foreground);
+  }
+
+  .wiz-suggestion-actions .ui-btn-outline svg {
+    color: var(--foreground);
+  }
+
+  .wiz-page .wiz-suggestion-actions .ui-btn-soft-danger {
+    border-color: color-mix(in srgb, var(--destructive) 12%, var(--card));
+    color: var(--foreground);
+  }
+
+  .wiz-page .wiz-suggestion-actions .ui-btn-soft-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--destructive) 12%, var(--card));
+    border-color: color-mix(in srgb, var(--destructive) 28%, var(--border));
+    color: var(--destructive);
+  }
+
+  .wiz-page .wiz-suggestion-actions .ui-btn-soft-danger:hover:not(:disabled) svg {
+    color: currentColor;
+  }
+
   .wiz-field-row {
     display: grid;
     grid-template-columns: 7.5rem minmax(0, 1fr) auto;
-    gap: 0.5rem 1rem;
-    padding: 1rem 1.25rem;
+    gap: var(--space-2) var(--space-4);
+    padding: var(--space-4) var(--space-5);
     border-bottom: 1px solid var(--border);
     align-items: center;
-    scroll-margin-top: 1rem;
+    scroll-margin-top: var(--space-4);
   }
 
   .wiz-field-row:has(.wiz-field-editor) {
@@ -2774,10 +2886,10 @@
   .wiz-context-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-2);
     flex-shrink: 0;
     height: var(--btn-height-sm);
-    padding: 0 0.75rem;
+    padding: 0 var(--space-3);
     border-radius: var(--radius);
     border: 1px solid var(--border);
     background: var(--card);
@@ -2834,7 +2946,7 @@
     display: grid;
     grid-template-columns: 7.5rem minmax(0, 1fr);
     grid-template-rows: auto auto;
-    gap: 0.5rem 1rem;
+    gap: var(--space-2) var(--space-4);
     align-items: start;
   }
 
@@ -2904,7 +3016,7 @@
   .wiz-proposal-panel > form,
   .wiz-proposal-panel > .wiz-edit-form {
     margin: 0;
-    padding: 0.85rem 1rem;
+    padding: var(--space-4) var(--space-5);
   }
 
   .wiz-proposal-edit {
@@ -2995,16 +3107,16 @@
   .wiz-ai-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--space-1);
     height: 1.35rem;
-    padding: 0 0.5rem;
+    padding: 0 var(--space-2);
     border-radius: calc(var(--radius) - 2px);
     background: var(--accent);
     color: var(--brand-deep);
     border: 1px solid color-mix(in srgb, var(--brand-soft) 65%, var(--border));
-    font-size: var(--type-xs);
+    font-size: var(--type-badge);
     font-weight: 700;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     white-space: nowrap;
     line-height: 1;
@@ -3028,8 +3140,8 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem 1.15rem;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
   }
 
   .wiz-compare-col-next {
@@ -3052,8 +3164,8 @@
     flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
-    font-size: var(--type-xs);
+    gap: var(--space-2);
+    font-size: var(--type-badge);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -3067,7 +3179,7 @@
   .wiz-compare-meter {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-2);
     flex-shrink: 0;
   }
 
@@ -3101,6 +3213,7 @@
     text-transform: none;
     color: var(--muted-foreground);
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
   .wiz-inline-old {
@@ -3132,10 +3245,10 @@
   .wiz-inline-rationale {
     display: flex;
     align-items: flex-start;
-    gap: 0.65rem;
+    gap: var(--space-3);
     width: 100%;
     margin: 0;
-    padding: 0.9rem 1.15rem;
+    padding: var(--space-4) var(--space-5);
     border-radius: 0;
     border-top: 1px solid var(--border);
     background: var(--accent);
@@ -3167,19 +3280,19 @@
   .wiz-inline-rationale-body {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1);
     min-width: 0;
   }
 
   .wiz-inline-rationale-label {
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
     font-weight: 600;
     color: var(--foreground);
   }
 
   .wiz-inline-rationale p {
     margin: 0;
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
     line-height: 1.45;
     color: var(--muted-foreground);
   }
@@ -3228,7 +3341,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.45rem;
+    gap: var(--space-2);
   }
 
   .wiz-cat-chips-sep {
@@ -3340,19 +3453,19 @@
   }
 
   .wiz-field-label {
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
     font-weight: 600;
-    color: #52525b;
+    color: var(--muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.02em;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-2);
     padding-top: 0;
   }
 
   .wiz-field-row:has(.wiz-field-editor) .wiz-field-label {
-    padding-top: 0.35rem;
+    padding-top: var(--space-1);
   }
 
   .wiz-field-content {
@@ -3480,38 +3593,38 @@
   }
 
   .wiz-preview-body {
-    padding: 1rem 1.25rem 1.25rem;
+    padding: var(--space-5);
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--space-3);
   }
 
   .wiz-preview-title {
     margin: 0;
-    font-size: var(--type-lg);
-    font-weight: 700;
+    font-size: var(--type-md);
+    font-weight: 600;
   }
 
   .wiz-preview-category {
     margin: 0;
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
     color: var(--muted-foreground);
   }
 
   .wiz-preview-meta {
     list-style: none;
-    margin: 0.5rem 0 0;
+    margin: var(--space-2) 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--space-2);
   }
 
   .wiz-preview-meta li {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
-    font-size: var(--type-base);
+    gap: var(--space-2);
+    font-size: var(--type-sm);
     color: var(--foreground);
   }
 
@@ -3569,33 +3682,33 @@
   .wiz-edit-form {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
   }
 
   .wiz-edit-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--space-2);
     align-items: center;
   }
 
   .wiz-service-area-form {
-    gap: 1rem;
+    gap: var(--space-4);
   }
 
   .wiz-service-area-field {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .wiz-service-area-label {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
-    font-size: var(--type-base);
+    gap: var(--space-3);
+    font-size: var(--type-sm);
     font-weight: 600;
     color: var(--muted-foreground);
   }
@@ -3607,7 +3720,7 @@
 
   .wiz-service-area-hint {
     margin: 0;
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
     color: var(--muted-foreground);
   }
 
@@ -3742,13 +3855,13 @@
   }
 
   .wiz-suggestion-value {
-    margin: 0.75rem 0 0;
-    padding: 0.75rem;
+    margin: var(--space-3) 0 0;
+    padding: var(--space-3);
     background: var(--secondary);
     border-radius: calc(var(--radius) - 2px);
     font-size: var(--type-base);
     white-space: pre-wrap;
-    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     overflow-x: auto;
   }
 
@@ -3764,11 +3877,11 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
+    gap: var(--space-3);
   }
 
   .wiz-preview-item {
-    padding: 0.625rem 0;
+    padding: var(--space-3) 0;
     border-bottom: 1px solid var(--border);
   }
 
@@ -3779,45 +3892,45 @@
 
   .wiz-preview-title {
     margin: 0;
-    font-size: var(--type-lg);
+    font-size: var(--type-md);
     font-weight: 600;
   }
 
   .wiz-preview-desc {
-    margin: 0.25rem 0 0;
-    font-size: var(--type-base);
+    margin: var(--space-1) 0 0;
+    font-size: var(--type-sm);
     color: var(--muted-foreground);
   }
 
   .wiz-preview-chips {
     list-style: none;
-    margin: 0.75rem 0 0;
+    margin: var(--space-3) 0 0;
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .wiz-preview-edit {
     list-style: none;
-    margin: 0.75rem 0 0;
+    margin: var(--space-3) 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3);
   }
 
   .wiz-suggestion-edit {
-    margin-top: 0.75rem;
+    margin-top: var(--space-3);
   }
 
   .wiz-suggestion-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin: 0;
-    padding: 0.85rem 1.15rem;
+    padding: var(--space-4) var(--space-5);
     border-top: 1px solid var(--border);
   }
 
@@ -3869,17 +3982,17 @@
   .wiz-uslugi > .wiz-tab-note,
   .wiz-uslugi > .locked-note {
     margin: 0;
-    padding: 1rem 1.25rem;
+    padding: var(--space-4) var(--space-5);
   }
 
   .wiz-uslugi-suggestion {
-    padding: 1rem 1.25rem;
+    padding: var(--space-4) var(--space-5);
   }
 
   .wiz-uslugi-title {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: var(--space-2);
   }
 
   .wiz-uslugi-count-badge {
@@ -3917,25 +4030,25 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
-    padding: 1rem 1.25rem 0.5rem;
+    padding: var(--space-4) var(--space-5) var(--space-2);
   }
 
   .wiz-services-form .wiz-services-edit {
     margin-top: 0;
-    gap: 0.65rem;
+    gap: var(--space-3);
   }
 
   .wiz-service-card {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.25rem 0 0.85rem;
+    gap: var(--space-2);
+    padding: var(--space-1) 0 var(--space-4);
   }
 
   .wiz-service-card-name-row {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: var(--space-2);
   }
 
   .wiz-service-card-name-row .wiz-service-card-name {
@@ -3988,8 +4101,8 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem 0.75rem;
-    padding: 0.75rem 1.25rem;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-5);
     background: var(--card);
     border-top: 1px solid var(--border);
   }
@@ -3998,7 +4111,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     min-width: 0;
     flex: 1 1 auto;
   }
@@ -4025,8 +4138,8 @@
   .wiz-tab-panel {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1.25rem;
+    gap: var(--space-4);
+    padding: var(--space-5);
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: calc(var(--radius) + 2px);
@@ -4035,17 +4148,19 @@
   .wiz-tab-panel-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .wiz-tab-note {
-    margin: 0.5rem 0 0;
+    margin: var(--space-2) 0 0;
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
   }
 
   .wiz-fields > .wiz-tab-note,
   .wiz-fields > .locked-note {
     margin: 0;
-    padding: 1rem 1.25rem;
+    padding: var(--space-4) var(--space-5);
   }
 
   .wiz-subblock {
@@ -4055,12 +4170,12 @@
 
   .wiz-subblock-title {
     margin: 0;
-    padding: 0.75rem 1.25rem 0.35rem;
-    font-size: var(--type-base);
+    padding: var(--space-3) var(--space-5) var(--space-1);
+    font-size: var(--type-badge);
     font-weight: 600;
     color: var(--muted-foreground);
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
   }
 
   .wiz-gaps-list {
@@ -4400,9 +4515,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    min-height: 2.25rem;
-    padding: 0.5rem 0;
+    gap: var(--space-4);
+    min-height: 2.75rem;
+    padding: var(--space-4) 0;
     border-bottom: 1px solid var(--border);
     border-radius: 0;
   }
@@ -4476,7 +4591,7 @@
 
   .wiz-special-item {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     gap: 0.75rem;
     padding: 0 0.75rem 0 0;
     border: 1px solid var(--border);
@@ -4494,14 +4609,20 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 2.75rem;
-    min-height: 2.75rem;
+    box-sizing: border-box;
+    width: 3.5rem;
+    height: 3.5rem;
+    min-width: 3.5rem;
+    min-height: 3.5rem;
     flex-shrink: 0;
-    align-self: stretch;
+    align-self: center;
+    gap: var(--space-1);
+    margin: var(--space-2) 0 var(--space-2) var(--space-2);
     border: 0;
-    border-radius: 0;
+    border-radius: calc(var(--radius) - 2px);
     background: var(--secondary);
     color: var(--foreground);
+    padding: var(--space-2) var(--space-1);
   }
 
   .wiz-special-datebox-day {
@@ -4509,15 +4630,17 @@
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
+    text-align: center;
   }
 
   .wiz-special-datebox-month {
-    margin-top: 0.15rem;
+    margin-top: 0;
     font-size: var(--type-xs);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--muted-foreground);
+    line-height: 1;
   }
 
   .wiz-special-meta {
@@ -4906,13 +5029,13 @@
   .wiz-report-kpi {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--space-2);
     min-width: 0;
   }
 
   .wiz-report-kpi-label {
     margin: 0;
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
     color: var(--muted-foreground);
   }
 
@@ -4922,12 +5045,13 @@
     font-weight: 700;
     line-height: 1.15;
     color: var(--foreground);
+    font-variant-numeric: tabular-nums;
   }
 
   .wiz-report-kpi-desc,
   .wiz-report-kpi-foot {
     margin: 0;
-    font-size: var(--type-base);
+    font-size: var(--type-sm);
     line-height: 1.45;
     color: var(--muted-foreground);
   }
@@ -4935,8 +5059,8 @@
   .wiz-report-bars {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
-    margin: 0.15rem 0 0;
+    gap: var(--space-2);
+    margin: var(--space-1) 0 0;
     padding: 0;
     list-style: none;
   }

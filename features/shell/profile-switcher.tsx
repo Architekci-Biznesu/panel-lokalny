@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, Plus } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { exitAdminMode } from "@/features/admin/actions";
-import { switchActiveProfile } from "@/features/onboarding/actions";
+import {
+  startFreshAddProfile,
+  switchActiveProfile,
+} from "@/features/onboarding/actions";
 
 type ProfileOption = { id: string; name: string; location?: string | null };
 
@@ -27,6 +29,8 @@ export function ProfileSwitcher({
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const isOnboarding = pathname === "/onboarding";
 
   const active =
     profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
@@ -45,9 +49,21 @@ export function ProfileSwitcher({
     return null;
   }
 
+  function goToSelectedProfile() {
+    if (isOnboarding) {
+      router.push("/pulpit");
+      return;
+    }
+    router.refresh();
+  }
+
   function selectProfile(profileId: string) {
     if (profileId === activeProfileId) {
       setOpen(false);
+      // From onboarding, even the already-active profile must leave the wizard.
+      if (isOnboarding) {
+        router.push("/pulpit");
+      }
       return;
     }
     startTransition(async () => {
@@ -60,12 +76,15 @@ export function ProfileSwitcher({
         return;
       }
       setOpen(false);
-      router.refresh();
+      goToSelectedProfile();
     });
   }
 
   return (
-    <div className="profile-menu" ref={rootRef}>
+    <div
+      className={compact ? "profile-menu profile-menu-end" : "profile-menu"}
+      ref={rootRef}
+    >
       <button
         type="button"
         className={compact ? "profile-menu-trigger" : "profile-switcher-btn"}
@@ -132,15 +151,17 @@ export function ProfileSwitcher({
             </button>
           ))}
           {!adminImpersonating ? (
-            <Link
-              href="/onboarding?mode=add"
-              className="profile-menu-add"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-            >
-              <Plus aria-hidden />
-              Dodaj profil
-            </Link>
+            <form action={startFreshAddProfile}>
+              <button
+                type="submit"
+                className="profile-menu-add"
+                role="menuitem"
+                disabled={pending}
+              >
+                <Plus aria-hidden />
+                Dodaj profil
+              </button>
+            </form>
           ) : null}
         </div>
       ) : null}

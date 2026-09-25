@@ -26,8 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pl" className={`${montserrat.variable} ${jetbrainsMono.variable} h-full`}>
-      <body className="min-h-full">
+    <html
+      lang="pl"
+      className={`${montserrat.variable} ${jetbrainsMono.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <body className="h-full overflow-hidden" suppressHydrationWarning>
         {children}
         <GooeyToaster />
       </body>

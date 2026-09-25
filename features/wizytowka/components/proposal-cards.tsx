@@ -85,10 +85,10 @@ function cardHref(item: ProposalCardItem, mapsUri?: string | null): string {
 function cardTitle(item: ProposalCardItem): string {
   if (item.kind === "categories") return "Kategorie";
   if (item.kind === "special_hours") {
-    return "Brak nadchodzących dni specjalnych";
+    return "Brak dni specjalnych";
   }
   if (item.kind === "attributes") {
-    return "Atrybuty do potwierdzenia";
+    return "Atrybuty";
   }
   if (item.kind === "photos") {
     return "Za mało zdjęć na wizytówce";
@@ -273,25 +273,27 @@ export function ProposalCards({
                 key={cardKey(item)}
                 className={`wiz-proposal-card${warn ? " is-warn" : ""}`}
               >
-                <div className="wiz-proposal-card-top">
+                <div className="wiz-proposal-card-title-row">
                   <span className="wiz-proposal-icon" aria-hidden>
                     <Icon />
                   </span>
+                  <p className="wiz-proposal-card-title">{cardTitle(item)}</p>
+                </div>
+                <p className="wiz-proposal-card-blurb">{cardBlurb(item)}</p>
+                <div className="wiz-proposal-card-foot">
+                  <button
+                    type="button"
+                    className="wiz-proposal-compare"
+                    onClick={() =>
+                      goToHref(pathname, router, cardHref(item, mapsUri))
+                    }
+                  >
+                    {cardActionLabel(item)}
+                  </button>
                   <span className="wiz-proposal-tab">
-                    Zakładka: {cardTabLabel(item)}
+                    {cardTabLabel(item)}
                   </span>
                 </div>
-                <p className="wiz-proposal-card-title">{cardTitle(item)}</p>
-                <p className="wiz-proposal-card-blurb">{cardBlurb(item)}</p>
-                <button
-                  type="button"
-                  className="wiz-proposal-compare"
-                  onClick={() =>
-                    goToHref(pathname, router, cardHref(item, mapsUri))
-                  }
-                >
-                  {cardActionLabel(item)}
-                </button>
               </li>
             );
           })}

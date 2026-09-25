@@ -149,8 +149,8 @@ export function AppShell({
                 href="/ustawienia/kontekst"
                 className="ui-btn ui-btn-outline ui-btn-sm"
               >
-                <span>Zaktualizuj kontekst firmy</span>
                 <ArrowUpRight aria-hidden />
+                <span>Zaktualizuj kontekst firmy</span>
               </Link>
             ) : null}
             {onWizytowka ? <ReanalyzeButton /> : null}
