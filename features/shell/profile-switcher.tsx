@@ -1,8 +1,14 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Plus } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronsUpDown,
+  Plus,
+  Search,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { exitAdminMode } from "@/features/admin/actions";
 import {
@@ -11,6 +17,12 @@ import {
 } from "@/features/onboarding/actions";
 
 type ProfileOption = { id: string; name: string; location?: string | null };
+
+function profileCountLabel(count: number) {
+  if (count === 1) return "1 profil";
+  if (count >= 2 && count <= 4) return `${count} profile`;
+  return `${count} profili`;
+}
 
 export function ProfileSwitcher({
   profiles,
@@ -26,14 +38,30 @@ export function ProfileSwitcher({
   ownerEmail?: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const isOnboarding = pathname === "/onboarding";
 
   const active =
     profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
+
+  const filtered = useMemo(() => {
+    const base =
+      compact && activeProfileId
+        ? profiles.filter((p) => p.id !== activeProfileId)
+        : profiles;
+    const q = query.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.location ?? "").toLowerCase().includes(q),
+    );
+  }, [profiles, query, compact, activeProfileId]);
 
   useEffect(() => {
     function onDocClick(event: MouseEvent) {
@@ -44,6 +72,16 @@ export function ProfileSwitcher({
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      return;
+    }
+    if (!adminImpersonating) {
+      searchRef.current?.focus();
+    }
+  }, [open, adminImpersonating]);
 
   if (profiles.length === 0 || (compact && !activeProfileId)) {
     return null;
@@ -60,7 +98,6 @@ export function ProfileSwitcher({
   function selectProfile(profileId: string) {
     if (profileId === activeProfileId) {
       setOpen(false);
-      // From onboarding, even the already-active profile must leave the wizard.
       if (isOnboarding) {
         router.push("/pulpit");
       }
@@ -80,6 +117,12 @@ export function ProfileSwitcher({
     });
   }
 
+  const triggerMeta = adminImpersonating
+    ? `Tryb admina · ${ownerEmail?.trim() || "konto klienta"}`
+    : `${profileCountLabel(profiles.length)}${
+        active?.location ? ` · ${active.location}` : ""
+      }`;
+
   return (
     <div
       className={compact ? "profile-menu profile-menu-end" : "profile-menu"}
@@ -98,18 +141,13 @@ export function ProfileSwitcher({
           </>
         ) : (
           <>
-            {adminImpersonating ? (
-              <span className="profile-switcher-label">
-                <span className="ui-pill ui-pill-warn">admin</span>
+            <span className="profile-switcher-copy">
+              <span className="profile-switcher-value">
+                {active?.name ?? "Brak profilu"}
               </span>
-            ) : null}
-            <span className="profile-switcher-value">
-              {active?.name ?? "Brak profilu"}
+              <span className="profile-switcher-sub">{triggerMeta}</span>
             </span>
-            {adminImpersonating && ownerEmail ? (
-              <span className="profile-switcher-sub">{ownerEmail}</span>
-            ) : null}
-            <ChevronDown className="profile-switcher-icon" aria-hidden />
+            <ChevronsUpDown className="profile-switcher-icon" aria-hidden />
           </>
         )}
       </button>
@@ -117,51 +155,87 @@ export function ProfileSwitcher({
       {open ? (
         <div className="profile-menu-panel" role="menu">
           {adminImpersonating ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="profile-menu-admin-exit"
-              disabled={pending}
-              onClick={() => {
-                startTransition(async () => {
-                  await exitAdminMode();
-                });
-              }}
-            >
-              Wróć do panelu admina
-            </button>
+            <p className="profile-menu-section">
+              Profile klienta · {profiles.length}
+            </p>
           ) : null}
-          {profiles.map((profile) => (
-            <button
-              key={profile.id}
-              type="button"
-              className={
-                profile.id === activeProfileId
-                  ? "profile-menu-option active"
-                  : "profile-menu-option"
-              }
-              role="menuitem"
-              disabled={pending}
-              onClick={() => selectProfile(profile.id)}
-            >
-              <span className="profile-menu-name">{profile.name}</span>
-              {profile.location ? (
-                <span className="profile-menu-loc">{profile.location}</span>
-              ) : null}
-            </button>
-          ))}
+
           {!adminImpersonating ? (
-            <form action={startFreshAddProfile}>
-              <button
-                type="submit"
-                className="profile-menu-add"
-                role="menuitem"
-                disabled={pending}
-              >
-                <Plus aria-hidden />
-                Dodaj profil
-              </button>
-            </form>
+            <div className="ui-search profile-menu-search">
+              <Search aria-hidden className="ui-search-icon" />
+              <input
+                ref={searchRef}
+                type="search"
+                className="ui-field ui-search-input"
+                placeholder="Szukaj profilu"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Szukaj profilu"
+              />
+            </div>
+          ) : null}
+
+          <div className="profile-menu-list">
+            {filtered.length === 0 ? (
+              <p className="profile-menu-empty">
+                {compact && !query.trim()
+                  ? "Brak innych profili"
+                  : "Brak wyników"}
+              </p>
+            ) : (
+              filtered.map((profile) => (
+                <button
+                  key={profile.id}
+                  type="button"
+                  className={
+                    profile.id === activeProfileId
+                      ? "profile-menu-option active"
+                      : "profile-menu-option"
+                  }
+                  role="menuitem"
+                  disabled={pending}
+                  onClick={() => selectProfile(profile.id)}
+                >
+                  <span className="profile-menu-name">{profile.name}</span>
+                  {profile.location ? (
+                    <span className="profile-menu-loc">{profile.location}</span>
+                  ) : null}
+                </button>
+              ))
+            )}
+          </div>
+
+          {adminImpersonating || !compact ? (
+            <div className="profile-menu-foot">
+              {adminImpersonating ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="profile-menu-admin-exit"
+                  disabled={pending}
+                  onClick={() => {
+                    startTransition(async () => {
+                      await exitAdminMode();
+                    });
+                  }}
+                >
+                  <ArrowLeft aria-hidden />
+                  Wróć do panelu admina
+                </button>
+              ) : (
+                <form action={startFreshAddProfile}>
+                  <button
+                    type="submit"
+                    className="profile-menu-add"
+                    role="menuitem"
+                    disabled={pending}
+                  >
+                    <Plus aria-hidden />
+                    Dodaj profil
+                  </button>
+                </form>
+              )}
+            </div>
           ) : null}
         </div>
       ) : null}

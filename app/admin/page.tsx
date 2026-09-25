@@ -21,7 +21,7 @@ export default async function AdminPage() {
     <div className="admin-page">
       <header className="page-header">
         <div>
-          <p className="split-step">PANEL WEWNĘTRZNY</p>
+          <p className="page-header-kicker">Panel wewnętrzny</p>
           <h1>Panel wewnętrzny</h1>
           <p>
             Konta klientów i zgłoszenia - wejście bez hasła, tylko dla zespołu.

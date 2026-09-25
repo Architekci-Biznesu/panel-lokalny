@@ -15,13 +15,15 @@ export default async function AdminLayout({
       <header className="admin-topbar">
         <Link href="/admin" className="admin-brand">
           <span className="sidebar-brand-mark">PL</span>
-          <span>
-            <strong>Panel Lokalny</strong>
-            <span className="admin-brand-sub">admin</span>
+          <span className="sidebar-brand-text">
+            <span className="sidebar-brand-name">Panel Lokalny</span>
+            <span className="sidebar-brand-sub">admin</span>
           </span>
         </Link>
         <div className="admin-topbar-user">
-          <span>{session?.user?.email ?? ""}</span>
+          {session?.user?.email ? (
+            <span className="admin-topbar-email">{session.user.email}</span>
+          ) : null}
           <form action={logoutAction}>
             <button type="submit" className="ui-btn ui-btn-ghost ui-btn-sm">
               <LogOut aria-hidden />
@@ -30,7 +32,7 @@ export default async function AdminLayout({
           </form>
         </div>
       </header>
-      <main className="admin-main">{children}</main>
+      <main className="admin-main app-canvas-dots">{children}</main>
     </div>
   );
 }

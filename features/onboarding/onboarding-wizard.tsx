@@ -310,7 +310,7 @@ export function OnboardingWizard({
           </div>
         )}
 
-        <div className="onboarding-actions">
+        <div className="onboarding-actions onboarding-actions-solo">
           <button
             type="button"
             className="ui-btn ui-btn-primary"
