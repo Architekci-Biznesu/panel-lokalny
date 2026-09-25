@@ -10,23 +10,23 @@ Cel: ten sam look & feel co Heio (czarne CTA, fiolet tylko jako accent, te same 
 ## P0 - wizualne „odjechanie” (zrób najpierw)
 
 ### 1. Primary CTA = czarny, nie fiolet
-- [ ] `.ui-btn-primary` → `background: var(--primary); color: var(--primary-foreground)`
-- [ ] Hover primary → lekko jaśniejszy/ciemniejszy czarny (jak Heio), **nie** `--brand-deep`
-- [ ] Usunąć nadpisania `.wiz-page .ui-btn-primary` (też brand)
+- [x] `.ui-btn-primary` → `background: var(--primary); color: var(--primary-foreground)`
+- [x] Hover primary → lekko jaśniejszy/ciemniejszy czarny (jak Heio), **nie** `--brand-deep`
+- [x] Usunąć nadpisania `.wiz-page .ui-btn-primary` (też brand)
 - [ ] Przejrzeć miejsca, gdzie „główna akcja” jest fioletowa poza `.ui-btn-primary` (linki CTA, big buttons w onboardingu „Dalej” jeśli mają zostać brand - decyzja produktowa: Heio = czarny)
 
 ### 2. Canvas background
-- [ ] `--background: #fafafa` (dziś `#f5f5f6`)
-- [ ] Zsynchronizować `.app-canvas-dots` / admin, żeby nie walczyły z nowym tłem
-- [ ] Zaktualizować `docs/panel-lokalny-zasady-aplikacji.md` jeśli w kodzie jest inaczej niż w docs
+- [x] `--background: #fafafa` (dziś `#f5f5f6`)
+- [x] Zsynchronizować `.app-canvas-dots` / admin, żeby nie walczyły z nowym tłem
+- [x] Zaktualizować `docs/panel-lokalny-zasady-aplikacji.md` jeśli w kodzie jest inaczej niż w docs
 
 ### 3. Tytuły sekcji jak Heio (~15px), nie 18px
-- [ ] `.ui-section-title` → `font-size: 0.9375rem` (albo `var(--type-md)` = 15px)
-- [ ] `.ui-section-desc` → `0.75rem` / `var(--type-xs)` (dziś często `--type-sm` 13px)
+- [x] `.ui-section-title` → `font-size: 0.9375rem` (albo `var(--type-md)` = 15px)
+- [x] `.ui-section-desc` → `0.75rem` / `var(--type-xs)` (dziś często `--type-sm` 13px)
 
 ### 4. `ui-btn-sm` jak Heio
-- [ ] Height `1.75rem` (28px - już `--btn-height-sm`)
-- [ ] Font-size `0.8rem` (~12.8px), nie `var(--type-base)` 14px
+- [x] Height `1.75rem` (28px - już `--btn-height-sm`)
+- [x] Font-size `0.8rem` (~12.8px), nie `var(--type-base)` 14px
 
 ---
 

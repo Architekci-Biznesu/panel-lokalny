@@ -40,6 +40,8 @@ Wygląd aplikacji ma odpowiadać makiecie (https://claude.ai/artifact/Wn2ZrSXrAJ
 
 Fonty: Montserrat (tekst), JetBrains Mono (liczby, daty, wartości - `.mono` z `font-variant-numeric:tabular-nums`). Font podstawowy 14px (`0.875rem`), line-height 1.4.
 
+**Primary CTA:** `.ui-btn-primary` używa `--primary` (czarny `#171717`), nie fioletu. Fiolet (`--brand` / `--brand-deep` / `--brand-soft`) to accent: focus ring, logo, soft fills, pills, aktywne ikony nawigacji - zgodnie z Heio Design System.
+
 Ikony: obrys (nie wypełnienie), `stroke-width:2`, zaokrąglone końce (`stroke-linecap:round`) - biblioteka typu Lucide pasuje 1:1 do tego stylu.
 
 **Skala promieni zaokrągleń** - konsekwentnie pochodna jednego `--radius` (0.5rem), nie dowolne wartości:
