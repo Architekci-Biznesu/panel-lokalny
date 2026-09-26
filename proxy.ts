@@ -17,8 +17,7 @@ async function readIsStaff(userId: string | undefined): Promise<boolean> {
 export const proxy = auth(async (req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
-  const isAuthPage =
-    pathname === "/logowanie" || pathname === "/rejestracja";
+  const isAuthPage = pathname === "/logowanie" || pathname === "/rejestracja";
   const isApi = pathname.startsWith("/api");
   const isAuthApi = pathname.startsWith("/api/auth");
   const isOnboarding = pathname === "/onboarding";

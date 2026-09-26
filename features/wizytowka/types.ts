@@ -171,9 +171,11 @@ export function formatAddress(addr?: GbpPostalAddress): string {
   return parts.join(", ");
 }
 
-export function formatOpeningDate(
-  date?: { year?: number; month?: number; day?: number },
-): string {
+export function formatOpeningDate(date?: {
+  year?: number;
+  month?: number;
+  day?: number;
+}): string {
   if (!date?.year) return "";
   const m = date.month ? String(date.month).padStart(2, "0") : "01";
   const d = date.day ? String(date.day).padStart(2, "0") : "01";

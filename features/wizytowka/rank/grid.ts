@@ -26,8 +26,7 @@ export function buildRankGrid(input: {
   const totalPoints = gridSize * gridSize;
   const latDegPerKm = 1 / 111;
   const cosLat = Math.cos((lat * Math.PI) / 180);
-  const lngDegPerKm =
-    Math.abs(cosLat) < 1e-6 ? 1 / 111 : 1 / (111 * cosLat);
+  const lngDegPerKm = Math.abs(cosLat) < 1e-6 ? 1 / 111 : 1 / (111 * cosLat);
 
   const points: GridPoint[] = [
     {

@@ -10,10 +10,7 @@ import {
   parseTime,
   type ServiceItemDraft,
 } from "@/features/wizytowka/types";
-import {
-  GBP_DESCRIPTION_MAX,
-  clampTextToLimit,
-} from "@/lib/ai/gbp-limits";
+import { GBP_DESCRIPTION_MAX, clampTextToLimit } from "@/lib/ai/gbp-limits";
 import { db } from "@/lib/db";
 import {
   gbpSuggestions,
@@ -160,7 +157,9 @@ export async function updateGbpServices(input: unknown): Promise<ActionResult> {
 }
 
 const openInfoSchema = z.object({
-  status: z.enum(["OPEN", "CLOSED_TEMPORARILY", "CLOSED_PERMANENTLY"]).optional(),
+  status: z
+    .enum(["OPEN", "CLOSED_TEMPORARILY", "CLOSED_PERMANENTLY"])
+    .optional(),
   openingDate: z
     .object({
       year: z.number().int().min(1800).max(2100),
@@ -500,7 +499,10 @@ export async function rejectGbpSuggestion(
       .limit(1);
 
     if (!suggestion || suggestion.status !== "pending") {
-      return { ok: false, error: "Propozycja nie istnieje lub jest nieaktualna" };
+      return {
+        ok: false,
+        error: "Propozycja nie istnieje lub jest nieaktualna",
+      };
     }
 
     await db
@@ -564,7 +566,10 @@ export async function acceptGbpSuggestion(
       .limit(1);
 
     if (!suggestion || suggestion.status !== "pending") {
-      return { ok: false, error: "Propozycja nie istnieje lub jest nieaktualna" };
+      return {
+        ok: false,
+        error: "Propozycja nie istnieje lub jest nieaktualna",
+      };
     }
 
     if (suggestion.risk === "high" && !parsed.data.riskAcknowledged) {
@@ -588,7 +593,9 @@ export async function acceptGbpSuggestion(
 
     switch (suggestion.field) {
       case "title": {
-        await patchGbpLocation(token, locationName, { title: value }, ["title"]);
+        await patchGbpLocation(token, locationName, { title: value }, [
+          "title",
+        ]);
         break;
       }
       case "description": {
@@ -646,8 +653,7 @@ export async function acceptGbpSuggestion(
         if (location.metadata?.canModifyServiceList === false) {
           return {
             ok: false,
-            error:
-              "Ta lokalizacja nie pozwala edytować listy usług w Google.",
+            error: "Ta lokalizacja nie pozwala edytować listy usług w Google.",
           };
         }
         const drafts = JSON.parse(value) as ServiceItemDraft[];

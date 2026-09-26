@@ -26,9 +26,7 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
         </p>
       ) : null}
 
-      {data.loadError ? (
-        <p className="locked-note">{data.loadError}</p>
-      ) : null}
+      {data.loadError ? <p className="locked-note">{data.loadError}</p> : null}
 
       <div className="pulpit-grid">
         <div className="pulpit-span-7">

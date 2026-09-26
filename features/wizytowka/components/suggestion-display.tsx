@@ -42,8 +42,7 @@ export function normalizeServicesForPreview(value: string): ServiceDraft[] {
     const item = raw as Record<string, unknown>;
     if (item.structuredServiceItem || item.freeFormServiceItem) {
       const structured = item.structuredServiceItem as
-        | { serviceTypeId?: string; description?: string }
-        | undefined;
+        { serviceTypeId?: string; description?: string } | undefined;
       const free = item.freeFormServiceItem as
         | {
             category?: string;

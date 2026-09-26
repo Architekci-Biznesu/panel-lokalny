@@ -23,7 +23,10 @@ import {
 } from "@/lib/integrations/gbp/client";
 import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/access";
 import { requireOwnedProfile } from "@/lib/session";
-import { parseLocation, serviceItemsToDrafts } from "@/features/wizytowka/types";
+import {
+  parseLocation,
+  serviceItemsToDrafts,
+} from "@/features/wizytowka/types";
 
 function normalizeSuggestionValue(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -66,7 +69,9 @@ function servicesFingerprint(value: string): string | null {
         typeof item === "object" &&
         ("structuredServiceItem" in item || "freeFormServiceItem" in item),
     )
-      ? serviceItemsToDrafts(parsed as Parameters<typeof serviceItemsToDrafts>[0])
+      ? serviceItemsToDrafts(
+          parsed as Parameters<typeof serviceItemsToDrafts>[0],
+        )
       : (parsed as Array<{
           kind?: string;
           serviceTypeId?: string;
@@ -117,7 +122,9 @@ function isNoopSuggestion(
     return left === right;
   }
 
-  return normalizeSuggestionValue(current) === normalizeSuggestionValue(suggested);
+  return (
+    normalizeSuggestionValue(current) === normalizeSuggestionValue(suggested)
+  );
 }
 
 function currentValueForField(
@@ -365,7 +372,9 @@ async function executeAudit(profile: Profile): Promise<void> {
         }
         const invalid = items.some((item) => {
           if (item.kind === "structured") {
-            return !item.serviceTypeId || !serviceTypeSet.has(item.serviceTypeId);
+            return (
+              !item.serviceTypeId || !serviceTypeSet.has(item.serviceTypeId)
+            );
           }
           const name = item.displayName ?? "";
           const desc = item.description ?? "";

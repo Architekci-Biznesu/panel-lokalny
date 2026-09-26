@@ -76,9 +76,10 @@ export function OnboardingWizard({
   const scrapeWarned = useRef(false);
   const gbpToasted = useRef(false);
 
-  const step = initialDraft.step === "2" || initialDraft.step === "3"
-    ? initialDraft.step
-    : "1";
+  const step =
+    initialDraft.step === "2" || initialDraft.step === "3"
+      ? initialDraft.step
+      : "1";
 
   // Step 1
   const [path, setPath] = useState<"website" | "manual">(
@@ -132,7 +133,8 @@ export function OnboardingWizard({
     const q = locationQuery.trim().toLowerCase();
     if (!q) return initialDraft.pendingLocations;
     return initialDraft.pendingLocations.filter((loc) => {
-      const haystack = `${loc.title} ${loc.storefrontAddress ?? ""}`.toLowerCase();
+      const haystack =
+        `${loc.title} ${loc.storefrontAddress ?? ""}`.toLowerCase();
       return haystack.includes(q);
     });
   }, [initialDraft.pendingLocations, locationQuery]);
@@ -383,7 +385,9 @@ export function OnboardingWizard({
             <div className="brief-regen-status" role="status">
               <span>Generuję nowy brief</span>
               <span className="brief-regen-dots" aria-hidden>
-                <i /><i /><i />
+                <i />
+                <i />
+                <i />
               </span>
             </div>
           ) : null}
@@ -651,7 +655,8 @@ export function OnboardingWizard({
                 startTransition(async () => {
                   toast.success({
                     title: "Onboarding zakończony",
-                    description: "Możesz wrócić do Google później w ustawieniach.",
+                    description:
+                      "Możesz wrócić do Google później w ustawieniach.",
                   });
                   await skipGbpAndFinish(mode);
                 });

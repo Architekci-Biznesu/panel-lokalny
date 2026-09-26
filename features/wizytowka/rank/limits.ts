@@ -1,8 +1,5 @@
 import { and, eq, gte, lt } from "drizzle-orm";
-import {
-  RANK_STALE_RUNNING_MS,
-  RANK_TIMEZONE,
-} from "@/lib/config/rank-limits";
+import { RANK_STALE_RUNNING_MS, RANK_TIMEZONE } from "@/lib/config/rank-limits";
 import { db } from "@/lib/db";
 import { rankScans, type RankScan } from "@/lib/db/schema";
 

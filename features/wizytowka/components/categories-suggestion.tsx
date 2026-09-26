@@ -2,14 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import {
-  Check,
-  Loader2,
-  Pencil,
-  Star,
-  WandSparkles,
-  X,
-} from "lucide-react";
+import { Check, Loader2, Pencil, Star, WandSparkles, X } from "lucide-react";
 import { toast } from "gooey-toast";
 import {
   acceptGbpSuggestion,
@@ -37,10 +30,7 @@ function chipLabel(
   options: Array<{ name: string; displayName: string }>,
   fallbackDisplay?: string | null,
 ) {
-  return (
-    fallbackDisplay?.trim() ||
-    resolveCategoryDisplay(name, options)
-  );
+  return fallbackDisplay?.trim() || resolveCategoryDisplay(name, options);
 }
 
 export function CategoriesSuggestion({
@@ -57,8 +47,7 @@ export function CategoriesSuggestion({
   const [reason, setReason] = useState("");
 
   const currentPrimaryName = primary?.name ?? "";
-  const currentPrimaryLabel =
-    primary?.displayName ?? primary?.name ?? null;
+  const currentPrimaryLabel = primary?.displayName ?? primary?.name ?? null;
   const currentAdditionalNames = additional
     .map((c) => c.name)
     .filter((n): n is string => Boolean(n));
@@ -67,8 +56,8 @@ export function CategoriesSuggestion({
     ? primarySuggestion.suggestedValue.trim()
     : currentPrimaryName;
   const suggestedAdditional = additionalSuggestion
-    ? ((parseJsonArray(additionalSuggestion.suggestedValue) as string[] | null) ??
-      [])
+    ? ((parseJsonArray(additionalSuggestion.suggestedValue) as
+        string[] | null) ?? [])
     : currentAdditionalNames;
 
   const [draftPrimary, setDraftPrimary] = useState(suggestedPrimary);
@@ -90,9 +79,7 @@ export function CategoriesSuggestion({
     (n) => !newAdditionalSet.has(n),
   );
   const primaryChanged =
-    nextPrimary &&
-    currentPrimaryName &&
-    nextPrimary !== currentPrimaryName;
+    nextPrimary && currentPrimaryName && nextPrimary !== currentPrimaryName;
 
   const pendingIds = [primarySuggestion?.id, additionalSuggestion?.id].filter(
     (id): id is string => Boolean(id),
@@ -317,7 +304,8 @@ export function CategoriesSuggestion({
         {rejectOpen ? (
           <div className="wiz-reject-box">
             <label className="text-sm font-medium" htmlFor="reject-categories">
-              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać” w kontekście)
+              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać” w
+              kontekście)
             </label>
             <textarea
               id="reject-categories"

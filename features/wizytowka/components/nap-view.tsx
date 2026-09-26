@@ -77,10 +77,7 @@ const SAMPLE_NAP_ENTRIES: SampleNapEntry[] = [
   },
 ];
 
-const STATUS_META: Record<
-  NapStatus,
-  { label: string; pill: string }
-> = {
+const STATUS_META: Record<NapStatus, { label: string; pill: string }> = {
   published: { label: "Opublikowany", pill: "ui-pill ui-pill-success" },
   in_progress: { label: "W trakcie", pill: "ui-pill ui-pill-warn" },
   pending: { label: "Oczekuje", pill: "ui-pill ui-pill-neutral" },
@@ -161,9 +158,7 @@ export function NapView({ requestsCount }: { requestsCount: number }) {
 
         <aside className="wiz-nap-cta">
           <span className="ui-pill ui-pill-neutral">Status</span>
-          <h3 className="wiz-nap-cta-title">
-            Więcej wpisów = spójniejszy NAP
-          </h3>
+          <h3 className="wiz-nap-cta-title">Więcej wpisów = spójniejszy NAP</h3>
           <p className="wiz-nap-cta-copy">
             {requestsCount > 0
               ? `Zgłoszono zainteresowanie (${requestsCount}). Skontaktujemy się w sprawie realizacji.`

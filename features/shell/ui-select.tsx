@@ -72,7 +72,11 @@ export function UiSelect({
       </button>
 
       {open ? (
-        <ul className="ui-select-menu" role="listbox" aria-labelledby={selectId}>
+        <ul
+          className="ui-select-menu"
+          role="listbox"
+          aria-labelledby={selectId}
+        >
           {options.map((option) => {
             const isSelected = option.value === value;
             return (

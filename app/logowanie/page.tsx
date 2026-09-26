@@ -1,8 +1,5 @@
 import { LoginForm } from "@/features/auth/auth-forms";
-import {
-  AuthAltTop,
-  SplitScreenLayout,
-} from "@/features/shell/split-screen";
+import { AuthAltTop, SplitScreenLayout } from "@/features/shell/split-screen";
 
 export default function LoginPage() {
   return (
@@ -25,7 +22,8 @@ export default function LoginPage() {
     >
       <h1>Logowanie</h1>
       <p className="split-right-lead">
-        Zaloguj się, żeby zarządzać stroną, wizytówką, publikacjami i kampaniami.
+        Zaloguj się, żeby zarządzać stroną, wizytówką, publikacjami i
+        kampaniami.
       </p>
       <LoginForm />
     </SplitScreenLayout>

@@ -25,9 +25,7 @@ export async function getActiveGbpProfile(): Promise<Profile> {
 
 export function isGbpUnauthenticatedError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : "";
-  return (
-    message.includes("UNAUTHENTICATED") || message.includes('"code": 401')
-  );
+  return message.includes("UNAUTHENTICATED") || message.includes('"code": 401');
 }
 
 /** Returns a fresh access token for the profile's OAuth connection. */

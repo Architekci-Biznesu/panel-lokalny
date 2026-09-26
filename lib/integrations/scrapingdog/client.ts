@@ -22,7 +22,10 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return null;
 }
 
-function readString(obj: Record<string, unknown>, ...keys: string[]): string | null {
+function readString(
+  obj: Record<string, unknown>,
+  ...keys: string[]
+): string | null {
   for (const key of keys) {
     const value = obj[key];
     if (typeof value === "string" && value.trim()) return value.trim();
@@ -30,7 +33,10 @@ function readString(obj: Record<string, unknown>, ...keys: string[]): string | n
   return null;
 }
 
-function readNumber(obj: Record<string, unknown>, ...keys: string[]): number | null {
+function readNumber(
+  obj: Record<string, unknown>,
+  ...keys: string[]
+): number | null {
   for (const key of keys) {
     const value = obj[key];
     if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -122,12 +128,15 @@ export async function mapsSearch(input: {
   lng: number;
   zoom: number;
 }): Promise<ScrapingDogPlaceResult[]> {
-  const data = await getJsonWithRetry("https://api.scrapingdog.com/google_maps", {
-    api_key: getApiKey(),
-    query: input.query,
-    ll: `@${input.lat},${input.lng},${input.zoom}z`,
-    country: "pl",
-  });
+  const data = await getJsonWithRetry(
+    "https://api.scrapingdog.com/google_maps",
+    {
+      api_key: getApiKey(),
+      query: input.query,
+      ll: `@${input.lat},${input.lng},${input.zoom}z`,
+      country: "pl",
+    },
+  );
 
   const root = asRecord(data) ?? {};
   const list =
@@ -214,8 +223,7 @@ export async function localSearch(input: {
     });
   } catch (error) {
     throw (
-      lastError ??
-      (error instanceof Error ? error : new Error(String(error)))
+      lastError ?? (error instanceof Error ? error : new Error(String(error)))
     );
   }
 }

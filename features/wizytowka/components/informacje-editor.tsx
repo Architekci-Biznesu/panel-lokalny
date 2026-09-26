@@ -187,10 +187,7 @@ function CategoriesFieldRow({
     .filter((n): n is string => Boolean(n));
 
   return (
-    <div
-      id="wiz-field-primary_category"
-      className="wiz-field-row"
-    >
+    <div id="wiz-field-primary_category" className="wiz-field-row">
       <span id="wiz-field-additional_categories" className="sr-only" />
       <div className="wiz-field-label">Kategorie</div>
       <div className="wiz-field-content">
@@ -467,9 +464,11 @@ function openStatusLabel(status?: string): string {
   );
 }
 
-function displayOpeningDate(
-  date?: { year?: number; month?: number; day?: number },
-): string {
+function displayOpeningDate(date?: {
+  year?: number;
+  month?: number;
+  day?: number;
+}): string {
   const iso = formatOpeningDate(date);
   if (!iso) return "";
   const [year, month, day] = iso.split("-");
@@ -711,7 +710,11 @@ function CategoriesEditor({
 
 function SaveButton({ pending }: { pending: boolean }) {
   return (
-    <button type="submit" className="ui-btn ui-btn-primary ui-btn-sm" disabled={pending}>
+    <button
+      type="submit"
+      className="ui-btn ui-btn-primary ui-btn-sm"
+      disabled={pending}
+    >
       {pending ? <Loader2 aria-hidden className="ui-btn-spinner" /> : null}
       Zapisz w Google
     </button>

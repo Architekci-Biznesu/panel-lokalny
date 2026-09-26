@@ -71,9 +71,9 @@ function storedScrape(scrape: ScrapeResult) {
 function draftHasSource(draft: OnboardingDraft) {
   return Boolean(
     draft.profileName ||
-      draft.scrapeText ||
-      draft.websiteUrl ||
-      draft.manualDescription,
+    draft.scrapeText ||
+    draft.websiteUrl ||
+    draft.manualDescription,
   );
 }
 
@@ -134,7 +134,8 @@ export async function loadOnboardingState(modeRaw: string | undefined) {
       tone: draft.tone ?? "",
       targetAudience: draft.targetAudience ?? "",
       differentiators: draft.differentiators ?? "",
-      pendingLocations: (draft.pendingGbpLocations as GbpLocation[] | null) ?? [],
+      pendingLocations:
+        (draft.pendingGbpLocations as GbpLocation[] | null) ?? [],
       hasConnection: !!draft.oauthConnectionId,
     },
     profiles: accountProfiles,
@@ -155,15 +156,17 @@ const step1Schema = z.discriminatedUnion("path", [
 ]);
 
 export type StepResult =
-  | { ok: true; warning?: string }
-  | { ok: false; error: string };
+  { ok: true; warning?: string } | { ok: false; error: string };
 
 export async function submitOnboardingStep1(
   input: z.infer<typeof step1Schema>,
 ): Promise<StepResult> {
   const parsed = step1Schema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Błąd walidacji" };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Błąd walidacji",
+    };
   }
 
   const accountId = await getActiveAccountId();
@@ -186,7 +189,9 @@ export async function submitOnboardingStep1(
     else {
       try {
         profileName = new URL(
-          /^https?:\/\//i.test(websiteUrl) ? websiteUrl : `https://${websiteUrl}`,
+          /^https?:\/\//i.test(websiteUrl)
+            ? websiteUrl
+            : `https://${websiteUrl}`,
         ).hostname.replace(/^www\./, "");
       } catch {
         profileName = websiteUrl.slice(0, 120);
@@ -224,7 +229,9 @@ export async function submitOnboardingStep1(
   try {
     const provider = getTextProvider();
     const brief = await provider.generateBrief({
-      sourceText: scrapeText || "Brak materiału źródłowego - zaproponuj ogólny brief dla lokalnej firmy.",
+      sourceText:
+        scrapeText ||
+        "Brak materiału źródłowego - zaproponuj ogólny brief dla lokalnej firmy.",
       websiteUrl,
       companyNameHint: profileName,
     });
@@ -327,7 +334,10 @@ export async function saveBriefAndContinue(
 ): Promise<StepResult> {
   const parsed = briefSaveSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Błąd walidacji" };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Błąd walidacji",
+    };
   }
 
   const draft = await getDraft(parsed.data.mode);
@@ -351,7 +361,10 @@ export async function saveBriefAndContinue(
   return { ok: true };
 }
 
-export async function goToOnboardingStep(modeRaw: string, step: "1" | "2" | "3") {
+export async function goToOnboardingStep(
+  modeRaw: string,
+  step: "1" | "2" | "3",
+) {
   const mode = modeSchema.parse(modeRaw);
   const draft = await getDraft(mode);
   await db
@@ -437,9 +450,7 @@ export async function skipGbpAndFinish(modeRaw: string) {
   await unstable_update({
     user: { activeProfileId: created.id },
   });
-  await db
-    .delete(onboardingDrafts)
-    .where(eq(onboardingDrafts.id, draft.id));
+  await db.delete(onboardingDrafts).where(eq(onboardingDrafts.id, draft.id));
 
   redirect("/pulpit");
 }
@@ -467,7 +478,10 @@ export async function confirmGbpLocations(
 ): Promise<StepResult> {
   const parsed = confirmLocationsSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Błąd walidacji" };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Błąd walidacji",
+    };
   }
 
   const accountId = await getActiveAccountId();
@@ -528,10 +542,8 @@ export async function confirmGbpLocations(
 
   const { decryptSecret } = await import("@/lib/crypto/secrets");
   const { oauthConnections } = await import("@/lib/db/schema");
-  const {
-    fetchGbpLocationDetails,
-    refreshGbpAccessToken,
-  } = await import("@/lib/integrations/gbp/client");
+  const { fetchGbpLocationDetails, refreshGbpAccessToken } =
+    await import("@/lib/integrations/gbp/client");
 
   const [connection] = await db
     .select()
@@ -549,11 +561,16 @@ export async function confirmGbpLocations(
   }
 
   let accessToken = decryptSecret(connection.encryptedAccessToken);
-  if (connection.expiresAt && connection.expiresAt.getTime() < Date.now() + 60_000) {
+  if (
+    connection.expiresAt &&
+    connection.expiresAt.getTime() < Date.now() + 60_000
+  ) {
     if (!connection.encryptedRefreshToken) {
       return { ok: false, error: "Sesja Google wygasła - połącz ponownie" };
     }
-    const refreshed = await refreshGbpAccessToken(connection.encryptedRefreshToken);
+    const refreshed = await refreshGbpAccessToken(
+      connection.encryptedRefreshToken,
+    );
     const { sealTokens } = await import("@/lib/integrations/gbp/client");
     const sealed = sealTokens(refreshed);
     await db

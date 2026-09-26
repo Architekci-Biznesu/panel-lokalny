@@ -2,7 +2,10 @@ import { GbpPreviewCard } from "@/features/wizytowka/components/gbp-preview-card
 import { LastAnalysisLabel } from "@/features/wizytowka/components/last-analysis-label";
 import { ProposalCards } from "@/features/wizytowka/components/proposal-cards";
 import { WizytowkaSubnav } from "@/features/wizytowka/components/wizytowka-subnav";
-import { computeCompleteness, GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
+import {
+  computeCompleteness,
+  GBP_PHOTO_MIN,
+} from "@/features/wizytowka/completeness";
 import { loadActiveGbpBundle } from "@/features/wizytowka/load-location";
 import { getUpcomingHolidayHint } from "@/features/wizytowka/polish-holidays";
 import {
@@ -50,10 +53,7 @@ export default async function WizytowkaLayout({
         bundle.locationName,
       );
       photoCount = countGbpOwnerPhotos(media.owner);
-      photoUrls = pickGbpCollageUrls(
-        [...media.owner, ...media.customers],
-        6,
-      );
+      photoUrls = pickGbpCollageUrls([...media.owner, ...media.customers], 6);
     } catch {
       photoUrls = [];
       photoCount = 0;
@@ -68,7 +68,7 @@ export default async function WizytowkaLayout({
       lastAnalyzedAt:
         bundle.latestAuditRun?.status === "done"
           ? bundle.latestAuditRun.finishedAt
-          : bundle.latestAuditRun?.startedAt ?? null,
+          : (bundle.latestAuditRun?.startedAt ?? null),
     });
     pendingSuggestions = uniquePendingByField(bundle.pendingSuggestions);
     tabCounts = countSuggestionsByTab(bundle.pendingSuggestions);

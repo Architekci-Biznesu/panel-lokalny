@@ -33,7 +33,8 @@ type ActionFail = { ok: false; error: string };
 function fail(error: unknown): ActionFail {
   return {
     ok: false,
-    error: error instanceof Error ? error.message : "Nie udało się wykonać akcji",
+    error:
+      error instanceof Error ? error.message : "Nie udało się wykonać akcji",
   };
 }
 
@@ -107,9 +108,7 @@ export async function addRankKeyword(input: unknown): Promise<
           .where(eq(rankKeywords.profileId, profile.id))
       : [];
     if (
-      duplicate.some(
-        (row) => row.phrase.toLowerCase() === phrase.toLowerCase(),
-      )
+      duplicate.some((row) => row.phrase.toLowerCase() === phrase.toLowerCase())
     ) {
       return { ok: false, error: "Ta fraza jest już na liście" };
     }
@@ -138,9 +137,9 @@ export async function addRankKeyword(input: unknown): Promise<
   }
 }
 
-export async function removeRankKeyword(input: unknown): Promise<
-  { ok: true } | ActionFail
-> {
+export async function removeRankKeyword(
+  input: unknown,
+): Promise<{ ok: true } | ActionFail> {
   const parsed = keywordIdSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "Nieprawidłowa fraza" };
@@ -213,7 +212,8 @@ export async function startRankScan(
     if (await hasDoneScanTodayForKeyword(profile.id, keyword.id)) {
       return {
         ok: false,
-        error: "Dziś już wykonano skan tej frazy - kolejny będzie dostępny jutro",
+        error:
+          "Dziś już wykonano skan tej frazy - kolejny będzie dostępny jutro",
       };
     }
 
@@ -255,9 +255,7 @@ export async function startRankScan(
   }
 }
 
-export async function getRankScanStatus(
-  input: unknown,
-): Promise<
+export async function getRankScanStatus(input: unknown): Promise<
   | {
       ok: true;
       scan: Pick<

@@ -80,10 +80,7 @@ function Editable({
             className="wiz-inline-link mono"
           >
             {displayUrl(uri)}
-            <SquareArrowOutUpRight
-              aria-hidden
-              className="wiz-ext-link-icon"
-            />
+            <SquareArrowOutUpRight aria-hidden className="wiz-ext-link-icon" />
           </a>
         ) : (
           <span className="mono text-muted-foreground">-</span>

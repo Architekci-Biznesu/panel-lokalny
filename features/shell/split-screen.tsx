@@ -47,11 +47,7 @@ function userInitials(name: string) {
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
 }
 
-function FormUserChip({
-  user,
-}: {
-  user: { name: string; email: string };
-}) {
+function FormUserChip({ user }: { user: { name: string; email: string } }) {
   return (
     <div className="split-form-user">
       <div className="split-form-user-text">

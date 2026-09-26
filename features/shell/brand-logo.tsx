@@ -21,7 +21,14 @@ export function BrandLogo({ className }: { className?: string }) {
             <stop offset="1" stopColor="#a5b4fc" />
           </linearGradient>
         </defs>
-        <rect x="7" y="5" width="11" height="38" rx="5.5" fill="url(#pl-logo-stem)" />
+        <rect
+          x="7"
+          y="5"
+          width="11"
+          height="38"
+          rx="5.5"
+          fill="url(#pl-logo-stem)"
+        />
         <circle
           cx="27"
           cy="17"

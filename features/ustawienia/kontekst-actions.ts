@@ -29,8 +29,7 @@ const briefSchema = z.object({
 });
 
 export type SaveKontekstResult =
-  | { ok: true; suggestReaudit: boolean }
-  | { ok: false; error: string };
+  { ok: true; suggestReaudit: boolean } | { ok: false; error: string };
 
 export async function saveKontekstAction(
   input: unknown,

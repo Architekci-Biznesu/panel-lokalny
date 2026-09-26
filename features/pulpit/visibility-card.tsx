@@ -73,7 +73,11 @@ export function VisibilityCard({
             <p className="pulpit-card-lead">Ten tydzień vs poprzedni</p>
           </div>
 
-          <div className="pulpit-lollipop" role="img" aria-label="Wykres tygodnia">
+          <div
+            className="pulpit-lollipop"
+            role="img"
+            aria-label="Wykres tygodnia"
+          >
             {days.map((day) => {
               const isActive = day.date === selected;
               const height = `${Math.max(8, (day.value / max) * 100)}%`;
@@ -94,10 +98,7 @@ export function VisibilityCard({
                     <span className="pulpit-lollipop-tip-spacer" aria-hidden />
                   )}
                   <span className="pulpit-lollipop-stem-wrap">
-                    <span
-                      className="pulpit-lollipop-stem"
-                      style={{ height }}
-                    >
+                    <span className="pulpit-lollipop-stem" style={{ height }}>
                       <span className="pulpit-lollipop-dot" />
                     </span>
                   </span>

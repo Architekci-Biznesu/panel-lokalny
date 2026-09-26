@@ -50,7 +50,8 @@ export async function scrapeWebsite(rawUrl: string): Promise<ScrapeResult> {
     if (!html.trim()) {
       return {
         ok: false,
-        warning: "Strona zwróciła pustą treść. Możesz przejść dalej i uzupełnić brief ręcznie.",
+        warning:
+          "Strona zwróciła pustą treść. Możesz przejść dalej i uzupełnić brief ręcznie.",
         title: null,
         description: null,
         text: "",
@@ -88,7 +89,8 @@ export async function scrapeWebsite(rawUrl: string): Promise<ScrapeResult> {
     if (!bodyText && !description && headings.length === 0) {
       return {
         ok: false,
-        warning: "Nie udało się wyciągnąć treści ze strony. Możesz przejść dalej i uzupełnić brief ręcznie.",
+        warning:
+          "Nie udało się wyciągnąć treści ze strony. Możesz przejść dalej i uzupełnić brief ręcznie.",
         title,
         description,
         text: "",

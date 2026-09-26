@@ -80,7 +80,8 @@ function cardHref(item: ProposalCardItem, mapsUri?: string | null): string {
   if (item.kind === "photos") {
     return mapsUri?.trim() || "/wizytowka";
   }
-  return PROPOSAL_META[item.suggestion.field as keyof typeof PROPOSAL_META].href;
+  return PROPOSAL_META[item.suggestion.field as keyof typeof PROPOSAL_META]
+    .href;
 }
 
 function cardTitle(item: ProposalCardItem): string {
@@ -115,8 +116,7 @@ function cardBlurb(item: ProposalCardItem): string {
     return parts[0] || "AI proponuje zmianę kategorii";
   }
   return (
-    item.suggestion.rationale?.trim() ||
-    aiHintForSuggestion(item.suggestion)
+    item.suggestion.rationale?.trim() || aiHintForSuggestion(item.suggestion)
   );
 }
 

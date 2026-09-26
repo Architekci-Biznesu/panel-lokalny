@@ -59,9 +59,7 @@ export function RankLocalPackTable({
               <tbody>
                 {rows.map((row) => {
                   const isOwn =
-                    (ownPlaceId &&
-                      row.placeId &&
-                      row.placeId === ownPlaceId) ||
+                    (ownPlaceId && row.placeId && row.placeId === ownPlaceId) ||
                     (ownPosition != null && row.position === ownPosition);
                   return (
                     <tr

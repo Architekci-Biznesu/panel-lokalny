@@ -1,11 +1,7 @@
 import type { GbpAttributeMetadata } from "@/lib/integrations/gbp/client";
 
 export type GbpAttrValueType =
-  | "BOOL"
-  | "ENUM"
-  | "REPEATED_ENUM"
-  | "URL"
-  | string;
+  "BOOL" | "ENUM" | "REPEATED_ENUM" | "URL" | string;
 
 export type ParsedAttributeValue =
   | { valueType: "BOOL"; bool: boolean | null }
@@ -71,7 +67,9 @@ export function parseAttributeValues(
     const id = attributeId(name);
     const meta = metaById.get(id);
 
-    let valueType = String(attr.valueType ?? meta?.valueType ?? "").toUpperCase();
+    let valueType = String(
+      attr.valueType ?? meta?.valueType ?? "",
+    ).toUpperCase();
     if (!valueType) {
       if (attr.repeatedEnumValue) valueType = "REPEATED_ENUM";
       else if (attr.uriValues) valueType = "URL";

@@ -35,7 +35,10 @@ export async function syncGbpPlaceId(
       .update(profiles)
       .set({ gbpPlaceId: placeId })
       .where(
-        and(eq(profiles.id, profile.id), eq(profiles.accountId, profile.accountId)),
+        and(
+          eq(profiles.id, profile.id),
+          eq(profiles.accountId, profile.accountId),
+        ),
       );
     return { placeId, updated: true };
   }
@@ -47,9 +50,7 @@ export async function syncGbpPlaceId(
   return { placeId, updated: false };
 }
 
-export async function ensureGbpPlaceId(
-  profile: Profile,
-): Promise<Profile> {
+export async function ensureGbpPlaceId(profile: Profile): Promise<Profile> {
   if (profile.gbpPlaceId) return profile;
   try {
     const { placeId } = await syncGbpPlaceId(profile);

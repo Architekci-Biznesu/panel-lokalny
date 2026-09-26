@@ -117,9 +117,7 @@ export async function getActiveProfile(): Promise<Profile> {
 /**
  * Verifies that a profileId from the request belongs to the active account.
  */
-export async function requireOwnedProfile(
-  profileId: string,
-): Promise<Profile> {
+export async function requireOwnedProfile(profileId: string): Promise<Profile> {
   const accountId = await getActiveAccountId();
 
   const [profile] = await db
@@ -135,7 +133,9 @@ export async function requireOwnedProfile(
   return profile;
 }
 
-async function onboardingDraftProfileIds(accountId: string): Promise<Set<string>> {
+async function onboardingDraftProfileIds(
+  accountId: string,
+): Promise<Set<string>> {
   const drafts = await db
     .select({ profileId: onboardingDrafts.profileId })
     .from(onboardingDrafts)
@@ -168,10 +168,14 @@ export type AccountProfileOption = {
 
 function locationLabel(raw: unknown): string | null {
   if (!raw || typeof raw !== "object") return null;
-  const address = (raw as { storefrontAddress?: {
-    locality?: string;
-    addressLines?: string[];
-  } }).storefrontAddress;
+  const address = (
+    raw as {
+      storefrontAddress?: {
+        locality?: string;
+        addressLines?: string[];
+      };
+    }
+  ).storefrontAddress;
   if (address && typeof address === "object") {
     const locality = address.locality?.trim();
     const line = address.addressLines?.find((item) => item.trim())?.trim();
@@ -184,12 +188,16 @@ function locationLabel(raw: unknown): string | null {
       serviceArea?: { places?: { placeInfos?: Array<{ placeName?: string }> } };
     }
   ).serviceArea?.places?.placeInfos;
-  const place = places?.find((item) => item.placeName?.trim())?.placeName?.trim();
+  const place = places
+    ?.find((item) => item.placeName?.trim())
+    ?.placeName?.trim();
   return place || null;
 }
 
 /** Finished profiles with a short place line from the saved Google location. */
-export async function listAccountProfileOptions(): Promise<AccountProfileOption[]> {
+export async function listAccountProfileOptions(): Promise<
+  AccountProfileOption[]
+> {
   const rows = await listAccountProfiles();
   if (rows.length === 0) return [];
 
@@ -229,10 +237,15 @@ export async function resolveSwitcherProfileId(
   sessionProfileId: string | null,
 ): Promise<string | null> {
   const ready = await listAccountProfiles();
-  if (sessionProfileId && ready.some((profile) => profile.id === sessionProfileId)) {
+  if (
+    sessionProfileId &&
+    ready.some((profile) => profile.id === sessionProfileId)
+  ) {
     return sessionProfileId;
   }
-  const withOauth = [...ready].reverse().find((profile) => profile.oauthConnectionId);
+  const withOauth = [...ready]
+    .reverse()
+    .find((profile) => profile.oauthConnectionId);
   return withOauth?.id ?? ready.at(-1)?.id ?? null;
 }
 

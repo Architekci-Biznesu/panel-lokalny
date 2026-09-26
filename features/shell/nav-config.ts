@@ -33,16 +33,36 @@ export const navGroups: NavGroup[] = [
     label: "Obecność online",
     items: [
       { href: "/strona", label: "Strona WWW", icon: Globe },
-      { href: "/wizytowka", label: "Wizytówka Google", shortLabel: "Wizytówka", icon: Building2 },
+      {
+        href: "/wizytowka",
+        label: "Wizytówka Google",
+        shortLabel: "Wizytówka",
+        icon: Building2,
+      },
       { href: "/publikacje", label: "Publikacje", icon: FileText },
-      { href: "/opinie", label: "Opinie i komentarze", shortLabel: "Opinie", icon: MessageSquare },
+      {
+        href: "/opinie",
+        label: "Opinie i komentarze",
+        shortLabel: "Opinie",
+        icon: MessageSquare,
+      },
     ],
   },
   {
     label: "Sprzedaż",
     items: [
-      { href: "/crm", label: "Klienci (CRM)", shortLabel: "Klienci", icon: Users },
-      { href: "/kampanie-wysylkowe", label: "Kampanie wysyłkowe", shortLabel: "Kampanie", icon: Send },
+      {
+        href: "/crm",
+        label: "Klienci (CRM)",
+        shortLabel: "Klienci",
+        icon: Users,
+      },
+      {
+        href: "/kampanie-wysylkowe",
+        label: "Kampanie wysyłkowe",
+        shortLabel: "Kampanie",
+        icon: Send,
+      },
     ],
   },
   {

@@ -24,14 +24,16 @@ export default async function RaportyPage({
     start: ReturnType<typeof resolveRangeFromSearchParams>["start"];
     end: ReturnType<typeof resolveRangeFromSearchParams>["end"];
     loadError: boolean;
-    rank: Awaited<ReturnType<typeof loadRankRaportPayload>> | {
-      placeId: string | null;
-      businessName: string;
-      keywords: [];
-      latestByKeyword: Record<string, never>;
-      scansByKeywordDay: Record<string, never>;
-      activeScan: null;
-    };
+    rank:
+      | Awaited<ReturnType<typeof loadRankRaportPayload>>
+      | {
+          placeId: string | null;
+          businessName: string;
+          keywords: [];
+          latestByKeyword: Record<string, never>;
+          scansByKeywordDay: Record<string, never>;
+          activeScan: null;
+        };
   } | null = null;
 
   try {

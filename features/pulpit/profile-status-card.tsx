@@ -66,15 +66,14 @@ export function ProfileStatusCard({ status }: { status: PulpitStatus | null }) {
             <p className="pulpit-metric-value mono">
               {filled}/{total}
             </p>
-            <MetricTicks filled={Math.round((filled / Math.max(total, 1)) * 20)} />
+            <MetricTicks
+              filled={Math.round((filled / Math.max(total, 1)) * 20)}
+            />
           </div>
           <div className="pulpit-metric">
             <p className="pulpit-metric-label">Propozycje AI</p>
             <p className="pulpit-metric-value mono">{proposals}</p>
-            <MetricTicks
-              filled={Math.min(20, proposals)}
-              tone="warn"
-            />
+            <MetricTicks filled={Math.min(20, proposals)} tone="warn" />
           </div>
           <div className="pulpit-metric">
             <p className="pulpit-metric-label">Nowe opinie</p>

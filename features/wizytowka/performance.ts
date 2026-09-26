@@ -108,7 +108,9 @@ export function formatDatePl(parts: DateParts): string {
   return `${parts.day}.${parts.month}.${parts.year}`;
 }
 
-export function parseDateIso(value: string | undefined | null): DateParts | null {
+export function parseDateIso(
+  value: string | undefined | null,
+): DateParts | null {
   if (!value) return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
   if (!match) return null;
@@ -425,14 +427,19 @@ export function buildWeeklyViewsRows(series: MetricSeries[]): WeeklyViewsRow[] {
   for (const date of dates) {
     const week = weekStartIso(date);
     const row = weeks.get(week) ?? { date: week, maps: 0, search: 0 };
-    row.maps += sumMetricOnDate(series, [
-      "BUSINESS_IMPRESSIONS_DESKTOP_MAPS",
-      "BUSINESS_IMPRESSIONS_MOBILE_MAPS",
-    ], date);
-    row.search += sumMetricOnDate(series, [
-      "BUSINESS_IMPRESSIONS_DESKTOP_SEARCH",
-      "BUSINESS_IMPRESSIONS_MOBILE_SEARCH",
-    ], date);
+    row.maps += sumMetricOnDate(
+      series,
+      ["BUSINESS_IMPRESSIONS_DESKTOP_MAPS", "BUSINESS_IMPRESSIONS_MOBILE_MAPS"],
+      date,
+    );
+    row.search += sumMetricOnDate(
+      series,
+      [
+        "BUSINESS_IMPRESSIONS_DESKTOP_SEARCH",
+        "BUSINESS_IMPRESSIONS_MOBILE_SEARCH",
+      ],
+      date,
+    );
     weeks.set(week, row);
   }
 

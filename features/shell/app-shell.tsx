@@ -6,7 +6,11 @@ import { ChevronDown, LogOut, Menu, Settings, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { logoutAction } from "@/features/auth/actions";
 import { BrandLogo } from "@/features/shell/brand-logo";
-import { navGroups, topNavMore, topNavPrimary } from "@/features/shell/nav-config";
+import {
+  navGroups,
+  topNavMore,
+  topNavPrimary,
+} from "@/features/shell/nav-config";
 import { ProfileSwitcher } from "@/features/shell/profile-switcher";
 
 type ShellProps = {
@@ -87,7 +91,12 @@ export function AppShell({
           >
             {drawerOpen ? <X aria-hidden /> : <Menu aria-hidden />}
           </button>
-          <Link href="/pulpit" onClick={closeAll} className="topnav-brand" aria-label="Panel Lokalny - Pulpit">
+          <Link
+            href="/pulpit"
+            onClick={closeAll}
+            className="topnav-brand"
+            aria-label="Panel Lokalny - Pulpit"
+          >
             <BrandLogo />
             <span className="topnav-brand-name">Panel Lokalny</span>
           </Link>
@@ -99,7 +108,9 @@ export function AppShell({
                 href={item.href}
                 onClick={closeAll}
                 className={`topnav-link ${isActive(pathname, item.href) ? "active" : ""}`}
-                aria-current={isActive(pathname, item.href) ? "page" : undefined}
+                aria-current={
+                  isActive(pathname, item.href) ? "page" : undefined
+                }
               >
                 {item.shortLabel ?? item.label}
               </Link>
@@ -167,12 +178,21 @@ export function AppShell({
                     <span className="topnav-menu-user-email">{userEmail}</span>
                   ) : null}
                 </div>
-                <Link href="/ustawienia" onClick={closeAll} role="menuitem" className="topnav-menu-item">
+                <Link
+                  href="/ustawienia"
+                  onClick={closeAll}
+                  role="menuitem"
+                  className="topnav-menu-item"
+                >
                   <Settings aria-hidden />
                   Ustawienia i plan
                 </Link>
                 <form action={logoutAction}>
-                  <button type="submit" role="menuitem" className="topnav-menu-item">
+                  <button
+                    type="submit"
+                    role="menuitem"
+                    className="topnav-menu-item"
+                  >
                     <LogOut aria-hidden />
                     Wyloguj
                   </button>

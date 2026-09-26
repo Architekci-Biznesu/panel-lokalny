@@ -181,7 +181,7 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
       lastAnalyzedAt:
         bundle.latestAuditRun?.status === "done"
           ? bundle.latestAuditRun.finishedAt
-          : bundle.latestAuditRun?.startedAt ?? null,
+          : (bundle.latestAuditRun?.startedAt ?? null),
     });
 
     const analyzedAt = summary.lastAnalyzedAt;

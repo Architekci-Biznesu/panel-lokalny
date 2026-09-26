@@ -45,7 +45,11 @@ export function LoginForm() {
           className="ui-field"
         />
       </div>
-      <button type="submit" className="ui-btn ui-btn-primary" disabled={pending}>
+      <button
+        type="submit"
+        className="ui-btn ui-btn-primary"
+        disabled={pending}
+      >
         {pending ? "Logowanie..." : "Zaloguj się"}
       </button>
       <AuthAltLink
@@ -101,7 +105,11 @@ export function RegisterForm() {
           className="ui-field"
         />
       </div>
-      <button type="submit" className="ui-btn ui-btn-primary" disabled={pending}>
+      <button
+        type="submit"
+        className="ui-btn ui-btn-primary"
+        disabled={pending}
+      >
         {pending ? "Tworzenie konta..." : "Utwórz konto"}
       </button>
       <AuthAltLink

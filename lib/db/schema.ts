@@ -81,7 +81,9 @@ export const profileGroups = pgTable(
       .notNull()
       .references(() => publishGroups.id, { onDelete: "cascade" }),
   },
-  (table) => [uniqueIndex("profile_groups_profile_id_uidx").on(table.profileId)],
+  (table) => [
+    uniqueIndex("profile_groups_profile_id_uidx").on(table.profileId),
+  ],
 );
 
 export const profileBriefs = pgTable(
@@ -107,7 +109,9 @@ export const profileBriefs = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [uniqueIndex("profile_briefs_profile_id_uidx").on(table.profileId)],
+  (table) => [
+    uniqueIndex("profile_briefs_profile_id_uidx").on(table.profileId),
+  ],
 );
 
 export const companyContext = pgTable("company_context", {
@@ -398,7 +402,8 @@ export const rankScans = pgTable(
     status: rankScanStatusEnum("status").notNull().default("running"),
     error: text("error"),
     localPackPosition: integer("local_pack_position"),
-    localPackResults: jsonb("local_pack_results").$type<LocalPackSnapshotItem[]>(),
+    localPackResults:
+      jsonb("local_pack_results").$type<LocalPackSnapshotItem[]>(),
     agr: numeric("agr", { precision: 8, scale: 3 }),
     atgr: numeric("atgr", { precision: 8, scale: 4 }),
     shareToken: text("share_token"),
@@ -432,13 +437,16 @@ export const rankResults = pgTable(
   (table) => [index("rank_results_scan_id_idx").on(table.scanId)],
 );
 
-export const rankKeywordsRelations = relations(rankKeywords, ({ one, many }) => ({
-  profile: one(profiles, {
-    fields: [rankKeywords.profileId],
-    references: [profiles.id],
+export const rankKeywordsRelations = relations(
+  rankKeywords,
+  ({ one, many }) => ({
+    profile: one(profiles, {
+      fields: [rankKeywords.profileId],
+      references: [profiles.id],
+    }),
+    scans: many(rankScans),
   }),
-  scans: many(rankScans),
-}));
+);
 
 export const rankScansRelations = relations(rankScans, ({ one, many }) => ({
   profile: one(profiles, {

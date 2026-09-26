@@ -385,9 +385,7 @@ function EnumAttrRow({
       })),
   ];
   const display =
-    options.find((o) => o.value === (value ?? ""))?.label ||
-    value ||
-    "Brak";
+    options.find((o) => o.value === (value ?? ""))?.label || value || "Brak";
 
   return (
     <li className={`wiz-attr-row${dirty ? " is-dirty" : ""}`}>
@@ -439,11 +437,7 @@ function RepeatedEnumAttrBlock({
       <ul className="wiz-attr-list">
         {options.map((opt) => {
           const optId = String(opt.value);
-          const state = set.has(optId)
-            ? true
-            : unset.has(optId)
-              ? false
-              : null;
+          const state = set.has(optId) ? true : unset.has(optId) ? false : null;
           return (
             <li
               key={optId}

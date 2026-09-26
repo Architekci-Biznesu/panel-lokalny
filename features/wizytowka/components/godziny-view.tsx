@@ -60,9 +60,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
 
   return (
     <div className="wiz-hours-row" id="wiz-field-hours">
-      <article
-        className={`wiz-hours-tile${editing ? " is-editing" : ""}`}
-      >
+      <article className={`wiz-hours-tile${editing ? " is-editing" : ""}`}>
         {editing ? (
           <HoursEditor
             initial={periods}
@@ -106,9 +104,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
                 type="button"
                 className="wiz-field-edit"
                 aria-label="Dodaj dzień specjalny"
-                onClick={() =>
-                  enterEdit({ seedSpecial: special.length === 0 })
-                }
+                onClick={() => enterEdit({ seedSpecial: special.length === 0 })}
               >
                 <Plus aria-hidden />
               </button>
@@ -244,8 +240,7 @@ function SpecialDaysList({ periods }: { periods: GbpSpecialHourPeriod[] }) {
           weekday: "long",
         }).format(date);
         const name = holidayNameFor(parts) ?? "Dzień specjalny";
-        const weekdayLabel =
-          weekday.charAt(0).toUpperCase() + weekday.slice(1);
+        const weekdayLabel = weekday.charAt(0).toUpperCase() + weekday.slice(1);
 
         return (
           <li key={i} className={`wiz-special-item${past ? " is-past" : ""}`}>
@@ -284,11 +279,14 @@ function getWarsawNow(): { date: Date } {
     day: "2-digit",
   }).formatToParts(new Date());
 
-  const get = (type: string) =>
-    parts.find((p) => p.type === type)?.value ?? "";
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
 
   return {
-    date: new Date(Number(get("year")), Number(get("month")) - 1, Number(get("day"))),
+    date: new Date(
+      Number(get("year")),
+      Number(get("month")) - 1,
+      Number(get("day")),
+    ),
   };
 }
 
@@ -586,9 +584,7 @@ function SpecialHoursEditor({
                   next[index] = {
                     ...row,
                     date: e.target.value,
-                    name: date
-                      ? (holidayNameFor(date) ?? row.name)
-                      : row.name,
+                    name: date ? (holidayNameFor(date) ?? row.name) : row.name,
                   };
                   setRows(next);
                 }}

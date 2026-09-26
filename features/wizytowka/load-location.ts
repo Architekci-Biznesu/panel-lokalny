@@ -22,10 +22,7 @@ import {
   type GbpSuggestion,
   type Profile,
 } from "@/lib/db/schema";
-import {
-  GBP_DESCRIPTION_MAX,
-  clampTextToLimit,
-} from "@/lib/ai/gbp-limits";
+import { GBP_DESCRIPTION_MAX, clampTextToLimit } from "@/lib/ai/gbp-limits";
 import { parseLocation, type GbpLocation } from "@/features/wizytowka/types";
 
 export type LoadedGbpBundle = {
@@ -73,36 +70,41 @@ export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
     (n): n is string => Boolean(n),
   );
 
-  const [categoryDetails, attrPayload, attributeMetadata, pendingSuggestions, latestRuns] =
-    await Promise.all([
-      batchGetGbpCategories(accessToken, categoryNames),
-      getGbpLocationAttributes(accessToken, locationName).catch(() => ({
-        attributes: [] as Array<Record<string, unknown>>,
-      })),
-      listGbpAttributesForLocation(accessToken, locationName).catch(() =>
-        primaryName
-          ? listGbpAttributesForCategory(accessToken, primaryName).catch(
-              () => [] as GbpAttributeMetadata[],
-            )
-          : Promise.resolve([] as GbpAttributeMetadata[]),
-      ),
-      db
-        .select()
-        .from(gbpSuggestions)
-        .where(
-          and(
-            eq(gbpSuggestions.profileId, profile.id),
-            eq(gbpSuggestions.status, "pending"),
-          ),
-        )
-        .orderBy(desc(gbpSuggestions.createdAt)),
-      db
-        .select()
-        .from(gbpAuditRuns)
-        .where(eq(gbpAuditRuns.profileId, profile.id))
-        .orderBy(desc(gbpAuditRuns.startedAt))
-        .limit(1),
-    ]);
+  const [
+    categoryDetails,
+    attrPayload,
+    attributeMetadata,
+    pendingSuggestions,
+    latestRuns,
+  ] = await Promise.all([
+    batchGetGbpCategories(accessToken, categoryNames),
+    getGbpLocationAttributes(accessToken, locationName).catch(() => ({
+      attributes: [] as Array<Record<string, unknown>>,
+    })),
+    listGbpAttributesForLocation(accessToken, locationName).catch(() =>
+      primaryName
+        ? listGbpAttributesForCategory(accessToken, primaryName).catch(
+            () => [] as GbpAttributeMetadata[],
+          )
+        : Promise.resolve([] as GbpAttributeMetadata[]),
+    ),
+    db
+      .select()
+      .from(gbpSuggestions)
+      .where(
+        and(
+          eq(gbpSuggestions.profileId, profile.id),
+          eq(gbpSuggestions.status, "pending"),
+        ),
+      )
+      .orderBy(desc(gbpSuggestions.createdAt)),
+    db
+      .select()
+      .from(gbpAuditRuns)
+      .where(eq(gbpAuditRuns.profileId, profile.id))
+      .orderBy(desc(gbpAuditRuns.startedAt))
+      .limit(1),
+  ]);
 
   return {
     profile,

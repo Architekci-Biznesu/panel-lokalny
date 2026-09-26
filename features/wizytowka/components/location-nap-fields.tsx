@@ -10,10 +10,7 @@ import {
   updateGbpPhones,
   updateGbpServiceArea,
 } from "@/features/wizytowka/actions";
-import {
-  formatAddress,
-  type GbpLocation,
-} from "@/features/wizytowka/types";
+import { formatAddress, type GbpLocation } from "@/features/wizytowka/types";
 import { UiSelect } from "@/features/shell/ui-select";
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
@@ -522,7 +519,10 @@ function ServiceAreaPlacePicker({
           onFocus={() => setOpen(true)}
         />
         {searching ? (
-          <Loader2 aria-hidden className="wiz-service-area-spinner ui-btn-spinner" />
+          <Loader2
+            aria-hidden
+            className="wiz-service-area-spinner ui-btn-spinner"
+          />
         ) : null}
       </div>
       {open && query.trim().length >= 2 ? (

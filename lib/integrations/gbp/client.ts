@@ -656,15 +656,14 @@ export function countGbpOwnerPhotos(items: GbpMediaItem[]): number {
 }
 
 /** Cover first, then other photos. Skips video. */
-export function pickGbpCollageUrls(
-  items: GbpMediaItem[],
-  limit = 6,
-): string[] {
+export function pickGbpCollageUrls(items: GbpMediaItem[], limit = 6): string[] {
   const photos = items.filter(isGbpPhotoItem);
 
   photos.sort((a, b) => {
-    const rankA = MEDIA_CATEGORY_RANK[a.locationAssociation?.category ?? ""] ?? 8;
-    const rankB = MEDIA_CATEGORY_RANK[b.locationAssociation?.category ?? ""] ?? 8;
+    const rankA =
+      MEDIA_CATEGORY_RANK[a.locationAssociation?.category ?? ""] ?? 8;
+    const rankB =
+      MEDIA_CATEGORY_RANK[b.locationAssociation?.category ?? ""] ?? 8;
     return rankA - rankB;
   });
 
@@ -689,9 +688,8 @@ export function pickGbpCoverUrl(items: GbpMediaItem[]): string | null {
 export async function scheduleGbpAnalysis(profileId: string): Promise<void> {
   // TODO: przenieść do kolejki BullMQ (Faza 5)
   try {
-    const { runGbpAuditForProfile } = await import(
-      "@/features/wizytowka/audit"
-    );
+    const { runGbpAuditForProfile } =
+      await import("@/features/wizytowka/audit");
     await runGbpAuditForProfile(profileId);
   } catch (error) {
     console.error("GBP audit after onboarding failed:", error);

@@ -25,7 +25,10 @@ export function WizytowkaSubnav({
           >
             <span>{tab.label}</span>
             {count > 0 ? (
-              <span className="wiz-subnav-badge" aria-label={`${count} propozycji`}>
+              <span
+                className="wiz-subnav-badge"
+                aria-label={`${count} propozycji`}
+              >
                 {count}
               </span>
             ) : null}

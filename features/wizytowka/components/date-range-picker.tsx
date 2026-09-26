@@ -59,10 +59,16 @@ function isAfter(a: DateParts, b: DateParts) {
   return fromDateParts(a) > fromDateParts(b);
 }
 
-function inRange(day: DateParts, start: DateParts | null, end: DateParts | null) {
+function inRange(
+  day: DateParts,
+  start: DateParts | null,
+  end: DateParts | null,
+) {
   if (!start || !end) return false;
   const t = fromDateParts(day).getTime();
-  return t >= fromDateParts(start).getTime() && t <= fromDateParts(end).getTime();
+  return (
+    t >= fromDateParts(start).getTime() && t <= fromDateParts(end).getTime()
+  );
 }
 
 export function DateRangePicker({ start, end }: Props) {
@@ -81,8 +87,7 @@ export function DateRangePicker({ start, end }: Props) {
   }>({ open: false, start, end });
   if (
     open !== draftSyncedFor.open ||
-    (open &&
-      (start !== draftSyncedFor.start || end !== draftSyncedFor.end))
+    (open && (start !== draftSyncedFor.start || end !== draftSyncedFor.end))
   ) {
     setDraftSyncedFor({ open, start, end });
     if (open) {
@@ -168,7 +173,11 @@ export function DateRangePicker({ start, end }: Props) {
       </button>
 
       {open ? (
-        <div className="wiz-range-popover" role="dialog" aria-label="Zakres dat">
+        <div
+          className="wiz-range-popover"
+          role="dialog"
+          aria-label="Zakres dat"
+        >
           <div className="wiz-range-presets">
             {(
               [
@@ -198,7 +207,11 @@ export function DateRangePicker({ start, end }: Props) {
               aria-label="Poprzedni miesiąc"
               onClick={() =>
                 setViewMonth(
-                  new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1),
+                  new Date(
+                    viewMonth.getFullYear(),
+                    viewMonth.getMonth() - 1,
+                    1,
+                  ),
                 )
               }
             >
@@ -215,7 +228,11 @@ export function DateRangePicker({ start, end }: Props) {
               }
               onClick={() =>
                 setViewMonth(
-                  new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1),
+                  new Date(
+                    viewMonth.getFullYear(),
+                    viewMonth.getMonth() + 1,
+                    1,
+                  ),
                 )
               }
             >
@@ -296,7 +313,10 @@ function MonthGrid({
       </div>
       <div className="wiz-range-days">
         {cells.map((day, index) => {
-          if (!day) return <span key={`e-${index}`} className="wiz-range-day is-empty" />;
+          if (!day)
+            return (
+              <span key={`e-${index}`} className="wiz-range-day is-empty" />
+            );
           const disabled = isAfter(day, maxEnd);
           const isStart = draft.start ? sameDay(day, draft.start) : false;
           const isEnd = draft.end ? sameDay(day, draft.end) : false;

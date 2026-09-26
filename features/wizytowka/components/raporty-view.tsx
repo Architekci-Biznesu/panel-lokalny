@@ -103,8 +103,7 @@ export function RaportyView({
       ? Math.round((summary.desktopViews / summary.viewsTotal) * 100)
       : 0;
   const rateRounded = Math.round(summary.actionsPer100);
-  const hasAnyData =
-    summary.viewsTotal > 0 || summary.actionsTotal > 0;
+  const hasAnyData = summary.viewsTotal > 0 || summary.actionsTotal > 0;
 
   return (
     <div className="wiz-stack">

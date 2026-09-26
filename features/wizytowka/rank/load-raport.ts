@@ -237,8 +237,7 @@ export async function loadRankRaportPayload(
   }
 
   const selectedKeywordId =
-    preferredKeywordId &&
-    keywordViews.some((k) => k.id === preferredKeywordId)
+    preferredKeywordId && keywordViews.some((k) => k.id === preferredKeywordId)
       ? preferredKeywordId
       : keywordViews[0]?.id;
 

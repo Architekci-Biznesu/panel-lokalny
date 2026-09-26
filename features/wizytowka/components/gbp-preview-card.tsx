@@ -77,12 +77,7 @@ export function GbpPreviewCard({
             >
               {collage.map((url) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={url}
-                  src={url}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                />
+                <img key={url} src={url} alt="" referrerPolicy="no-referrer" />
               ))}
             </div>
           ) : (

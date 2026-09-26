@@ -22,17 +22,31 @@ function canStartScan(input: {
   if (input.scannedToday) {
     return {
       ok: false,
-      reason: "Dziś już wykonano skan tej frazy - kolejny będzie dostępny jutro",
+      reason:
+        "Dziś już wykonano skan tej frazy - kolejny będzie dostępny jutro",
     };
   }
   return { ok: true };
 }
 
 {
-  assert.equal(canStartScan({ placeId: null, scannedToday: false, hasRunning: false }).ok, false);
-  assert.equal(canStartScan({ placeId: "ChIJ", scannedToday: true, hasRunning: false }).ok, false);
-  assert.equal(canStartScan({ placeId: "ChIJ", scannedToday: false, hasRunning: true }).ok, false);
-  assert.equal(canStartScan({ placeId: "ChIJ", scannedToday: false, hasRunning: false }).ok, true);
+  assert.equal(
+    canStartScan({ placeId: null, scannedToday: false, hasRunning: false }).ok,
+    false,
+  );
+  assert.equal(
+    canStartScan({ placeId: "ChIJ", scannedToday: true, hasRunning: false }).ok,
+    false,
+  );
+  assert.equal(
+    canStartScan({ placeId: "ChIJ", scannedToday: false, hasRunning: true }).ok,
+    false,
+  );
+  assert.equal(
+    canStartScan({ placeId: "ChIJ", scannedToday: false, hasRunning: false })
+      .ok,
+    true,
+  );
 }
 
 /** Public payload must not include account/email/other phrases. */
@@ -45,7 +59,9 @@ type PublicPayload = {
   points: Array<{ lat: number; lng: number; position: number | null }>;
 };
 
-function assertPublicPayloadSafe(payload: PublicPayload & Record<string, unknown>) {
+function assertPublicPayloadSafe(
+  payload: PublicPayload & Record<string, unknown>,
+) {
   const forbidden = ["email", "accountId", "profileId", "keywords", "userId"];
   for (const key of forbidden) {
     assert.equal(

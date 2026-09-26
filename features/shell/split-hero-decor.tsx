@@ -13,10 +13,7 @@ function CompletenessBars() {
   return (
     <div className="split-decor-bars" aria-hidden>
       {Array.from({ length: 10 }, (_, i) => (
-        <span
-          key={i}
-          className={`split-decor-bar${i < 7 ? " is-on" : ""}`}
-        />
+        <span key={i} className={`split-decor-bar${i < 7 ? " is-on" : ""}`} />
       ))}
     </div>
   );
@@ -112,8 +109,7 @@ function LoginDecor() {
               ].map((col) => (
                 <div key={col.label} className="split-decor-kanban-col">
                   <p className={`split-decor-kanban-label is-${col.tone}`}>
-                    {col.label}{" "}
-                    <span className="mono">{col.count}</span>
+                    {col.label} <span className="mono">{col.count}</span>
                   </p>
                   <SkeletonLine />
                   <SkeletonLine wide="mid" />

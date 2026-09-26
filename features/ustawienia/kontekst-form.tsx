@@ -28,7 +28,8 @@ const HINTS: Record<keyof FormValues, string> = {
   services: "Lista usług, które naprawdę oferujesz - bazą dla propozycji AI.",
   tone: "Jak ma brzmieć komunikacja (np. ekspercko, ciepło, konkretnie).",
   targetAudience: "Dla kogo jest ta firma - kto kupuje najczęściej.",
-  differentiators: "Konkretne wyróżniki (lata na rynku, specjalizacja, dojazd).",
+  differentiators:
+    "Konkretne wyróżniki (lata na rynku, specjalizacja, dojazd).",
   serviceArea:
     "Miasta i dzielnice działania - nie tylko adres z wizytówki Google.",
   avoid:
@@ -103,9 +104,13 @@ export function KontekstForm({
           <div key={name} className="kontekst-field">
             <label className="text-sm font-medium" htmlFor={name}>
               {label}
-              {["serviceArea", "avoid", "outOfScope", "websiteUrl", "notes"].includes(
-                name,
-              ) ? (
+              {[
+                "serviceArea",
+                "avoid",
+                "outOfScope",
+                "websiteUrl",
+                "notes",
+              ].includes(name) ? (
                 <span className="text-muted-foreground font-normal">
                   {" "}
                   (opcjonalne)
@@ -114,11 +119,7 @@ export function KontekstForm({
             </label>
             <p className="locked-note mt-1">{HINTS[name]}</p>
             {kind === "input" ? (
-              <input
-                id={name}
-                className="ui-field mt-2"
-                {...register(name)}
-              />
+              <input id={name} className="ui-field mt-2" {...register(name)} />
             ) : (
               <textarea
                 id={name}

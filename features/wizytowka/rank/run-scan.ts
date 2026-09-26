@@ -7,10 +7,7 @@ import {
   rankResults,
   rankScans,
 } from "@/lib/db/schema";
-import {
-  localSearch,
-  mapsSearch,
-} from "@/lib/integrations/scrapingdog";
+import { localSearch, mapsSearch } from "@/lib/integrations/scrapingdog";
 import {
   cityFromStorefrontAddress,
   formatStorefrontAddress,
@@ -114,12 +111,10 @@ export async function runScan(scanId: string): Promise<void> {
     return;
   }
 
-  const { getGbpAccessTokenForProfile } = await import(
-    "@/lib/integrations/gbp/access"
-  );
-  const { fetchGbpLocationDetails } = await import(
-    "@/lib/integrations/gbp/client"
-  );
+  const { getGbpAccessTokenForProfile } =
+    await import("@/lib/integrations/gbp/access");
+  const { fetchGbpLocationDetails } =
+    await import("@/lib/integrations/gbp/client");
 
   let raw: Record<string, unknown>;
   try {

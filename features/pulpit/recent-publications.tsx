@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ChevronDown,
-  ChevronUp,
-  FileText,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 
 export type PulpitPublication = {
   id: string;
@@ -45,11 +41,7 @@ const STATUS_META: Record<
   },
 };
 
-export function RecentPublications({
-  items,
-}: {
-  items: PulpitPublication[];
-}) {
+export function RecentPublications({ items }: { items: PulpitPublication[] }) {
   const [openId, setOpenId] = useState<string | null>(items[0]?.id ?? null);
 
   return (

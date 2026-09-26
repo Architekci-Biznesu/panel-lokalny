@@ -24,8 +24,7 @@ const HERO_BY_STEP = {
   "3": {
     topic: "Wizytówka Google",
     headline: "Prawie gotowe",
-    description:
-      "Połącz wizytówkę Google - albo pomiń i wróć do tego później.",
+    description: "Połącz wizytówkę Google - albo pomiń i wróć do tego później.",
   },
 } as const;
 
@@ -39,9 +38,9 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
   const session = await auth();
   const state = await loadOnboardingState(mode);
   const groups = await listPublishGroupsForAccount();
-  const step = (["1", "2", "3"].includes(state.draft.step)
-    ? state.draft.step
-    : "1") as "1" | "2" | "3";
+  const step = (
+    ["1", "2", "3"].includes(state.draft.step) ? state.draft.step : "1"
+  ) as "1" | "2" | "3";
   const hero = HERO_BY_STEP[step];
   const activeProfileId = await resolveSwitcherProfileId(
     session?.user?.activeProfileId ?? null,

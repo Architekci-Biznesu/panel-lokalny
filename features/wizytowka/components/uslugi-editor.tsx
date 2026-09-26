@@ -159,7 +159,9 @@ function enrichServiceDrafts(
   drafts: ServiceItemDraft[],
   serviceTypes: Array<{ serviceTypeId: string; displayName: string }>,
 ): ServiceItemDraft[] {
-  const map = new Map(serviceTypes.map((s) => [s.serviceTypeId, s.displayName]));
+  const map = new Map(
+    serviceTypes.map((s) => [s.serviceTypeId, s.displayName]),
+  );
   return drafts.map((d) =>
     d.kind === "structured" && d.serviceTypeId
       ? { ...d, displayName: map.get(d.serviceTypeId) ?? d.displayName }
@@ -348,7 +350,9 @@ function ServicesEditor({
                         ...item,
                         displayName: e.target.value,
                         kind:
-                          item.kind === "structured" ? "structured" : "freeForm",
+                          item.kind === "structured"
+                            ? "structured"
+                            : "freeForm",
                       };
                       setItems(next);
                     }}
@@ -431,7 +435,9 @@ function ServicesEditor({
             className="ui-btn ui-btn-primary ui-btn-sm"
             disabled={pending || !dirty}
           >
-            {pending ? <Loader2 aria-hidden className="ui-btn-spinner" /> : null}
+            {pending ? (
+              <Loader2 aria-hidden className="ui-btn-spinner" />
+            ) : null}
             Zapisz w Google
           </button>
         </div>

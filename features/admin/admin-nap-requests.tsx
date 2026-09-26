@@ -31,7 +31,9 @@ export function AdminNapRequests({
         <div>
           <div className="admin-section-heading">
             <h2 className="ui-section-title">Zgłoszenia NAP</h2>
-            <span className="ui-pill ui-pill-neutral mono">{requests.length}</span>
+            <span className="ui-pill ui-pill-neutral mono">
+              {requests.length}
+            </span>
           </div>
           <p className="ui-section-desc">
             Zainteresowanie dodatkowymi wpisami w katalogach zewnętrznych.

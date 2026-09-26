@@ -1,10 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { GBP_AUDIT_SYSTEM_PROMPT } from "@/lib/ai/gbp-audit-guidelines";
-import {
-  GBP_DESCRIPTION_MAX,
-  clampTextToLimit,
-} from "@/lib/ai/gbp-limits";
+import { GBP_DESCRIPTION_MAX, clampTextToLimit } from "@/lib/ai/gbp-limits";
 import type {
   BriefFields,
   GbpAuditSuggestion,
@@ -84,7 +81,9 @@ Zwróć WYŁĄCZNIE JSON o kluczach: services, tone, targetAudience, differentia
 Bez markdownu, bez dodatkowych kluczy.`;
 
     const userParts = [
-      input.companyNameHint ? `Nazwa firmy (wskazówka): ${input.companyNameHint}` : null,
+      input.companyNameHint
+        ? `Nazwa firmy (wskazówka): ${input.companyNameHint}`
+        : null,
       input.websiteUrl ? `Adres strony: ${input.websiteUrl}` : null,
       "Materiał źródłowy:",
       input.sourceText.slice(0, 12000),
@@ -107,7 +106,10 @@ Bez markdownu, bez dodatkowych kluczy.`;
       );
     }
 
-    const raw = await completeJson(system, userParts.filter(Boolean).join("\n"));
+    const raw = await completeJson(
+      system,
+      userParts.filter(Boolean).join("\n"),
+    );
     const parsed = briefSchema.parse(JSON.parse(raw));
     return {
       services: parsed.services.trim(),
@@ -131,9 +133,7 @@ Bez markdownu, bez dodatkowych kluczy.`;
     );
   },
 
-  async generateReviewReply(
-    input: GenerateReviewReplyInput,
-  ): Promise<string> {
+  async generateReviewReply(input: GenerateReviewReplyInput): Promise<string> {
     return completeText(
       "Piszesz odpowiedź na opinię klienta lokalnej firmy po polsku. Zwróć samą odpowiedź.",
       `Ocena: ${input.rating}/5\nOpinia: ${input.reviewText}\n${briefContext(input.brief)}`,

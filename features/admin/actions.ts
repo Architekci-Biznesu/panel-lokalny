@@ -97,7 +97,9 @@ export async function listAdminAccounts(): Promise<AdminAccountRow[]> {
   });
 }
 
-export async function listNapInterestRequests(): Promise<AdminNapInterestRow[]> {
+export async function listNapInterestRequests(): Promise<
+  AdminNapInterestRow[]
+> {
   await requireStaff();
 
   const rows = await db
@@ -201,10 +203,7 @@ export async function enterAdminAccount(
     .select({ isStaff: users.isStaff })
     .from(users)
     .where(
-      and(
-        eq(users.accountId, parsed.data.accountId),
-        eq(users.role, "owner"),
-      ),
+      and(eq(users.accountId, parsed.data.accountId), eq(users.role, "owner")),
     )
     .limit(1);
 

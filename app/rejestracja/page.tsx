@@ -1,8 +1,5 @@
 import { RegisterForm } from "@/features/auth/auth-forms";
-import {
-  AuthAltTop,
-  SplitScreenLayout,
-} from "@/features/shell/split-screen";
+import { AuthAltTop, SplitScreenLayout } from "@/features/shell/split-screen";
 
 export default function RegisterPage() {
   return (

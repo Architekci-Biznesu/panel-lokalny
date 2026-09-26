@@ -11,7 +11,10 @@ export function PlaceholderPage({ title }: { title: string }) {
       </div>
       <p className="mt-4 text-sm text-muted-foreground">
         Wróć do{" "}
-        <Link href="/pulpit" className="text-brand-deep underline-offset-2 hover:underline">
+        <Link
+          href="/pulpit"
+          className="text-brand-deep underline-offset-2 hover:underline"
+        >
           pulpitu
         </Link>
         .

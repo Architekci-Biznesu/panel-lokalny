@@ -1,5 +1,1 @@
-export {
-  mapsSearch,
-  localSearch,
-  type ScrapingDogPlaceResult,
-} from "./client";
+export { mapsSearch, localSearch, type ScrapingDogPlaceResult } from "./client";

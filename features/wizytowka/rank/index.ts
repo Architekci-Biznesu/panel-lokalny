@@ -1,6 +1,10 @@
 export { buildRankGrid, type GridPoint } from "./grid";
 export { computeAgr, computeAtgr } from "./metrics";
-export { matchBusinessInResults, type RankMatch, type RankMatchMethod } from "./match";
+export {
+  matchBusinessInResults,
+  type RankMatch,
+  type RankMatchMethod,
+} from "./match";
 export {
   cityFromStorefrontAddress,
   formatStorefrontAddress,

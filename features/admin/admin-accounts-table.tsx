@@ -65,7 +65,9 @@ export function AdminAccountsTable({
         <div>
           <div className="admin-section-heading">
             <h2 className="ui-section-title">Konta klientów</h2>
-            <span className="ui-pill ui-pill-neutral mono">{accounts.length}</span>
+            <span className="ui-pill ui-pill-neutral mono">
+              {accounts.length}
+            </span>
           </div>
           <p className="ui-section-desc">
             Wejdź w konto lub profil, żeby pomóc klientowi - bez proszenia o
@@ -179,18 +181,11 @@ function AccountBlock({
             aria-label={open ? "Zwiń profile" : "Rozwiń profile"}
             onClick={onToggle}
           >
-            <ChevronDown
-              aria-hidden
-              className={open ? "is-open" : undefined}
-            />
+            <ChevronDown aria-hidden className={open ? "is-open" : undefined} />
           </button>
         </td>
         <td>
-          <button
-            type="button"
-            className="admin-email-btn"
-            onClick={onToggle}
-          >
+          <button type="button" className="admin-email-btn" onClick={onToggle}>
             {account.ownerEmail}
           </button>
         </td>

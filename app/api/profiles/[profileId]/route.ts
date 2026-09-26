@@ -19,7 +19,10 @@ export async function GET(_request: Request, context: RouteContext) {
   const parsed = paramsSchema.safeParse(raw);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Nieprawidłowy profileId" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Nieprawidłowy profileId" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -31,7 +34,10 @@ export async function GET(_request: Request, context: RouteContext) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
     }
     throw error;
   }

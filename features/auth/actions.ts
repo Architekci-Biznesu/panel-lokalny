@@ -24,9 +24,7 @@ const loginSchema = z.object({
 /** bcrypt cost - 10 is OWASP-acceptable and ~4x faster than 12 on slow CI/dev. */
 const BCRYPT_ROUNDS = 10;
 
-export type ActionResult =
-  | { ok: true }
-  | { ok: false; error: string };
+export type ActionResult = { ok: true } | { ok: false; error: string };
 
 export async function registerAction(
   _prev: ActionResult | null,
@@ -39,7 +37,10 @@ export async function registerAction(
   });
 
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Błąd walidacji" };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Błąd walidacji",
+    };
   }
 
   const email = parsed.data.email.toLowerCase();
@@ -101,7 +102,10 @@ export async function loginAction(
   });
 
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Błąd walidacji" };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Błąd walidacji",
+    };
   }
 
   try {

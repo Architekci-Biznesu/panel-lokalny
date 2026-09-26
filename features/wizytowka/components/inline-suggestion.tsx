@@ -16,7 +16,10 @@ import {
   parseJsonArray,
   resolveCategoryDisplay,
 } from "@/features/wizytowka/components/suggestion-display";
-import { PROPOSAL_META, isProposalField } from "@/features/wizytowka/proposal-meta";
+import {
+  PROPOSAL_META,
+  isProposalField,
+} from "@/features/wizytowka/proposal-meta";
 import { GBP_DESCRIPTION_MAX } from "@/lib/ai/gbp-limits";
 import type { GbpSuggestion } from "@/lib/db/schema";
 
@@ -148,8 +151,7 @@ export function InlineSuggestion({
   const fieldLabel = isProposalField(suggestion.field)
     ? PROPOSAL_META[suggestion.field].label
     : suggestion.field;
-  const hint =
-    suggestion.rationale?.trim() || aiHintForSuggestion(suggestion);
+  const hint = suggestion.rationale?.trim() || aiHintForSuggestion(suggestion);
 
   function runAccept(riskAcknowledged: boolean) {
     startTransition(async () => {
@@ -323,7 +325,8 @@ export function InlineSuggestion({
               className="text-sm font-medium"
               htmlFor={`reject-${suggestion.id}`}
             >
-              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać” w kontekście)
+              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać” w
+              kontekście)
             </label>
             <textarea
               id={`reject-${suggestion.id}`}
@@ -364,9 +367,9 @@ export function InlineSuggestion({
             <h3 className="text-lg font-semibold">Ryzyko zmiany nazwy</h3>
             <p className="text-sm text-muted-foreground mt-2">
               Wytyczne Google wymagają nazwy faktycznie używanej przez firmę.
-              Dodawanie słów kluczowych i lokalizacji jest ich naruszeniem. W razie
-              zgłoszenia lub audytu grozi zawieszeniem wizytówki razem z opiniami, a
-              odzyskanie trwa tygodniami.
+              Dodawanie słów kluczowych i lokalizacji jest ich naruszeniem. W
+              razie zgłoszenia lub audytu grozi zawieszeniem wizytówki razem z
+              opiniami, a odzyskanie trwa tygodniami.
             </p>
             <p className="text-sm mt-2">
               Czy tak brzmi nazwa na Twoim szyldzie lub materiałach firmowych?
