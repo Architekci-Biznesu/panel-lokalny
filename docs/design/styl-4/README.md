@@ -176,7 +176,7 @@ Akceptacja: frazy nigdy pod mapą; max 10 fraz (przy 10 przycisk `Dodaj frazę` 
 
 ### Z8. Logowanie i rejestracja
 
-Ref: `06-logowanie.png`, `--blad.png`, `07-rejestracja.png`, `--blad.png`. Pliki: `features/shell/split-screen.tsx`, `split-left-carousel.tsx`, `features/auth/auth-forms.tsx`.
+Ref: `06-logowanie.png`, `--blad.png`, `07-rejestracja.png`, `--blad.png`. Pliki: `features/shell/split-screen.tsx`, `split-hero-decor.tsx`, `features/auth/auth-forms.tsx`.
 
 - Układ już jest (etap 4a). Do zrobienia: **prawy kafel** - zamiast karuzeli 3 obrazków jedno zdjęcie `lokalny-przedsiebiorca.jpg` (object-fit cover, fokus na twarzy, indygo tint od góry), headline 52/300 biały + lead.
 - **Logowanie** - nad zdjęciem pływające białe karty-ilustracje (r16, cień): Wizytówka (kompletność), Strona WWW, Kampania SMS, CRM kanban, opinia z gwiazdkami - rozmieszczenie jak na PNG (nie zasłaniają twarzy).
