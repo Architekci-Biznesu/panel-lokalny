@@ -90,7 +90,12 @@ export function InformacjeEditor({
       />
       <FieldRow
         label="Status"
-        value={openStatusLabel(location.openInfo?.status)}
+        value={
+          <span className="ui-pill ui-pill-success wiz-status-pill">
+            <span className="wiz-status-dot" aria-hidden />
+            {openStatusLabel(location.openInfo?.status)}
+          </span>
+        }
         editor={({ close }) => (
           <OpenStatusEditor
             status={location.openInfo?.status}
@@ -101,7 +106,11 @@ export function InformacjeEditor({
       />
       <FieldRow
         label="Data otwarcia"
-        value={displayOpeningDate(location.openInfo?.openingDate) || "-"}
+        value={
+          <span className="mono">
+            {displayOpeningDate(location.openInfo?.openingDate) || "-"}
+          </span>
+        }
         editor={({ close }) => (
           <OpeningDateEditor
             status={location.openInfo?.status}
@@ -118,28 +127,31 @@ export function InformacjeEditor({
 
 function WebsiteFieldRow({ websiteUri }: { websiteUri?: string }) {
   const [open, setOpen] = useState(false);
-  const display = websiteUri?.trim() || "-";
+  const raw = websiteUri?.trim() || "";
+  const display = raw
+    ? raw.replace(/^https?:\/\//, "").replace(/\/$/, "")
+    : "-";
 
   return (
     <div id="wiz-field-website" className="wiz-field-row">
       <div className="wiz-field-label">Witryna</div>
       <div className="wiz-field-content">
-        {display.startsWith("http") ? (
+        {raw.startsWith("http") ? (
           <a
-            href={display}
+            href={raw}
             target="_blank"
             rel="noreferrer"
-            className="wiz-inline-link"
+            className="wiz-inline-link mono"
           >
             {display}
           </a>
         ) : (
-          display
+          <span className="mono">{display}</span>
         )}
       </div>
       <button
         type="button"
-        className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
+        className={`wiz-field-edit${open ? " is-open" : ""}`}
         aria-label="Edytuj: Witryna"
         onClick={() => setOpen((v) => !v)}
       >
@@ -147,10 +159,12 @@ function WebsiteFieldRow({ websiteUri }: { websiteUri?: string }) {
       </button>
       {open ? (
         <div className="wiz-field-editor">
-          <WebsiteForm
-            initial={websiteUri ?? ""}
-            onDone={() => setOpen(false)}
-          />
+          <div className="wiz-edit-block">
+            <WebsiteForm
+              initial={websiteUri ?? ""}
+              onDone={() => setOpen(false)}
+            />
+          </div>
         </div>
       ) : null}
     </div>
@@ -210,7 +224,7 @@ function CategoriesFieldRow({
       </div>
       <button
         type="button"
-        className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
+        className={`wiz-field-edit${open ? " is-open" : ""}`}
         aria-label="Edytuj: Kategorie"
         onClick={() => setOpen((v) => !v)}
       >
@@ -218,13 +232,15 @@ function CategoriesFieldRow({
       </button>
       {open ? (
         <div className="wiz-field-editor">
-          <CategoriesEditor
-            mode="combined"
-            primaryName={primary?.name ?? ""}
-            additionalNames={additionalNames}
-            options={categoryOptions}
-            onDone={() => setOpen(false)}
-          />
+          <div className="wiz-edit-block">
+            <CategoriesEditor
+              mode="combined"
+              primaryName={primary?.name ?? ""}
+              additionalNames={additionalNames}
+              options={categoryOptions}
+              onDone={() => setOpen(false)}
+            />
+          </div>
         </div>
       ) : null}
     </div>
@@ -243,7 +259,7 @@ function FieldRow({
 }: {
   label: string;
   anchorId?: string;
-  value: string;
+  value: React.ReactNode;
   multiline?: boolean;
   editor: (args: { close: () => void }) => React.ReactNode;
   suggestion?: GbpSuggestion;
@@ -257,7 +273,7 @@ function FieldRow({
       <div id={anchorId} className="wiz-field-row wiz-field-row-suggestion">
         <InlineSuggestion
           suggestion={suggestion}
-          currentDisplay={suggestionCurrentFallback ?? value}
+          currentDisplay={suggestionCurrentFallback ?? String(value ?? "")}
           categoryOptions={categoryOptions}
         />
       </div>
@@ -268,21 +284,22 @@ function FieldRow({
     <div id={anchorId} className="wiz-field-row">
       <div className="wiz-field-label">{label}</div>
       <div className={`wiz-field-content ${multiline ? "multiline" : ""}`}>
-        {value}
+        {open ? (
+          <div className="wiz-edit-block">
+            {editor({ close: () => setOpen(false) })}
+          </div>
+        ) : (
+          value
+        )}
       </div>
       <button
         type="button"
-        className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
-        aria-label={`Edytuj: ${label}`}
+        className={`wiz-field-edit${open ? " is-open" : ""}`}
+        aria-label={open ? `Zamknij: ${label}` : `Edytuj: ${label}`}
         onClick={() => setOpen((v) => !v)}
       >
         {open ? <X aria-hidden /> : <Pencil aria-hidden />}
       </button>
-      {open ? (
-        <div className="wiz-field-editor">
-          {editor({ close: () => setOpen(false) })}
-        </div>
-      ) : null}
     </div>
   );
 }

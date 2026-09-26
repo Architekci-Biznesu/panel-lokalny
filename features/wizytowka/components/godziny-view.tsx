@@ -56,84 +56,80 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
   }
 
   return (
-    <div
-      className={`wiz-hours-panel${editing ? " is-editing" : ""}`}
-      id="wiz-field-hours"
-    >
-      <div className="wiz-hours-panel-body">
-        <section className="wiz-hours-col">
-          {editing ? (
-            <HoursEditor
-              initial={periods}
-              onDone={exitEdit}
-              onCancel={exitEdit}
-            />
-          ) : (
-            <>
-              <header className="wiz-hours-col-head">
-                <div className="wiz-hours-col-titles">
-                  <div className="wiz-field-label">Godziny otwarcia</div>
-                </div>
-                <button
-                  type="button"
-                  className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
-                  aria-label="Edytuj godziny"
-                  onClick={() => enterEdit()}
-                >
-                  <Pencil aria-hidden />
-                </button>
-              </header>
-              <HoursWeekList periods={periods} />
-            </>
-          )}
-        </section>
+    <div className="wiz-hours-row" id="wiz-field-hours">
+      <article
+        className={`wiz-hours-tile${editing ? " is-editing" : ""}`}
+      >
+        {editing ? (
+          <HoursEditor
+            initial={periods}
+            onDone={exitEdit}
+            onCancel={exitEdit}
+          />
+        ) : (
+          <>
+            <header className="wiz-hours-col-head">
+              <h3 className="wiz-hours-tile-title">Godziny otwarcia</h3>
+              <button
+                type="button"
+                className="wiz-field-edit"
+                aria-label="Edytuj godziny"
+                onClick={() => enterEdit()}
+              >
+                <Pencil aria-hidden />
+              </button>
+            </header>
+            <HoursWeekList periods={periods} />
+          </>
+        )}
+      </article>
 
-        <section className="wiz-hours-col" id="wiz-field-special-hours">
-          {editing ? (
-            <SpecialHoursEditor
-              initial={special}
-              seedEmpty={seedEmptySpecial}
-              onDone={exitEdit}
-              onCancel={exitEdit}
-            />
-          ) : (
-            <>
-              <header className="wiz-hours-col-head">
-                <div className="wiz-hours-col-titles">
-                  <div className="wiz-field-label">Dni specjalne</div>
+      <article
+        className={`wiz-hours-tile${editing ? " is-editing" : ""}`}
+        id="wiz-field-special-hours"
+      >
+        {editing ? (
+          <SpecialHoursEditor
+            initial={special}
+            seedEmpty={seedEmptySpecial}
+            onDone={exitEdit}
+            onCancel={exitEdit}
+          />
+        ) : (
+          <>
+            <header className="wiz-hours-col-head">
+              <h3 className="wiz-hours-tile-title">Dni specjalne</h3>
+              <button
+                type="button"
+                className="wiz-field-edit"
+                aria-label="Dodaj dzień specjalny"
+                onClick={() =>
+                  enterEdit({ seedSpecial: special.length === 0 })
+                }
+              >
+                <Plus aria-hidden />
+              </button>
+            </header>
+            <SpecialDaysList periods={special} />
+            {upcomingHint ? (
+              <div className="wiz-hours-tip" role="note">
+                <span className="wiz-hours-tip-icon-wrap" aria-hidden>
+                  <CircleAlert className="wiz-hours-tip-icon" />
+                </span>
+                <div className="wiz-hours-tip-body">
+                  <p className="wiz-hours-tip-title">
+                    Brak nadchodzących dni specjalnych
+                  </p>
+                  <p className="wiz-hours-tip-text">
+                    Najbliższe święta: {upcomingHint}. Ustaw godziny, żeby
+                    klienci nie trafili na zamknięte drzwi.
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
-                  aria-label="Dodaj dzień specjalny"
-                  onClick={() =>
-                    enterEdit({ seedSpecial: special.length === 0 })
-                  }
-                >
-                  <Plus aria-hidden />
-                </button>
-              </header>
-              <SpecialDaysList periods={special} />
-              {upcomingHint ? (
-                <div className="wiz-hours-tip" role="note">
-                  <span className="wiz-hours-tip-icon-wrap" aria-hidden>
-                    <CircleAlert className="wiz-hours-tip-icon" />
-                  </span>
-                  <div className="wiz-hours-tip-body">
-                    <p className="wiz-hours-tip-title">
-                      Brak nadchodzących dni specjalnych
-                    </p>
-                    <p className="wiz-hours-tip-text">
-                      Najbliższe święta: {upcomingHint}. Ustaw godziny, żeby
-                      klienci nie trafili na zamknięte drzwi.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-            </>
-          )}
-        </section>
-      </div>
+              </div>
+            ) : null}
+          </>
+        )}
+      </article>
     </div>
   );
 }

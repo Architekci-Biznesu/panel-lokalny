@@ -3691,23 +3691,30 @@
   }
 
   .wiz-gaps-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
     list-style: none;
     margin: 0;
     padding: 0;
-    gap: 0;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) + 2px);
-    overflow: hidden;
+    background: transparent;
+    border: 0;
+    overflow: visible;
+  }
+
+  @media (max-width: 899px) {
+    .wiz-gaps-list {
+      grid-template-columns: 1fr;
+    }
   }
 
   .wiz-gap-banner {
     display: block;
     padding: 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--warning) 22%, var(--border));
-    background: color-mix(in srgb, var(--warning-soft) 55%, var(--card));
+    border: 0;
+    border-radius: var(--radius-block);
+    background: var(--warning-soft);
+    overflow: hidden;
   }
 
   .wiz-gap-banner:last-child {
@@ -3717,19 +3724,24 @@
   .wiz-gap-link {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 12px;
     width: 100%;
-    padding: 0.85rem 1.15rem;
+    padding: 14px 16px;
     color: inherit;
     text-decoration: none;
+  }
+
+  .wiz-gap-copy {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .wiz-gap-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 1.5rem;
+    height: 1.5rem;
     flex-shrink: 0;
     border-radius: 999px;
     border: 0;
@@ -3739,23 +3751,42 @@
 
   .wiz-gap-icon svg {
     display: block;
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 1.25rem;
+    height: 1.25rem;
     stroke-width: 2;
   }
 
   .wiz-gap-title {
     margin: 0;
-    font-size: var(--type-base);
-    font-weight: 600;
-    color: #9a3412;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--warning-foreground);
   }
 
   .wiz-gap-why {
     margin: 0.2rem 0 0;
-    font-size: var(--type-base);
+    font-size: var(--type-xs);
     line-height: 1.4;
-    color: #9a3412;
+    color: var(--warning-foreground);
+  }
+
+  .wiz-gap-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: auto;
+    align-self: center;
+    font-size: var(--type-xs);
+    font-weight: 500;
+    color: var(--warning-foreground);
+    white-space: nowrap;
+  }
+
+  .wiz-gap-action svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2;
   }
 
   .wiz-uslugi-item {
@@ -7287,6 +7318,123 @@
   .wiz-field-row:has(.wiz-field-editor) .wiz-field-label {
     border: 0;
     margin-top: 10px;
+  }
+
+  .wiz-edit-block {
+    background: var(--canvas);
+    border-radius: var(--radius-block);
+    padding: 16px;
+  }
+
+  .wiz-edit-block .wiz-edit-form {
+    gap: 12px;
+  }
+
+  .wiz-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .wiz-edit-field-label {
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-edit-fields-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 639px) {
+    .wiz-edit-fields-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .wiz-edit-note {
+    margin: 0;
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-phone-display {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .wiz-status-pill {
+    gap: 6px;
+  }
+
+  .wiz-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--success);
+  }
+
+  .wiz-field-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+    color: var(--foreground);
+    cursor: pointer;
+  }
+
+  .wiz-field-edit:hover {
+    background: var(--canvas-strong);
+  }
+
+  .wiz-field-edit.is-open {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .wiz-field-edit svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+  }
+
+  .wiz-hours-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  @media (max-width: 899px) {
+    .wiz-hours-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .wiz-hours-tile {
+    background: var(--card);
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 20px 24px;
+    min-width: 0;
+  }
+
+  .wiz-hours-tile-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--foreground);
   }
 
   @media (max-width: 639px) {

@@ -67,16 +67,33 @@ function ServiceAreaPreview({ location }: { location: GbpLocation }) {
 
 /** Phone, address, service area - shown on Informacje tab. */
 export function LocationNapFields({ location }: { location: GbpLocation }) {
+  const additional = location.phoneNumbers?.additionalPhones ?? [];
+  const primaryPhone = location.phoneNumbers?.primaryPhone?.trim() || "";
+
   return (
     <>
       <NapField
         label="Telefon"
         anchorId="wiz-field-phone"
-        display={location.phoneNumbers?.primaryPhone ?? "-"}
+        display={
+          primaryPhone ? (
+            <span className="wiz-phone-display">
+              <span className="mono">{primaryPhone}</span>
+              {additional.length > 0 ? (
+                <span className="ui-pill ui-pill-neutral">
+                  +{additional.length}{" "}
+                  {additional.length === 1 ? "dodatkowy" : "dodatkowe"}
+                </span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="mono">-</span>
+          )
+        }
         editor={({ close }) => (
           <PhoneForm
             initial={location.phoneNumbers?.primaryPhone ?? ""}
-            additional={location.phoneNumbers?.additionalPhones ?? []}
+            additional={additional}
             onDone={close}
           />
         )}
@@ -84,7 +101,11 @@ export function LocationNapFields({ location }: { location: GbpLocation }) {
       <NapField
         label="Adres"
         anchorId="wiz-field-address"
-        display={formatAddress(location.storefrontAddress) || "-"}
+        display={
+          <span className="mono">
+            {formatAddress(location.storefrontAddress) || "-"}
+          </span>
+        }
         editor={({ close }) => (
           <AddressForm location={location} onDone={close} />
         )}
@@ -116,20 +137,23 @@ function NapField({
   return (
     <div id={anchorId} className="wiz-field-row">
       <div className="wiz-field-label">{label}</div>
-      <div className="wiz-field-content">{display}</div>
+      <div className="wiz-field-content">
+        {open ? (
+          <div className="wiz-edit-block">
+            {editor({ close: () => setOpen(false) })}
+          </div>
+        ) : (
+          display
+        )}
+      </div>
       <button
         type="button"
-        className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
-        aria-label={`Edytuj: ${label}`}
+        className={`wiz-field-edit${open ? " is-open" : ""}`}
+        aria-label={open ? `Zamknij: ${label}` : `Edytuj: ${label}`}
         onClick={() => setOpen((v) => !v)}
       >
         {open ? <X aria-hidden /> : <Pencil aria-hidden />}
       </button>
-      {open ? (
-        <div className="wiz-field-editor">
-          {editor({ close: () => setOpen(false) })}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -235,30 +259,44 @@ function AddressForm({
         });
       }}
     >
-      <input
-        className="ui-field"
-        placeholder="Ulica i numer"
-        value={line}
-        onChange={(e) => setLine(e.target.value)}
-      />
-      <input
-        className="ui-field"
-        placeholder="Miasto"
-        value={locality}
-        onChange={(e) => setLocality(e.target.value)}
-      />
-      <input
-        className="ui-field"
-        placeholder="Kod pocztowy"
-        value={postal}
-        onChange={(e) => setPostal(e.target.value)}
-      />
-      <input
-        className="ui-field"
-        placeholder="Województwo"
-        value={area}
-        onChange={(e) => setArea(e.target.value)}
-      />
+      <label className="wiz-edit-field">
+        <span className="wiz-edit-field-label">Ulica i numer</span>
+        <input
+          className="ui-field"
+          value={line}
+          onChange={(e) => setLine(e.target.value)}
+        />
+      </label>
+      <div className="wiz-edit-fields-row">
+        <label className="wiz-edit-field">
+          <span className="wiz-edit-field-label">Miasto</span>
+          <input
+            className="ui-field"
+            value={locality}
+            onChange={(e) => setLocality(e.target.value)}
+          />
+        </label>
+        <label className="wiz-edit-field">
+          <span className="wiz-edit-field-label">Kod pocztowy</span>
+          <input
+            className="ui-field mono"
+            value={postal}
+            onChange={(e) => setPostal(e.target.value)}
+          />
+        </label>
+        <label className="wiz-edit-field">
+          <span className="wiz-edit-field-label">Województwo</span>
+          <input
+            className="ui-field"
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
+          />
+        </label>
+      </div>
+      <p className="wiz-edit-note">
+        Adres musi przejść weryfikację Google - zmiany mogą być widoczne z
+        opóźnieniem.
+      </p>
       <Submit pending={pending} />
     </form>
   );

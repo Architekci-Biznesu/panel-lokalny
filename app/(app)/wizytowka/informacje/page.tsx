@@ -45,15 +45,18 @@ export default async function InformacjePage() {
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div>
-          <h2 className="text-lg font-semibold">Informacje o firmie</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2>Informacje o firmie</h2>
+          <p>
             Kliknij ołówek, aby edytować. Propozycje AI są wyróżnione przy
             polach.
           </p>
         </div>
       </div>
 
-      <OutsideGaps gaps={summary.outsidePanelGaps} />
+      <OutsideGaps
+        gaps={summary.outsidePanelGaps}
+        mapsUri={bundle.location.metadata?.mapsUri ?? null}
+      />
 
       <InformacjeEditor
         location={bundle.location}
