@@ -7823,3 +7823,164 @@
   line-height: 1.4;
 }
 
+
+/* ============ Styl 4 - poprawki po Z2-Z6 (weryfikacja) ============ */
+@layer components {
+  /* Odstęp nagłówek zakładki -> pierwsza treść = 24px */
+  .wiz-stack > .wiz-tab-head {
+    margin-bottom: calc(var(--space-5) - var(--space-6));
+  }
+
+  /* Czarne kółko X: ikona biała (wcześniej czarna na czarnym) */
+  .wiz-field-edit.is-open,
+  .wiz-field-edit.is-open svg {
+    color: var(--primary-foreground);
+  }
+
+  .wiz-field-edit.is-open:hover {
+    background: #2e2e2e;
+  }
+
+  .wiz-field-row:has(.wiz-field-editor) .wiz-field-edit,
+  .wiz-field-row:has(.wiz-edit-block) .wiz-field-edit {
+    align-self: start;
+  }
+
+  /* Propozycja AI: jeden blok r20 (porównanie + "Dlaczego"), przyciski pod blokiem */
+  .wiz-inline-suggestion .wiz-proposal-panel {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .wiz-inline-suggestion .wiz-compare-cols,
+  .wiz-inline-suggestion .wiz-proposal-compare {
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    background: var(--card);
+  }
+
+  .wiz-inline-suggestion .wiz-compare-cols:not(:has(+ .wiz-inline-rationale)),
+  .wiz-inline-suggestion .wiz-proposal-compare:not(:has(+ .wiz-inline-rationale)) {
+    border-radius: 20px;
+  }
+
+  .wiz-inline-suggestion .wiz-inline-rationale {
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .wiz-inline-suggestion .wiz-suggestion-actions,
+  .wiz-proposal-panel > .wiz-suggestion-actions:last-child {
+    padding: 12px 0 0;
+    border-top: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  /* Godziny / Dni specjalne: stara reguła wiersza godzin wcinała kafle */
+  .wiz-hours-row#wiz-field-hours,
+  div.wiz-hours-row:has(> .wiz-hours-tile) {
+    padding: 0;
+    border-bottom: 0;
+    align-items: start;
+  }
+
+  /* Formularze edycji w szarym bloku: zapis po prawej, nie na całą szerokość */
+  .wiz-edit-block .wiz-edit-form > button[type="submit"],
+  .wiz-edit-block .wiz-edit-form > .ui-btn {
+    align-self: flex-end;
+    width: auto;
+  }
+
+  .wiz-edit-block .wiz-edit-actions {
+    justify-content: flex-end;
+  }
+
+  /* Atrybuty: segment Tak/Nie do prawej krawędzi (stare min-width 10rem) */
+  .wiz-attr-control {
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  /* Usługi (podgląd): nazwa 14/500, opis 13 muted, padding jak wiersze pól */
+  .wiz-uslugi-item {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--muted);
+  }
+
+  .wiz-uslugi-item .wiz-field-label {
+    font-size: var(--type-base);
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .wiz-uslugi-item .wiz-field-content {
+    margin-top: 2px;
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
+  }
+
+  /* Usługi (edycja): kosz jako szare kółko, nie czerwony */
+  .wiz-service-card-remove {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  .wiz-service-card-remove:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--destructive) 10%, var(--card));
+    color: var(--destructive);
+  }
+
+  /* Ołówek/X w nagłówku zakładki leży na płótnie - białe kółko */
+  .wiz-tab-head .wiz-field-edit:not(.is-open) {
+    background: var(--card);
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* Nagłówek "Propozycje AI do Twojej decyzji" 24/400 */
+  .wiz-proposals-title {
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  /* Banery luk: ciemny tekst, ikona w białym kółku, opis muted */
+  .wiz-gap-banner {
+    background: var(--warning-soft);
+    border: 0;
+    border-radius: var(--radius-block);
+    color: var(--foreground);
+  }
+
+  .wiz-gap-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    color: var(--warning);
+  }
+
+  .wiz-gap-title {
+    font-size: var(--type-base);
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .wiz-gap-why {
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
+  }
+
+  .wiz-gap-action {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+}
