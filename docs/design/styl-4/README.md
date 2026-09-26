@@ -32,7 +32,7 @@ Otwarte: Pulpit - "Ostatnie publikacje" i "Nowe opinie" czekają na dane z modu�
 
 ## Assety w repo
 
-- `public/images/textures/v4-halftone.svg` - tekstura siatki kresek (zanika od prawego dolnego rogu). Tło kafli "promocyjnych": NAP "Dokup dodatkowe wpisy", Pulpit "Automatyczne publikacje".
+- `public/images/textures/v4-halftone.svg` - tekstura siatki kresek (zanika od prawego dolnego rogu). Tło kafli "promocyjnych" (obecnie nieużywana w aplikacji; kafel NAP ma styl kart propozycji).
 - `public/images/auth/lokalny-przedsiebiorca.jpg` - zdjęcie do prawej części logowania/rejestracji/onboardingu.
 - Logo PL-3 - komponent `BrandLogo` (`features/shell/brand-logo.tsx`), nie osobny plik.
 
@@ -151,7 +151,7 @@ Ref: `04e-wizytowka-nap.png`. Plik: `nap-view.tsx`.
 
 - Siatka `2fr | 1fr`, gap 24.
 - **Lewy kafel "Katalogi"**: w nagłówku po prawej 3 pille-podsumowania (`3 opublikowane` zielona kropka, `2 w trakcie` koral, `2 oczekuje` szara). Wiersz: kwadrat r10 z inicjałami (mono 11, `--canvas`), nazwa 14/500, URL mono 11 muted + ↗, po prawej pill statusu.
-- **Prawy kafel "Status"** na `--canvas-strong` z teksturą `v4-halftone.svg` (background, prawy dolny róg): pill `Status`, tytuł 20 "Więcej wpisów = spójniejszy NAP", opis 12, na dole biała pigułka `Dokup dodatkowe wpisy NAP ›`, pod nią stan po zgłoszeniu 11 muted.
+- **Prawy kafel "Więcej wpisów"** jak karty propozycji: biały, bez ikony: napis `USŁUGA AGENCJI` (indygo, po prawej zielony pill `Zgłoszono` po zgłoszeniu), tytuł 18 "Twoja firma w 50 katalogach", opis 13 „W Twoim pakiecie publikujemy 5 wpisów miesięcznie. Chcesz szybciej? Dokup dodatkowe katalogi.”, licznik `x/50` z 50 kreskami jak pasek kompletności (indygo opublikowane, koral w trakcie), szara pigułka `Przyspiesz - dokup katalogi` z czarną strzałką, notka (stan zgłoszenia) jako szara stopka przyklejona do dołu.
 
 ### Z7. Wizytówka - Raporty + Mapa siatki pozycji
 

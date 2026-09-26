@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useTransition } from "react";
-import { ArrowRight, ExternalLink, Loader2, MapPinned } from "lucide-react";
+import { Check, ExternalLink, Loader2, ShoppingCart } from "lucide-react";
 import { toast } from "gooey-toast";
 import { requestNapInterest } from "@/features/wizytowka/actions";
 
@@ -76,6 +76,11 @@ const SAMPLE_NAP_ENTRIES: SampleNapEntry[] = [
     status: "pending",
   },
 ];
+
+/** Docelowa liczba wpisów NAP w pakiecie agencji (skala paska w kaflu). */
+const NAP_TARGET = 50;
+/** Ile wpisów miesięcznie publikujemy w ramach pakietu. */
+const NAP_MONTHLY = 5;
 
 const STATUS_META: Record<NapStatus, { label: string; pill: string }> = {
   published: { label: "Opublikowany", pill: "ui-pill ui-pill-success" },
@@ -157,18 +162,55 @@ export function NapView({ requestsCount }: { requestsCount: number }) {
         </section>
 
         <aside className="wiz-nap-cta">
-          <span className="wiz-nap-cta-icon" aria-hidden>
-            <MapPinned />
-          </span>
+          <div className="wiz-nap-cta-top">
+            <span className="wiz-nap-cta-kicker">Usługa agencji</span>
+            {requestsCount > 0 ? (
+              <span className="ui-pill ui-pill-success">
+                <Check aria-hidden />
+                Zgłoszono
+              </span>
+            ) : null}
+          </div>
           <div className="wiz-nap-cta-body">
             <h3 className="wiz-nap-cta-title">
-              Więcej wpisów = spójniejszy NAP
+              Twoja firma w {NAP_TARGET} katalogach
             </h3>
             <p className="wiz-nap-cta-copy">
-              {requestsCount > 0
-                ? `Zgłoszono zainteresowanie (${requestsCount}). Skontaktujemy się w sprawie realizacji.`
-                : "Brak aktywnych zgłoszeń dodatkowych wpisów NAP."}
+              W Twoim pakiecie publikujemy{" "}
+              <strong>{NAP_MONTHLY} wpisów miesięcznie</strong>. Chcesz
+              szybciej? Dokup dodatkowe katalogi.
             </p>
+          </div>
+
+          <div className="wiz-nap-cta-meter">
+            <div className="wiz-nap-cta-meter-head">
+              <p className="wiz-nap-cta-meter-value mono">
+                {counts.published}
+                <span>/{NAP_TARGET}</span>
+              </p>
+              <p className="wiz-nap-cta-meter-legend">
+                <span className="is-published">opublikowane</span>
+                <span className="is-progress">w trakcie</span>
+              </p>
+            </div>
+            <div
+              className="wiz-nap-cta-ticks"
+              role="img"
+              aria-label={`Opublikowane wpisy: ${counts.published} z ${NAP_TARGET}, w trakcie: ${counts.inProgress}`}
+            >
+              {Array.from({ length: NAP_TARGET }, (_, i) => (
+                <span
+                  key={i}
+                  className={
+                    i < counts.published
+                      ? "is-published"
+                      : i < counts.published + counts.inProgress
+                        ? "is-progress"
+                        : undefined
+                  }
+                />
+              ))}
+            </div>
           </div>
 
           <button
@@ -198,16 +240,17 @@ export function NapView({ requestsCount }: { requestsCount: number }) {
               {pending ? (
                 <Loader2 aria-hidden className="ui-btn-spinner" />
               ) : null}
-              Dokup dodatkowe wpisy NAP
+              Dokup katalogi
             </span>
             <span className="wiz-nap-cta-btn-arrow" aria-hidden>
-              <ArrowRight />
+              <ShoppingCart />
             </span>
           </button>
 
           <p className="wiz-nap-cta-note">
-            Po zgłoszeniu zobaczysz tu potwierdzenie i damy znać w sprawie
-            realizacji.
+            {requestsCount > 0
+              ? `Zgłoszenie przyjęte (${requestsCount}) - skontaktujemy się w sprawie realizacji.`
+              : "Po zgłoszeniu skontaktujemy się i ustalimy, które katalogi dodać."}
           </p>
         </aside>
       </div>

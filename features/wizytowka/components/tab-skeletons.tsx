@@ -138,13 +138,11 @@ export function NapSkel({ count = 6 }: { count?: number }) {
         ))}
       </section>
       <aside className="wiz-nap-cta">
-        <div className="ui-skel-stack" style={{ gap: 16 }}>
-          <span
-            className="ui-skel ui-skel-circle"
-            style={{ width: 40, height: 40 }}
-          />
+        <div className="ui-skel-stack" style={{ gap: 16, paddingBottom: 24 }}>
+          <Bar w="6rem" h="0.65rem" />
           <Bar w="90%" h="1.25rem" />
           <Bar w="70%" />
+          <Bar w="100%" h="68px" />
           <span
             className="ui-skel"
             style={{

@@ -78,11 +78,6 @@
     color: var(--muted-foreground);
     line-height: 1.35;
   }
-
-  /* Szkielet ładowania na szarym kaflu NAP */
-  .wiz-nap-cta .ui-skel {
-    background: var(--card);
-  }
 }
 
 @layer components {
@@ -1703,34 +1698,111 @@
     color: var(--foreground);
   }
 
+  /* Kafel "Więcej wpisów": jak karty propozycji - biały, ikona w kwadracie, szara pigułka CTA ze strzałką,
+     notka jako szara stopka przyklejona do dołu */
   .wiz-nap-cta {
-    position: relative;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    padding: var(--space-5);
-    background:
-      url("/images/textures/v4-halftone.svg") right bottom / 220px auto
-        no-repeat,
-      var(--canvas-strong);
+    gap: var(--space-3);
+    overflow: hidden;
+    padding: var(--space-5) var(--space-5) 0;
+    background: var(--card);
   }
 
-  .wiz-nap-cta-icon {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-pill);
-    background: var(--brand-50);
+  .wiz-nap-cta-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .wiz-nap-cta-top .ui-pill svg {
+    width: 12px;
+    height: 12px;
+    stroke-width: 2.5;
+  }
+
+  .wiz-nap-cta-kicker {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--brand);
-    flex-shrink: 0;
+    line-height: 22px;
   }
 
-  .wiz-nap-cta-icon svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 2;
+  /* Licznik wpisów: 50 kresek jak pasek kompletności (indygo opublikowane, koral w trakcie) */
+  .wiz-nap-cta-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border-radius: var(--radius-block);
+    background: var(--neutral-50);
+  }
+
+  .wiz-nap-cta-meter-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .wiz-nap-cta-meter-value {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--foreground);
+  }
+
+  .wiz-nap-cta-meter-value span {
+    font-size: var(--type-md);
+    color: var(--neutral-400);
+  }
+
+  .wiz-nap-cta-meter-legend {
+    display: flex;
+    gap: var(--space-3);
+    margin: 0;
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-nap-cta-meter-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .wiz-nap-cta-meter-legend span::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 2px;
+  }
+
+  .wiz-nap-cta-meter-legend .is-published::before,
+  .wiz-nap-cta-ticks .is-published {
+    background: var(--brand);
+  }
+
+  .wiz-nap-cta-meter-legend .is-progress::before,
+  .wiz-nap-cta-ticks .is-progress {
+    background: var(--warning);
+  }
+
+  .wiz-nap-cta-ticks {
+    display: flex;
+    gap: 2px;
+    height: 22px;
+  }
+
+  .wiz-nap-cta-ticks span {
+    flex: 1 1 0;
+    min-width: 0;
+    border-radius: 2px;
+    background: var(--border);
   }
 
   .wiz-nap-cta-body {
@@ -1741,7 +1813,7 @@
 
   .wiz-nap-cta-title {
     margin: 0;
-    font-size: 20px;
+    font-size: var(--type-lg);
     font-weight: 500;
     letter-spacing: -0.01em;
     line-height: 1.25;
@@ -1755,29 +1827,34 @@
     line-height: 1.45;
   }
 
+  .wiz-nap-cta-copy strong {
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
   .wiz-nap-cta-btn {
     box-sizing: border-box;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
-    margin-top: auto;
-    padding: 6px 6px 6px 16px;
+    margin-top: var(--space-1);
+    padding: 6px 6px 6px 14px;
     border: 0;
     border-radius: var(--radius-pill);
-    background: var(--card);
+    background: var(--canvas);
     color: var(--foreground);
     font: inherit;
     font-size: var(--type-sm);
     font-weight: 500;
     text-align: left;
     cursor: pointer;
-    box-shadow: var(--shadow-xs);
+    transition: background-color 0.15s ease;
   }
 
   .wiz-nap-cta-btn:hover:not(:disabled) {
-    background: var(--white);
+    background: var(--canvas-strong);
   }
 
   .wiz-nap-cta-btn:disabled {
@@ -1811,8 +1888,11 @@
   }
 
   .wiz-nap-cta-note {
-    margin: 0;
-    font-size: 11px;
+    margin: var(--space-2) calc(var(--space-5) * -1) 0;
+    padding: 12px var(--space-5);
+    background: var(--neutral-50);
+    border-top: 1px solid var(--muted);
+    font-size: var(--type-xs);
     color: var(--muted-foreground);
     line-height: 1.4;
   }
