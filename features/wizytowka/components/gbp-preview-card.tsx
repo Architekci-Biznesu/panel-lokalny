@@ -16,8 +16,17 @@ const CHECK_DISPLAY_ORDER = [
   "attributes",
 ] as const;
 
+const BAR_TICKS = 40;
+const NEXT_TICKS = 3;
+
 function displayUrl(url: string) {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
+function barTickClass(index: number, filledTicks: number): string {
+  if (index < filledTicks) return "wiz-complete-tick is-on";
+  if (index < filledTicks + NEXT_TICKS) return "wiz-complete-tick is-next";
+  return "wiz-complete-tick";
 }
 
 export function GbpPreviewCard({
@@ -37,164 +46,173 @@ export function GbpPreviewCard({
       "",
     ) ??
     null;
+  const city = location.storefrontAddress?.locality?.trim() || null;
   const address = formatAddress(location.storefrontAddress);
-  const phone = location.phoneNumbers?.primaryPhone;
-  const website = location.websiteUri;
-  const mapsUri = location.metadata?.mapsUri;
-  const thumb = photoUrls[0] ?? null;
+  const phone = location.phoneNumbers?.primaryPhone?.trim() || null;
+  const website = location.websiteUri?.trim() || null;
+  const mapsUri = location.metadata?.mapsUri?.trim() || null;
+  const collage = photoUrls.slice(0, 4);
   const filled = summary.filledCount;
   const total = Math.max(summary.filledTotal, 1);
-  const segments = Array.from({ length: total }, (_, i) => i < filled);
+  const filledTicks = Math.round((BAR_TICKS * filled) / total);
 
   const byId = new Map(summary.checks.map((check) => [check.id, check]));
   const orderedChecks = CHECK_DISPLAY_ORDER.map((id) => byId.get(id)).filter(
     (check): check is NonNullable<typeof check> => Boolean(check),
   );
+  const leftChecks = orderedChecks.slice(0, 5);
+  const rightChecks = orderedChecks.slice(5, 10);
 
   return (
-    <div className="wiz-profile-header">
-      {/* In-flow 1×1 SVG is the flex item (intrinsic ratio → width = stretch height).
-          Photo overlays it absolutely so it does not affect flex base size. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        className="wiz-profile-thumb-sizer"
-        alt=""
-        aria-hidden
-        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'/%3E"
-      />
-      <div className="wiz-profile-thumb" aria-hidden>
-        {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className="wiz-profile-thumb-img"
-            src={thumb}
-            alt=""
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <span className="wiz-profile-thumb-ph">[ZDJĘCIE]</span>
-        )}
-      </div>
+    <div className="wiz-top-row">
+      <article className="wiz-preview-card">
+        <div className="wiz-preview-media" aria-hidden>
+          {collage.length > 0 ? (
+            <div
+              className={
+                collage.length === 1
+                  ? "wiz-preview-collage is-single"
+                  : "wiz-preview-collage"
+              }
+            >
+              {collage.map((url) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={url}
+                  src={url}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                />
+              ))}
+            </div>
+          ) : (
+            <span className="wiz-preview-media-ph">[Zdjęcie]</span>
+          )}
+        </div>
 
-      <div className="wiz-profile-main">
-        <div className="wiz-profile-left">
-          <div className="wiz-profile-info">
-            <h2 className="wiz-profile-title">{title}</h2>
-            <p className="wiz-profile-subline">
-              {category ? <span>{category}</span> : null}
-              {category && mapsUri ? (
-                <span className="wiz-profile-sub-sep" aria-hidden>
-                  ·
+        <div className="wiz-preview-body">
+          <div className="wiz-preview-head">
+            <div className="wiz-preview-titles">
+              <h2 className="wiz-preview-name">{title}</h2>
+              {category ? (
+                <p className="wiz-preview-category">{category}</p>
+              ) : null}
+              <div className="wiz-preview-pills">
+                <span className="ui-pill ui-pill-neutral">
+                  Google Business Profile
                 </span>
-              ) : null}
-              {mapsUri ? (
-                <a
-                  href={mapsUri}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="wiz-ext-link"
-                >
-                  Otwórz w Mapach Google
-                  <SquareArrowOutUpRight
-                    aria-hidden
-                    className="wiz-ext-link-icon"
-                  />
-                </a>
-              ) : null}
-            </p>
+                {city ? (
+                  <span className="ui-pill ui-pill-neutral">{city}</span>
+                ) : null}
+              </div>
+            </div>
+            {mapsUri ? (
+              <a
+                href={mapsUri}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wiz-preview-open"
+                aria-label="Otwórz wizytówkę w Google"
+              >
+                <SquareArrowOutUpRight aria-hidden />
+              </a>
+            ) : null}
           </div>
 
-          <div className="wiz-profile-tiles">
-            <div className="wiz-profile-tile">
-              <div className="wiz-profile-tile-body">
-                <span className="wiz-profile-tile-label">Adres</span>
-                <span className="wiz-profile-tile-value">
-                  {address || "Brak adresu"}
-                </span>
-              </div>
+          <div className="wiz-preview-facts">
+            <div className="wiz-preview-fact">
+              <span className="wiz-preview-fact-label">Adres</span>
+              <span className="wiz-preview-fact-value mono">
+                {address || "-"}
+              </span>
             </div>
-            <div className="wiz-profile-tile">
-              <div className="wiz-profile-tile-body">
-                <span className="wiz-profile-tile-label">Telefon</span>
-                <span className="wiz-profile-tile-value wiz-profile-tile-phone">
-                  {phone || "Brak telefonu"}
-                </span>
-              </div>
+            <div className="wiz-preview-fact">
+              <span className="wiz-preview-fact-label">Telefon</span>
+              <span className="wiz-preview-fact-value mono">
+                {phone || "-"}
+              </span>
             </div>
-            <div className="wiz-profile-tile">
-              <div className="wiz-profile-tile-body">
-                <span className="wiz-profile-tile-label">Strona WWW</span>
-                {website ? (
-                  <a
-                    href={website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="wiz-profile-tile-value wiz-ext-link"
-                  >
-                    {displayUrl(website)}
-                    <SquareArrowOutUpRight
-                      aria-hidden
-                      className="wiz-ext-link-icon"
-                    />
-                  </a>
-                ) : (
-                  <span className="wiz-profile-tile-value">Brak strony</span>
-                )}
-              </div>
+            <div className="wiz-preview-fact">
+              <span className="wiz-preview-fact-label">Strona WWW</span>
+              {website ? (
+                <a
+                  href={website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="wiz-preview-fact-value mono wiz-preview-fact-link"
+                >
+                  {displayUrl(website)}
+                </a>
+              ) : (
+                <span className="wiz-preview-fact-value mono">-</span>
+              )}
             </div>
           </div>
         </div>
+      </article>
+
+      <aside
+        className="wiz-complete-card"
+        aria-label={`Kompletność profilu ${filled} z ${summary.filledTotal}`}
+      >
+        <div className="wiz-complete-head">
+          <p className="wiz-complete-title">Kompletność profilu</p>
+          <p className="wiz-complete-score mono">
+            <span className="wiz-complete-score-n">{filled}</span>
+            <span className="wiz-complete-score-d">/{summary.filledTotal}</span>
+          </p>
+        </div>
 
         <div
-          className="wiz-profile-complete"
-          aria-label={`Kompletność profilu ${filled} z ${summary.filledTotal}`}
+          className="wiz-complete-bar"
+          role="progressbar"
+          aria-valuenow={filled}
+          aria-valuemin={0}
+          aria-valuemax={summary.filledTotal}
+          aria-label={`Kompletność ${filled} z ${summary.filledTotal}`}
         >
-          <p className="wiz-profile-complete-label">Kompletność profilu</p>
-          <p className="wiz-profile-complete-score">
-            <span className="wiz-profile-complete-score-n">{filled}</span>
-            <span className="wiz-profile-complete-score-d">
-              /{summary.filledTotal}
-            </span>
-          </p>
-          <div
-            className="wiz-profile-complete-bar"
-            role="progressbar"
-            aria-valuenow={filled}
-            aria-valuemin={0}
-            aria-valuemax={summary.filledTotal}
-            aria-label={`Kompletność ${filled} z ${summary.filledTotal}`}
-          >
-            {segments.map((on, i) => (
-              <span
-                key={i}
-                className={
-                  on
-                    ? "wiz-profile-complete-seg is-on"
-                    : "wiz-profile-complete-seg"
-                }
-              />
-            ))}
-          </div>
+          {Array.from({ length: BAR_TICKS }, (_, i) => (
+            <span key={i} className={barTickClass(i, filledTicks)} />
+          ))}
+        </div>
 
-          <ul className="wiz-profile-checks">
-            {orderedChecks.map((check) => (
+        <div className="wiz-complete-checks">
+          <ul className="wiz-complete-col">
+            {leftChecks.map((check) => (
               <li
                 key={check.id}
                 className={
                   check.filled
-                    ? "wiz-profile-check is-done"
-                    : "wiz-profile-check"
+                    ? "wiz-complete-check is-done"
+                    : "wiz-complete-check"
                 }
               >
-                <span className="wiz-profile-check-mark" aria-hidden>
+                <span className="wiz-complete-check-mark" aria-hidden>
                   {check.filled ? <Check /> : null}
                 </span>
-                <span className="wiz-profile-check-label">{check.label}</span>
+                <span className="wiz-complete-check-label">{check.label}</span>
+              </li>
+            ))}
+          </ul>
+          <ul className="wiz-complete-col">
+            {rightChecks.map((check) => (
+              <li
+                key={check.id}
+                className={
+                  check.filled
+                    ? "wiz-complete-check is-done"
+                    : "wiz-complete-check"
+                }
+              >
+                <span className="wiz-complete-check-mark" aria-hidden>
+                  {check.filled ? <Check /> : null}
+                </span>
+                <span className="wiz-complete-check-label">{check.label}</span>
               </li>
             ))}
           </ul>
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

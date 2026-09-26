@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowRight,
   CalendarDays,
   ClipboardList,
   FileText,
@@ -11,7 +12,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { acceptAllGbpSuggestions } from "@/features/wizytowka/actions";
 import { GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
@@ -130,10 +131,10 @@ function cardTabLabel(item: ProposalCardItem): string {
 }
 
 function cardActionLabel(item: ProposalCardItem): string {
-  if (item.kind === "special_hours") return "Uzupełnij godziny →";
-  if (item.kind === "attributes") return "Potwierdź atrybuty →";
-  if (item.kind === "photos") return "Otwórz w Google →";
-  return "Porównaj zmiany →";
+  if (item.kind === "special_hours") return "Uzupełnij godziny";
+  if (item.kind === "attributes") return "Potwierdź atrybuty";
+  if (item.kind === "photos") return "Otwórz w Google";
+  return "Porównaj zmiany";
 }
 
 function cardIcon(item: ProposalCardItem) {
@@ -188,17 +189,13 @@ export function ProposalCards({
     () => items.filter((item) => !isNudgeProposalCard(item)).length,
     [items],
   );
-  const [sessionTotal] = useState(() => items.length);
-  const [resolved, setResolved] = useState(0);
 
   useEffect(() => {
     scrollToHash();
   }, [pathname]);
 
-  if (items.length === 0 && resolved === 0) return null;
-
   const remaining = items.length;
-  const cols = Math.min(Math.max(remaining, 1), 5);
+  const showEmpty = remaining === 0;
 
   function reviewNext() {
     const first = items[0];
@@ -213,14 +210,14 @@ export function ProposalCards({
           <WandSparkles aria-hidden className="wiz-proposals-wand" />
           <p className="wiz-proposals-title">Propozycje AI do Twojej decyzji</p>
           {remaining > 0 ? (
-            <span className="wiz-proposals-badge">{remaining}</span>
+            <span className="wiz-proposals-badge mono">{remaining}</span>
           ) : null}
         </div>
         {remaining > 0 ? (
           <div className="wiz-proposals-actions">
             <button
               type="button"
-              className="ui-btn ui-btn-outline ui-btn-sm"
+              className="ui-btn ui-btn-white ui-btn-sm"
               onClick={reviewNext}
             >
               <span>Przejrzyj po kolei</span>
@@ -240,7 +237,6 @@ export function ProposalCards({
                       });
                       return;
                     }
-                    setResolved(sessionTotal);
                     toast.success({
                       title: "Zaakceptowano propozycje",
                       description:
@@ -259,11 +255,12 @@ export function ProposalCards({
         ) : null}
       </div>
 
-      {remaining > 0 ? (
-        <ul
-          className="wiz-proposals-grid"
-          style={{ ["--proposal-cols" as string]: String(cols) }}
-        >
+      {showEmpty ? (
+        <p className="wiz-proposals-empty">
+          Brak propozycji - wizytówka jest aktualna
+        </p>
+      ) : (
+        <ul className="wiz-proposals-grid">
           {items.map((item) => {
             const Icon = cardIcon(item);
             const warn = isNudgeProposalCard(item);
@@ -273,32 +270,36 @@ export function ProposalCards({
                 key={cardKey(item)}
                 className={`wiz-proposal-card${warn ? " is-warn" : ""}`}
               >
-                <div className="wiz-proposal-card-title-row">
-                  <span className="wiz-proposal-icon" aria-hidden>
+                <div className="wiz-proposal-card-top">
+                  <span
+                    className={`wiz-proposal-icon-sq${warn ? " is-warn" : ""}`}
+                    aria-hidden
+                  >
                     <Icon />
                   </span>
-                  <p className="wiz-proposal-card-title">{cardTitle(item)}</p>
-                </div>
-                <p className="wiz-proposal-card-blurb">{cardBlurb(item)}</p>
-                <div className="wiz-proposal-card-foot">
-                  <button
-                    type="button"
-                    className="wiz-proposal-compare"
-                    onClick={() =>
-                      goToHref(pathname, router, cardHref(item, mapsUri))
-                    }
-                  >
-                    {cardActionLabel(item)}
-                  </button>
-                  <span className="wiz-proposal-tab">
+                  <span className="ui-pill ui-pill-neutral wiz-proposal-tab-pill">
                     {cardTabLabel(item)}
                   </span>
                 </div>
+                <p className="wiz-proposal-card-title">{cardTitle(item)}</p>
+                <p className="wiz-proposal-card-blurb">{cardBlurb(item)}</p>
+                <button
+                  type="button"
+                  className={`wiz-proposal-cta${warn ? " is-warn" : ""}`}
+                  onClick={() =>
+                    goToHref(pathname, router, cardHref(item, mapsUri))
+                  }
+                >
+                  <span>{cardActionLabel(item)}</span>
+                  <span className="wiz-proposal-cta-arrow" aria-hidden>
+                    <ArrowRight />
+                  </span>
+                </button>
               </li>
             );
           })}
         </ul>
-      ) : null}
+      )}
     </div>
   );
 }
