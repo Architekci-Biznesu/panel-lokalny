@@ -681,7 +681,10 @@ export function OnboardingWizard({
                 const inputId = `loc-${index}-${loc.name.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
                 const checked = selected.includes(loc.name);
                 return (
-                  <div key={loc.name} className="location-item">
+                  <div
+                    key={loc.name}
+                    className={`location-item${checked ? " is-selected" : ""}`}
+                  >
                     <input
                       id={inputId}
                       type="checkbox"
@@ -796,7 +799,7 @@ export function OnboardingWizard({
                 <>
                   <GoogleGlyph />
                   {selected.length > 1
-                    ? "Podłącz profile"
+                    ? `Podłącz profile (${selected.length})`
                     : "Podłącz profil"}
                 </>
               )}

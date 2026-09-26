@@ -10,19 +10,25 @@ import { SplitScreenLayout } from "@/features/shell/split-screen";
 
 const HERO_BY_STEP = {
   "1": {
+    topic: "Firma",
     headline: "Zacznijmy od Twojej firmy",
     description:
       "Podaj stronę WWW albo krótki opis. Resztę briefu AI uzupełni za Ciebie.",
+    decor: "onboarding-1" as const,
   },
   "2": {
+    topic: "Brief od AI",
     headline: "Brief pod Twoją markę",
     description:
       "Usługi, ton, grupa docelowa i wyróżniki - fundament publikacji i odpowiedzi na opinie.",
+    decor: "onboarding-2" as const,
   },
   "3": {
+    topic: "Wizytówka Google",
     headline: "Prawie gotowe",
     description:
       "Połącz wizytówkę Google - albo pomiń i wróć do tego później.",
+    decor: "onboarding-3" as const,
   },
 } as const;
 
@@ -49,12 +55,13 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
     <SplitScreenLayout
       hero={{
         ...hero,
-        user: session?.user
-          ? {
-              name: session.user.name ?? "Użytkownik",
-              email: session.user.email ?? "",
-            }
-          : null,
+        user:
+          !showProfileSwitcher && session?.user
+            ? {
+                name: session.user.name ?? "Użytkownik",
+                email: session.user.email ?? "",
+              }
+            : null,
       }}
       topRight={
         showProfileSwitcher ? (
