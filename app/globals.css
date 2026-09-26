@@ -6862,3 +6862,313 @@
     }
   }
 }
+
+
+/* ============ Styl 4 - logowanie, rejestracja, onboarding ============ */
+@layer components {
+  .split-screen {
+    height: 100dvh;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 624px) minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+    box-sizing: border-box;
+    background: var(--background);
+    overflow: hidden;
+  }
+
+  /* Kafel formularza (w DOM pierwszy = po lewej) */
+  .split-right {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    min-height: 0;
+    padding: 32px 48px;
+    background: var(--card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow-y: auto;
+  }
+
+  .split-form-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 40px;
+  }
+
+  .split-top-right {
+    position: static;
+  }
+
+  .split-form-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px 0;
+  }
+
+  .split-right-inner {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    gap: 20px;
+  }
+
+  .split-form-foot {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--type-xs);
+    color: var(--ring);
+  }
+
+  .split-brand-name {
+    font-size: var(--type-base);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--foreground);
+  }
+
+  .split-brand-sub {
+    font-size: var(--type-xs);
+    color: var(--muted-foreground);
+  }
+
+  .split-right-inner h1 {
+    margin: 0;
+    font-size: 40px;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    text-align: left;
+  }
+
+  .split-right-lead {
+    margin-top: -8px;
+    text-align: left;
+    font-size: 15px;
+    color: var(--muted-foreground);
+  }
+
+  .split-right-inner .split-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    height: 28px;
+    margin: 0;
+    padding: 0 12px;
+    border-radius: var(--radius-pill);
+    background: var(--warning-soft);
+    color: var(--foreground);
+    font-size: var(--type-xs);
+    font-weight: 500;
+    letter-spacing: 0;
+    text-align: left;
+  }
+
+  .split-right-inner .split-step::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--warning);
+  }
+
+  .split-right-inner .auth-field label {
+    font-size: var(--type-sm);
+    font-weight: 500;
+  }
+
+  .split-right-inner .ui-field {
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+  }
+
+  .split-right-inner .ui-textarea {
+    padding: 12px 16px;
+  }
+
+  .split-right-inner .ui-btn {
+    height: 40px;
+    min-height: 40px;
+    font-size: var(--type-base);
+  }
+
+  .auth-alt {
+    text-align: center;
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
+  }
+
+  .auth-alt a {
+    color: var(--foreground);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .auth-alt a:hover {
+    text-decoration: underline;
+  }
+
+  /* Segment „Mam stronę WWW / Nie mam strony” */
+  .path-toggle {
+    height: 44px;
+    padding: 4px;
+    gap: 0;
+    box-sizing: border-box;
+    background: var(--muted);
+    border: 0;
+  }
+
+  .path-toggle button {
+    padding: 0 14px;
+    font-weight: 500;
+  }
+
+  .path-toggle button[data-active="true"] {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Połącz z Google: biała pigułka z obrysem */
+  .google-connect-btn {
+    min-height: 48px;
+    padding: 0 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    font-weight: 500;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .google-connect-btn:hover:not(:disabled) {
+    background: #fafafa;
+    border-color: #d4d4d4;
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* Kafel ze zdjęciem (w DOM drugi = po prawej) */
+  .split-left {
+    position: relative;
+    min-height: 0;
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    background: var(--brand);
+    color: #fff;
+  }
+
+  /* Zdjęcie zaczyna się pod nagłówkiem, żeby twarz nie wchodziła pod tekst */
+  .split-left .split-carousel {
+    top: 30%;
+  }
+
+  .split-left .split-carousel-slide {
+    object-position: center top;
+  }
+
+  .split-hero-tint {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, var(--brand) 0%, var(--brand) 30%, rgba(79, 70, 229, 0.55) 36%, rgba(79, 70, 229, 0) 50%),
+      linear-gradient(90deg, rgba(55, 48, 163, 0.55) 0%, rgba(55, 48, 163, 0.2) 35%, rgba(55, 48, 163, 0) 55%),
+      linear-gradient(0deg, rgba(30, 27, 75, 0.55) 0%, rgba(30, 27, 75, 0) 30%);
+  }
+
+  .split-carousel-dots {
+    top: auto;
+    bottom: 40px;
+    right: 48px;
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .split-left-overlay {
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px 48px;
+    background: none;
+  }
+
+  .split-left-copy {
+    padding: 0;
+    gap: 16px;
+    max-width: 560px;
+  }
+
+  .split-headline {
+    margin: 0;
+    font-size: clamp(2.25rem, 3.6vw, 3.25rem);
+    font-weight: 300;
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+    max-width: 14ch;
+  }
+
+  .split-desc {
+    margin: 0;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    opacity: 1;
+    max-width: 40ch;
+  }
+
+  .split-left-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .trust-bar {
+    margin: 0;
+    padding: 10px 18px;
+    font-size: var(--type-sm);
+    color: #404040;
+    box-shadow: 0 16px 40px -12px rgba(30, 27, 75, 0.45);
+  }
+
+  .split-user-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 10px 10px 18px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(8px);
+  }
+
+  @media (max-width: 899px) {
+    .split-screen {
+      height: auto;
+      min-height: 100dvh;
+      grid-template-columns: 1fr;
+      padding: 12px;
+      overflow: visible;
+    }
+
+    .split-left {
+      display: none;
+    }
+
+    .split-right {
+      padding: 24px 20px;
+      overflow: visible;
+    }
+
+    .split-right-inner h1 {
+      font-size: 32px;
+    }
+  }
+}

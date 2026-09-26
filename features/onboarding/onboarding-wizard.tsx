@@ -253,7 +253,7 @@ export function OnboardingWizard({
   if (step === "1") {
     return (
       <>
-        <p className="split-step">KROK 1 Z 3</p>
+        <p className="split-step">Krok 1/3</p>
         <h1>Masz stronę internetową?</h1>
         <p className="split-right-lead">
           Wklej adres, a pobierzemy dane i przygotujemy brief. Nie masz strony?
@@ -357,7 +357,7 @@ export function OnboardingWizard({
   if (step === "2") {
     return (
       <>
-        <p className="split-step">KROK 2 Z 3</p>
+        <p className="split-step">Krok 2/3</p>
         <h1>Sprawdź brief od AI</h1>
         <p className="split-right-lead">
           To propozycja startowa - możesz poprawić każde pole przed kolejnym
@@ -605,7 +605,7 @@ export function OnboardingWizard({
 
   return (
     <>
-      <p className="split-step">KROK 3 Z 3</p>
+      <p className="split-step">Krok 3/3</p>
       <h1>Połącz wizytówkę Google</h1>
       <p className="split-right-lead">
         To najszybszy sposób na start - pobierzemy lokalizacje i dane firmy.

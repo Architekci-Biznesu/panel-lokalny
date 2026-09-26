@@ -67,22 +67,40 @@ export function SplitScreenLayout({
 
   return (
     <div className="split-screen">
+      {/* Styl 4: lewy biały kafel z formularzem, prawy kafel ze zdjęciem na indygo */}
+      <section className="split-right" id="split-right">
+        <header className="split-form-top">
+          <BrandMark />
+          {topRight ? <div className="split-top-right">{topRight}</div> : null}
+        </header>
+        <div className="split-form-body">
+          <div className="split-right-inner">{children}</div>
+        </div>
+        <footer className="split-form-foot">
+          <span>© {new Date().getFullYear()} Architekci Biznesu</span>
+        </footer>
+      </section>
+
       <aside className="split-left">
         <SplitLeftCarousel slides={slides} />
+        <div className="split-hero-tint" aria-hidden />
         <div className="split-left-overlay">
           <div className="split-left-copy">
-            <BrandMark />
             <h2 className="split-headline">{hero.headline}</h2>
             <p className="split-desc">{hero.description}</p>
+          </div>
 
+          <div className="split-left-bottom">
             {hero.showTrustBar ? (
               <div className="trust-bar">
                 <span className="trust-item">
                   <Users aria-hidden className="trust-users-icon" />
-                  +300 klientów
+                  <span className="mono">+300</span> klientów
                 </span>
                 <span className="trust-sep" aria-hidden />
-                <span className="trust-item">4.9/5 209 opinii</span>
+                <span className="trust-item">
+                  <span className="mono">4.9/5</span> · <span className="mono">209</span> opinii
+                </span>
                 <span className="trust-logos">
                   <Image
                     src="/images/brand/google.png"
@@ -104,32 +122,27 @@ export function SplitScreenLayout({
                 </span>
               </div>
             ) : null}
-          </div>
 
-          {hero.user ? (
-            <div className="split-user-bar">
-              <div>
-                <p className="split-user-name">{hero.user.name}</p>
-                <p className="split-user-email">{hero.user.email}</p>
+            {hero.user ? (
+              <div className="split-user-bar">
+                <div>
+                  <p className="split-user-name">{hero.user.name}</p>
+                  <p className="split-user-email">{hero.user.email}</p>
+                </div>
+                <form action={logoutAction}>
+                  <button
+                    type="submit"
+                    className="split-logout"
+                    aria-label="Wyloguj"
+                  >
+                    <LogOut aria-hidden />
+                  </button>
+                </form>
               </div>
-              <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className="split-logout"
-                  aria-label="Wyloguj"
-                >
-                  <LogOut aria-hidden />
-                </button>
-              </form>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </aside>
-
-      <section className="split-right" id="split-right">
-        {topRight ? <div className="split-top-right">{topRight}</div> : null}
-        <div className="split-right-inner">{children}</div>
-      </section>
     </div>
   );
 }
