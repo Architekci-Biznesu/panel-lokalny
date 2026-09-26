@@ -84,6 +84,7 @@ export type ProposalCardItem =
       additional?: GbpSuggestion;
     }
   | { kind: "special_hours"; hint: string }
+  | { kind: "regular_hours"; ourWeeklyMinutes: number; competitorMedian: number | null; competitorMax: number | null }
   | { kind: "attributes"; count: number }
   | {
       kind: "photos";
@@ -98,12 +99,21 @@ export type ProposalCardHints = {
   photoCount?: number;
   competitorPhotoMedian?: number | null;
   competitorPhotoMax?: number | null;
+  ourWeeklyMinutes?: number | null;
+  competitorHoursMedian?: number | null;
+  competitorHoursMax?: number | null;
 };
 
 export function isNudgeProposalCard(
   item: ProposalCardItem,
 ): item is
   | { kind: "special_hours"; hint: string }
+  | {
+      kind: "regular_hours";
+      ourWeeklyMinutes: number;
+      competitorMedian: number | null;
+      competitorMax: number | null;
+    }
   | { kind: "attributes"; count: number }
   | {
       kind: "photos";
@@ -113,6 +123,7 @@ export function isNudgeProposalCard(
     } {
   return (
     item.kind === "special_hours" ||
+    item.kind === "regular_hours" ||
     item.kind === "attributes" ||
     item.kind === "photos"
   );
@@ -147,6 +158,26 @@ export function proposalCardItems(
 
   if (hints.specialHoursHint) {
     items.push({ kind: "special_hours", hint: hints.specialHoursHint });
+  }
+
+  const ourWeekly = hints.ourWeeklyMinutes ?? null;
+  const hoursMedian = hints.competitorHoursMedian ?? null;
+  const hoursMax = hints.competitorHoursMax ?? null;
+  const behindOnHours =
+    ourWeekly != null
+      ? hoursMedian != null
+        ? ourWeekly < hoursMedian
+        : hoursMax != null
+          ? ourWeekly < hoursMax
+          : false
+      : false;
+  if (behindOnHours && ourWeekly != null) {
+    items.push({
+      kind: "regular_hours",
+      ourWeeklyMinutes: ourWeekly,
+      competitorMedian: hoursMedian,
+      competitorMax: hoursMax,
+    });
   }
 
   if ((hints.factsToConfirm ?? 0) > 0) {

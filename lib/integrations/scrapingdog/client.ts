@@ -9,6 +9,8 @@ export type ScrapingDogPlaceResult = {
   position: number;
   rating: number | null;
   reviews: number | null;
+  /** Per-day hours from Maps (`monday` → `"9:00–17:00"` / `"Closed"`). */
+  operatingHours?: Record<string, string> | null;
 };
 
 export type ScrapingDogPhotosCount = {
@@ -77,6 +79,19 @@ function readTypes(row: Record<string, unknown>): string[] {
   return [...new Set(out)];
 }
 
+function readOperatingHours(
+  row: Record<string, unknown>,
+): Record<string, string> | null {
+  const raw = row.operating_hours ?? row.operatingHours ?? row.hours;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value !== "string" || !value.trim()) continue;
+    out[key.toLowerCase()] = value.trim();
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 function parsePlaceList(
   items: unknown[],
   positionOffset = 0,
@@ -108,6 +123,7 @@ function parsePlaceList(
       types,
       rating,
       reviews,
+      operatingHours: readOperatingHours(row),
       position: explicitPosition ?? positionOffset + i + 1,
     });
   }

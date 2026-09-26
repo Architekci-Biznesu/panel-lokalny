@@ -66,6 +66,11 @@ export type CompetitorInsightsForAudit = {
     competitorMedian: number | null;
     competitorMax: number | null;
   } | null;
+  hoursStats?: {
+    ourWeeklyMinutes: number;
+    competitorMedian: number | null;
+    competitorMax: number | null;
+  } | null;
 };
 
 export type GenerateGbpAuditInput = {

@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Check, Loader2, Pencil, Star, WandSparkles, X } from "lucide-react";
+import { Check, Loader2, Pencil, Star, WandSparkles } from "lucide-react";
 import { toast } from "gooey-toast";
+import { RejectPopover } from "@/features/wizytowka/components/reject-popover";
 import {
   acceptGbpSuggestion,
   rejectGbpSuggestion,
@@ -43,8 +44,6 @@ export function CategoriesSuggestion({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [reason, setReason] = useState("");
 
   const currentPrimaryName = primary?.name ?? "";
   const currentPrimaryLabel = primary?.displayName ?? primary?.name ?? null;
@@ -111,12 +110,12 @@ export function CategoriesSuggestion({
     });
   }
 
-  function runReject() {
+  function runReject(reason: string | undefined) {
     startTransition(async () => {
       for (const id of pendingIds) {
         const result = await rejectGbpSuggestion({
           suggestionId: id,
-          reason: reason || undefined,
+          reason,
         });
         if (!result.ok) {
           toast.error({
@@ -268,62 +267,62 @@ export function CategoriesSuggestion({
         ) : null}
 
         <div className="wiz-suggestion-actions">
-          <button
-            type="button"
-            className="ui-btn ui-btn-outline ui-btn-sm"
-            disabled={pending}
-            onClick={() => setEditing((v) => !v)}
-          >
-            <Pencil aria-hidden />
-            {editing ? "Podgląd" : "Popraw"}
-          </button>
-          <button
-            type="button"
-            className="ui-btn ui-btn-soft-danger ui-btn-sm"
-            disabled={pending}
-            onClick={() => setRejectOpen((v) => !v)}
-          >
-            <X aria-hidden />
-            Odrzuć
-          </button>
-          <button
-            type="button"
-            className="ui-btn ui-btn-primary ui-btn-sm"
-            disabled={pending}
-            onClick={runAccept}
-          >
-            {pending ? (
-              <Loader2 aria-hidden className="ui-btn-spinner" />
-            ) : (
-              <Check aria-hidden />
-            )}
-            Akceptuj
-          </button>
+          {editing ? (
+            <>
+              <button
+                type="button"
+                className="ui-btn ui-btn-outline ui-btn-sm"
+                disabled={pending}
+                onClick={() => {
+                  setDraftPrimary(suggestedPrimary);
+                  setDraftAdditional(suggestedAdditional);
+                  setEditing(false);
+                }}
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                className="ui-btn ui-btn-primary ui-btn-sm"
+                disabled={pending}
+                onClick={runAccept}
+              >
+                {pending ? (
+                  <Loader2 aria-hidden className="ui-btn-spinner" />
+                ) : (
+                  <Check aria-hidden />
+                )}
+                Zapisz w Google
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="ui-btn ui-btn-outline ui-btn-sm"
+                disabled={pending}
+                onClick={() => setEditing(true)}
+              >
+                <Pencil aria-hidden />
+                Popraw
+              </button>
+              <RejectPopover pending={pending} onConfirm={runReject} />
+              <button
+                type="button"
+                className="ui-btn ui-btn-primary ui-btn-sm"
+                disabled={pending}
+                onClick={runAccept}
+              >
+                {pending ? (
+                  <Loader2 aria-hidden className="ui-btn-spinner" />
+                ) : (
+                  <Check aria-hidden />
+                )}
+                Akceptuj
+              </button>
+            </>
+          )}
         </div>
-
-        {rejectOpen ? (
-          <div className="wiz-reject-box">
-            <label className="text-sm font-medium" htmlFor="reject-categories">
-              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać” w
-              kontekście)
-            </label>
-            <textarea
-              id="reject-categories"
-              className="ui-textarea"
-              rows={2}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
-            <button
-              type="button"
-              className="ui-btn ui-btn-outline ui-btn-sm"
-              disabled={pending}
-              onClick={runReject}
-            >
-              Potwierdź odrzucenie
-            </button>
-          </div>
-        ) : null}
       </div>
     </div>
   );

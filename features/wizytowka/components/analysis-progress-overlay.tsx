@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check } from "lucide-react";
+import { WandSparkles } from "lucide-react";
 
 const STEPS = [
   "Pobieranie danych wizytówki",
@@ -11,69 +11,113 @@ const STEPS = [
   "Przygotowywanie propozycji",
 ] as const;
 
+/**
+ * Rotated while on the last main step. ~100 s audits need a fresh line every
+ * SUBSTEP_MS after the early STEPS finish (~7.5 s) → ~10 labels.
+ */
+const FINAL_SUBSTEPS = [
+  "Układanie propozycji nazwy",
+  "Doszlifowanie opisu wizytówki",
+  "Dopasowanie kategorii głównej",
+  "Przegląd kategorii dodatkowych",
+  "Porównywanie z konkurencją w okolicy",
+  "Sprawdzanie zdjęć i kompletności galerii",
+  "Analiza godzin otwarcia",
+  "Szukanie luk w Local Pack",
+  "Dobieranie fraz rankingowych",
+  "Finalizacja listy do decyzji",
+] as const;
+
 const STEP_MS = 2500;
+const SUBSTEP_MS = 8000;
 
 export function AnalysisProgressOverlay({ active }: { active: boolean }) {
-  const [mounted, setMounted] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const [substepIndex, setSubstepIndex] = useState(0);
+  const [wasActive, setWasActive] = useState(active);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!active) {
-      setStepIndex(0);
-      return;
-    }
+  // Każde nowe uruchomienie zaczyna od pierwszego kroku (reset w renderze, bez setState w efekcie).
+  if (active !== wasActive) {
+    setWasActive(active);
     setStepIndex(0);
+    setSubstepIndex(0);
+  }
+
+  useEffect(() => {
+    if (!active) return;
     const id = window.setInterval(() => {
       setStepIndex((prev) => Math.min(prev + 1, STEPS.length - 1));
     }, STEP_MS);
     return () => window.clearInterval(id);
   }, [active]);
 
-  if (!mounted || !active) return null;
+  useEffect(() => {
+    if (!active || stepIndex !== STEPS.length - 1) return;
+    setSubstepIndex(0);
+    const id = window.setInterval(() => {
+      setSubstepIndex((prev) =>
+        Math.min(prev + 1, FINAL_SUBSTEPS.length - 1),
+      );
+    }, SUBSTEP_MS);
+    return () => window.clearInterval(id);
+  }, [active, stepIndex]);
+
+  // Nakładka pojawia się tylko po akcji użytkownika, więc document zawsze istnieje.
+  if (!active || typeof document === "undefined") return null;
+
+  const onFinalStep = stepIndex === STEPS.length - 1;
+  const headline = onFinalStep
+    ? FINAL_SUBSTEPS[substepIndex]
+    : STEPS[stepIndex];
+  const headlineKey = onFinalStep
+    ? `sub-${substepIndex}`
+    : `step-${stepIndex}`;
 
   return createPortal(
     <div
-      className="app-profile-switch-overlay"
+      className="app-profile-switch-overlay wiz-analysis"
       role="status"
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="app-profile-switch-content wiz-analysis-overlay">
-        <svg
-          aria-hidden
-          className="app-profile-switch-spinner"
-          viewBox="0 0 50 50"
-        >
-          <circle
-            className="app-profile-switch-track"
-            cx="25"
-            cy="25"
-            r="20"
-          />
-          <circle className="app-profile-switch-arc" cx="25" cy="25" r="20" />
-        </svg>
-        <p className="app-profile-switch-label">Analiza wizytówki…</p>
-        <ol className="wiz-analysis-steps">
-          {STEPS.map((label, index) => {
-            const done = index < stepIndex;
-            const current = index === stepIndex;
-            return (
-              <li
-                key={label}
-                className={`wiz-analysis-step${done ? " is-done" : ""}${current ? " is-current" : ""}`}
-              >
-                <span className="wiz-analysis-step-mark" aria-hidden>
-                  {done ? <Check /> : <span className="mono">{index + 1}</span>}
-                </span>
-                <span className="wiz-analysis-step-label">{label}</span>
-              </li>
-            );
-          })}
+      <div className="wiz-analysis-stage">
+        <div className="wiz-analysis-radar" aria-hidden>
+          <span className="wiz-analysis-wave" />
+          <span className="wiz-analysis-wave" />
+          <span className="wiz-analysis-wave" />
+          <span className="wiz-analysis-core">
+            <WandSparkles />
+          </span>
+        </div>
+
+        <p className="wiz-analysis-kicker">Analiza wizytówki</p>
+        {/* key: każdy nowy krok / podkrok wjeżdża od nowa */}
+        <p key={headlineKey} className="wiz-analysis-now">
+          {headline}
+        </p>
+
+        <ol className="wiz-analysis-track" aria-label="Postęp analizy">
+          {STEPS.map((label, index) => (
+            <li
+              key={label}
+              className={`wiz-analysis-seg${index < stepIndex ? " is-done" : ""}${index === stepIndex ? " is-current" : ""}`}
+            >
+              <span className="sr-only">
+                {label}
+                {index < stepIndex
+                  ? " - gotowe"
+                  : index === stepIndex
+                    ? " - w toku"
+                    : ""}
+              </span>
+            </li>
+          ))}
         </ol>
+
+        <p className="wiz-analysis-foot">
+          Krok <span className="mono">{stepIndex + 1}</span> z{" "}
+          <span className="mono">{STEPS.length}</span> · nie zamykaj tej strony
+        </p>
       </div>
     </div>,
     document.body,

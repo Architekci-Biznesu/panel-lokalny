@@ -4,6 +4,7 @@ import {
   ArrowRight,
   CalendarDays,
   ClipboardList,
+  Clock3,
   FileText,
   ImageIcon,
   ListChecks,
@@ -16,6 +17,7 @@ import { useEffect, useMemo, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { acceptAllGbpSuggestions } from "@/features/wizytowka/actions";
 import { GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
+import { formatWeeklyHoursLabel } from "@/features/wizytowka/hours-compare";
 import { aiHintForSuggestion } from "@/features/wizytowka/components/suggestion-display";
 import {
   isNudgeProposalCard,
@@ -33,6 +35,7 @@ const FIELD_ICONS = {
 } as const;
 
 const SPECIAL_HOURS_HREF = "/wizytowka/informacje#wiz-field-special-hours";
+const REGULAR_HOURS_HREF = "/wizytowka/informacje#wiz-field-hours";
 const ATTRIBUTES_HREF = "/wizytowka/atrybuty";
 
 function scrollToHash() {
@@ -74,6 +77,9 @@ function cardHref(item: ProposalCardItem, mapsUri?: string | null): string {
   if (item.kind === "special_hours") {
     return SPECIAL_HOURS_HREF;
   }
+  if (item.kind === "regular_hours") {
+    return REGULAR_HOURS_HREF;
+  }
   if (item.kind === "attributes") {
     return ATTRIBUTES_HREF;
   }
@@ -88,6 +94,9 @@ function cardTitle(item: ProposalCardItem): string {
   if (item.kind === "categories") return "Kategorie";
   if (item.kind === "special_hours") {
     return "Brak dni specjalnych";
+  }
+  if (item.kind === "regular_hours") {
+    return "Krótsze godziny niż konkurencja";
   }
   if (item.kind === "attributes") {
     return "Atrybuty";
@@ -106,6 +115,18 @@ function cardTitle(item: ProposalCardItem): string {
 function cardBlurb(item: ProposalCardItem): string {
   if (item.kind === "special_hours") {
     return `Najbliższe święta: ${item.hint}. Ustaw godziny, żeby klienci nie trafili na zamknięte drzwi.`;
+  }
+  if (item.kind === "regular_hours") {
+    const target = item.competitorMedian ?? item.competitorMax;
+    const ours = formatWeeklyHoursLabel(item.ourWeeklyMinutes);
+    if (target != null) {
+      const approx =
+        item.competitorMedian != null
+          ? `zwykle ok. ${formatWeeklyHoursLabel(item.competitorMedian)}`
+          : `nawet ${formatWeeklyHoursLabel(item.competitorMax!)}`;
+      return `Top konkurencja jest otwarta ${approx} tygodniowo, Ty ${ours}. Rozważ wydłużenie godzin otwarcia.`;
+    }
+    return `Masz ${ours} otwarcia tygodniowo - warto sprawdzić, czy nie gubisz klientów poza tymi godzinami.`;
   }
   if (item.kind === "attributes") {
     return `${item.count} faktów o firmie czeka na potwierdzenie. Zaznacz, co jest prawdą - AI tego nie zgadnie.`;
@@ -133,7 +154,11 @@ function cardBlurb(item: ProposalCardItem): string {
 }
 
 function cardTabLabel(item: ProposalCardItem): string {
-  if (item.kind === "categories" || item.kind === "special_hours") {
+  if (
+    item.kind === "categories" ||
+    item.kind === "special_hours" ||
+    item.kind === "regular_hours"
+  ) {
     return "Informacje";
   }
   if (item.kind === "attributes") return "Atrybuty";
@@ -144,6 +169,7 @@ function cardTabLabel(item: ProposalCardItem): string {
 
 function cardActionLabel(item: ProposalCardItem): string {
   if (item.kind === "special_hours") return "Uzupełnij godziny";
+  if (item.kind === "regular_hours") return "Sprawdź godziny";
   if (item.kind === "attributes") return "Potwierdź atrybuty";
   if (item.kind === "photos") return "Otwórz w Google";
   return "Porównaj zmiany";
@@ -151,6 +177,7 @@ function cardActionLabel(item: ProposalCardItem): string {
 
 function cardIcon(item: ProposalCardItem) {
   if (item.kind === "special_hours") return CalendarDays;
+  if (item.kind === "regular_hours") return Clock3;
   if (item.kind === "attributes") return ListChecks;
   if (item.kind === "photos") return ImageIcon;
   if (item.kind === "categories") return Tags;
@@ -167,6 +194,7 @@ function cardKey(item: ProposalCardItem): string {
     return `cat-${item.primary?.id ?? ""}-${item.additional?.id ?? ""}`;
   }
   if (item.kind === "special_hours") return "special-hours";
+  if (item.kind === "regular_hours") return "regular-hours";
   if (item.kind === "attributes") return "attributes";
   if (item.kind === "photos") return "photos";
   return item.suggestion.id;
@@ -179,6 +207,9 @@ export function ProposalCards({
   photoCount = GBP_PHOTO_MIN,
   competitorPhotoMedian = null,
   competitorPhotoMax = null,
+  ourWeeklyMinutes = null,
+  competitorHoursMedian = null,
+  competitorHoursMax = null,
   mapsUri = null,
 }: {
   suggestions: GbpSuggestion[];
@@ -187,6 +218,9 @@ export function ProposalCards({
   photoCount?: number;
   competitorPhotoMedian?: number | null;
   competitorPhotoMax?: number | null;
+  ourWeeklyMinutes?: number | null;
+  competitorHoursMedian?: number | null;
+  competitorHoursMax?: number | null;
   mapsUri?: string | null;
 }) {
   const pathname = usePathname();
@@ -200,6 +234,9 @@ export function ProposalCards({
         photoCount,
         competitorPhotoMedian,
         competitorPhotoMax,
+        ourWeeklyMinutes,
+        competitorHoursMedian,
+        competitorHoursMax,
       }),
     [
       suggestions,
@@ -208,6 +245,9 @@ export function ProposalCards({
       photoCount,
       competitorPhotoMedian,
       competitorPhotoMax,
+      ourWeeklyMinutes,
+      competitorHoursMedian,
+      competitorHoursMax,
     ],
   );
   const aiCount = useMemo(

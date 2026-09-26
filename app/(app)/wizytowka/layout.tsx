@@ -1,14 +1,13 @@
 import { GbpPreviewCard } from "@/features/wizytowka/components/gbp-preview-card";
 import { LastAnalysisLabel } from "@/features/wizytowka/components/last-analysis-label";
+import { AnalysisRunningGate } from "@/features/wizytowka/components/analysis-running-gate";
 import { ProposalCards } from "@/features/wizytowka/components/proposal-cards";
 import { WizytowkaSubnav } from "@/features/wizytowka/components/wizytowka-subnav";
 import {
   computeCompleteness,
   GBP_PHOTO_MIN,
 } from "@/features/wizytowka/completeness";
-import {
-  loadLatestAuditInsights,
-} from "@/features/wizytowka/competitor-insights";
+import { loadLatestAuditInsights } from "@/features/wizytowka/competitor-insights";
 import { loadActiveGbpBundle } from "@/features/wizytowka/load-location";
 import { getUpcomingHolidayHint } from "@/features/wizytowka/polish-holidays";
 import {
@@ -45,6 +44,9 @@ export default async function WizytowkaLayout({
   let specialHoursHint: string | null = null;
   let competitorPhotoMedian: number | null = null;
   let competitorPhotoMax: number | null = null;
+  let ourWeeklyMinutes: number | null = null;
+  let competitorHoursMedian: number | null = null;
+  let competitorHoursMax: number | null = null;
 
   try {
     const bundle = await loadActiveGbpBundle();
@@ -56,6 +58,13 @@ export default async function WizytowkaLayout({
       competitorPhotoMedian =
         latestInsights.insights.photoStats.competitorMedian;
       competitorPhotoMax = latestInsights.insights.photoStats.competitorMax;
+    }
+    if (latestInsights?.insights.hoursStats) {
+      ourWeeklyMinutes =
+        latestInsights.insights.hoursStats.ourWeeklyMinutes;
+      competitorHoursMedian =
+        latestInsights.insights.hoursStats.competitorMedian;
+      competitorHoursMax = latestInsights.insights.hoursStats.competitorMax;
     }
 
     let photoCount = 0;
@@ -107,6 +116,7 @@ export default async function WizytowkaLayout({
 
   return (
     <div className="wiz-page">
+      <AnalysisRunningGate analyzing={analyzing} />
       <div className="page-header wiz-header">
         <div>
           <h1>Wizytówka Google</h1>
@@ -156,13 +166,11 @@ export default async function WizytowkaLayout({
             photoCount={summary?.photoCount ?? GBP_PHOTO_MIN}
             competitorPhotoMedian={competitorPhotoMedian}
             competitorPhotoMax={competitorPhotoMax}
+            ourWeeklyMinutes={ourWeeklyMinutes}
+            competitorHoursMedian={competitorHoursMedian}
+            competitorHoursMax={competitorHoursMax}
             mapsUri={location?.metadata?.mapsUri ?? null}
           />
-          {analyzing ? (
-            <div className="banner wiz-analyzing">
-              Analizujemy Twoją wizytówkę… Odśwież stronę za chwilę.
-            </div>
-          ) : null}
           <WizytowkaSubnav counts={tabCounts} />
           <div className="wiz-tab-body">{children}</div>
         </>

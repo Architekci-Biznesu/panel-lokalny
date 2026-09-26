@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Check, Loader2, Pencil, WandSparkles, X } from "lucide-react";
+import { Check, Loader2, Pencil, WandSparkles } from "lucide-react";
 import { toast } from "gooey-toast";
+import { RejectPopover } from "@/features/wizytowka/components/reject-popover";
 import {
   acceptGbpSuggestion,
   rejectGbpSuggestion,
@@ -138,8 +139,6 @@ export function InlineSuggestion({
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(suggestion.suggestedValue);
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [reason, setReason] = useState("");
   const [riskOpen, setRiskOpen] = useState(false);
   const isHighRisk = suggestion.risk === "high";
 
@@ -152,6 +151,24 @@ export function InlineSuggestion({
     ? PROPOSAL_META[suggestion.field].label
     : suggestion.field;
   const hint = suggestion.rationale?.trim() || aiHintForSuggestion(suggestion);
+
+  function runReject(reason: string | undefined) {
+    startTransition(async () => {
+      const result = await rejectGbpSuggestion({
+        suggestionId: suggestion.id,
+        reason,
+      });
+      if (!result.ok) {
+        toast.error({
+          title: "Nie udało się odrzucić",
+          description: result.error,
+        });
+        return;
+      }
+      toast.success({ title: "Propozycja odrzucona" });
+      router.refresh();
+    });
+  }
 
   function runAccept(riskAcknowledged: boolean) {
     startTransition(async () => {
@@ -280,87 +297,73 @@ export function InlineSuggestion({
         ) : null}
 
         <div className="wiz-suggestion-actions">
-          <button
-            type="button"
-            className="ui-btn ui-btn-outline ui-btn-sm"
-            disabled={pending}
-            onClick={() => setEditing((v) => !v)}
-          >
-            <Pencil aria-hidden />
-            {editing ? "Podgląd" : "Popraw"}
-          </button>
-          <button
-            type="button"
-            className="ui-btn ui-btn-soft-danger ui-btn-sm"
-            disabled={pending}
-            onClick={() => setRejectOpen((v) => !v)}
-          >
-            <X aria-hidden />
-            Odrzuć
-          </button>
-          <button
-            type="button"
-            className="ui-btn ui-btn-primary ui-btn-sm"
-            disabled={pending}
-            onClick={() => {
-              if (isHighRisk) {
-                setRiskOpen(true);
-                return;
-              }
-              runAccept(false);
-            }}
-          >
-            {pending ? (
-              <Loader2 aria-hidden className="ui-btn-spinner" />
-            ) : (
-              <Check aria-hidden />
-            )}
-            Akceptuj
-          </button>
-        </div>
-
-        {rejectOpen ? (
-          <div className="wiz-reject-box">
-            <label
-              className="text-sm font-medium"
-              htmlFor={`reject-${suggestion.id}`}
-            >
-              Dlaczego odrzucasz? (opcjonalnie - dopiszemy do „czego unikać” w
-              kontekście)
-            </label>
-            <textarea
-              id={`reject-${suggestion.id}`}
-              className="ui-textarea"
-              rows={2}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
-            <button
-              type="button"
-              className="ui-btn ui-btn-outline ui-btn-sm"
-              disabled={pending}
-              onClick={() => {
-                startTransition(async () => {
-                  const result = await rejectGbpSuggestion({
-                    suggestionId: suggestion.id,
-                    reason: reason || undefined,
-                  });
-                  if (!result.ok) {
-                    toast.error({
-                      title: "Nie udało się odrzucić",
-                      description: result.error,
-                    });
+          {editing ? (
+            <>
+              <button
+                type="button"
+                className="ui-btn ui-btn-outline ui-btn-sm"
+                disabled={pending}
+                onClick={() => {
+                  setDraft(suggestion.suggestedValue);
+                  setEditing(false);
+                }}
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                className="ui-btn ui-btn-primary ui-btn-sm"
+                disabled={pending}
+                onClick={() => {
+                  if (isHighRisk) {
+                    setRiskOpen(true);
                     return;
                   }
-                  toast.success({ title: "Propozycja odrzucona" });
-                  router.refresh();
-                });
-              }}
-            >
-              Potwierdź odrzucenie
-            </button>
-          </div>
-        ) : null}
+                  runAccept(false);
+                }}
+              >
+                {pending ? (
+                  <Loader2 aria-hidden className="ui-btn-spinner" />
+                ) : (
+                  <Check aria-hidden />
+                )}
+                Zapisz w Google
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="ui-btn ui-btn-outline ui-btn-sm"
+                disabled={pending}
+                onClick={() => setEditing(true)}
+              >
+                <Pencil aria-hidden />
+                Popraw
+              </button>
+              <RejectPopover pending={pending} onConfirm={runReject} />
+              <button
+                type="button"
+                className="ui-btn ui-btn-primary ui-btn-sm"
+                disabled={pending}
+                onClick={() => {
+                  if (isHighRisk) {
+                    setRiskOpen(true);
+                    return;
+                  }
+                  runAccept(false);
+                }}
+              >
+                {pending ? (
+                  <Loader2 aria-hidden className="ui-btn-spinner" />
+                ) : (
+                  <Check aria-hidden />
+                )}
+                Akceptuj
+              </button>
+            </>
+          )}
+        </div>
 
         {riskOpen ? (
           <div className="wiz-risk-dialog" role="dialog" aria-modal="true">

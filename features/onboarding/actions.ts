@@ -731,7 +731,7 @@ export async function confirmGbpLocations(
     // Still finish - report via query string would be nice; redirect with cookie
   }
 
-  redirect("/pulpit");
+  redirect("/wizytowka");
 }
 
 export async function switchActiveProfile(profileId: string) {

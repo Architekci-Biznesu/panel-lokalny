@@ -38,11 +38,14 @@ Zasady kategorii dodatkowych (additional_categories):
 - W rationale opisz DELTĘ: co dopisujesz i co usuwasz (z powodem). Nie pisz, że „dodajesz” kategorię, która już jest na liście Obecnie. Gdy używasz Local Pack, wspomnij frazy / top kategorie.
 
 Zasady opisu (description):
-- MAKSIMUM 750 znaków włącznie - nigdy więcej. Celuj w 500-700. Bez emotikon. Po polsku, albo w języku klientów, jeśli brief tak mówi.
+- MAKSIMUM 750 znaków włącznie - nigdy więcej. Celuj w **600-720**. Bez emotikon. Po polsku, albo w języku klientów, jeśli brief tak mówi.
 - Pierwsze zdanie: marka, czym się zajmuje, gdzie.
-- Dalej zakres, który pokrywa się z nazwą i kategoriami. Gdy dostaniesz competitorInsights.descriptionSamples - uwzględnij typowy zakres/ton konkurencji, ale fakty tylko z briefu/strony/wizytówki.
+- **Miasto musi wystąpić co najmniej raz** w całym opisie (z adresu wizytówki / locality, albo z obszaru w briefie). Bez miasta w tekście - dopisz je naturalnie (np. w pierwszym zdaniu albo przy adresie). Nie powtarzaj miasta w każdym zdaniu.
+- Dalej zakres, który pokrywa się z nazwą i kategoriami. Gdy dostaniesz competitorInsights.descriptionSamples - uwzględnij typowy zakres usług konkurencji, ale fakty tylko z briefu/strony/wizytówki.
 - Na końcu dowód tylko z danych wejściowych: staż, adres, marki, NFZ albo prywatnie, obszar dojazdu. Bez takiego faktu w wejściu - pomiń go.
+- **Nie dopisuj ocen, gwiazdek ani „opinii Google”** (np. „ocena 4.8”, „pozytywne opinie”) - nawet gdy widzisz je w snapshotcie. To nie wzmacnia opisu w sensowny sposób i wygląda jak wypełniacz.
 - Restauracja albo lokal, którego oferta jest kartą dań, może mieć to menu w opisie zamiast listy usług.
+- Jeśli obecny opis ma już 600-750 znaków, zaczyna się od marki/zakresu, **zawiera miasto** i nie ma oczywistych braków faktów - **POMIŃ pole description** (nie generuj kosmetycznego skrócenia ani „lepszego SEO”). Brak miasta w obecnym opisie = powód do propozycji.
 
 Zasady usług (services):
 - suggestedValue = string JSON-tablicy obiektów. Zawsze KOMPLETNA lista po zmianie, nie pojedynczy element. Maks. 40 pozycji (tyle przyjmuje zapis).
@@ -58,7 +61,7 @@ Zasady usług (services):
 
 Wspólne:
 - NIE wymyślaj kategorii ani serviceTypeId spoza podanych list.
-- NIE proponuj atrybutów (to osobny mechanizm faktów).
+- NIE proponuj atrybutów ani godzin otwarcia (to osobne sygnały w panelu, poza tym JSON-em).
 - Unikaj propozycji identycznych z rejectedSuggestions.
 - Uwzględnij avoid / outOfScope z briefu.
 - Pomiń pole, jeśli obecna wartość jest już dobra - nie generuj pustych zmian.

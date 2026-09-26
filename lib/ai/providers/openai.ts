@@ -188,6 +188,7 @@ Bez markdownu, bez dodatkowych kluczy.`;
               descriptionSamples:
                 input.competitorInsights.descriptionSamples.slice(0, 8),
               photoStats: input.competitorInsights.photoStats,
+              hoursStats: input.competitorInsights.hoursStats ?? null,
             }
           : null,
       ),

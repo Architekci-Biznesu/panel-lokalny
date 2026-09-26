@@ -684,14 +684,14 @@ export function pickGbpCoverUrl(items: GbpMediaItem[]): string | null {
   return pickGbpCollageUrls(items, 1)[0] ?? null;
 }
 
-/** Hook point for Phase 3 - GBP analysis after connect. */
+/** Hook point for Phase 3 - GBP analysis after connect (non-blocking). */
 export async function scheduleGbpAnalysis(profileId: string): Promise<void> {
   // TODO: przenieść do kolejki BullMQ (Faza 5)
   try {
-    const { runGbpAuditForProfile } =
+    const { enqueueGbpAuditForProfile } =
       await import("@/features/wizytowka/audit");
-    await runGbpAuditForProfile(profileId);
+    await enqueueGbpAuditForProfile(profileId);
   } catch (error) {
-    console.error("GBP audit after onboarding failed:", error);
+    console.error("GBP audit enqueue after onboarding failed:", error);
   }
 }

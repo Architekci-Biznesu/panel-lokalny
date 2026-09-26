@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { after } from "next/server";
 import { getTextProvider } from "@/lib/ai";
 import {
   GBP_DESCRIPTION_MAX,
@@ -12,6 +13,7 @@ import {
   gbpAuditRuns,
   gbpSuggestions,
   profileBriefs,
+  profiles,
   rankKeywords,
   type Profile,
 } from "@/lib/db/schema";
@@ -223,6 +225,71 @@ export async function runGbpAuditForProfile(profileId: string): Promise<void> {
   }
 }
 
+/**
+ * Inserts a running audit row immediately, then finishes the work after the
+ * response (onboarding redirect can land on Wizytówka with overlay).
+ */
+export async function enqueueGbpAuditForProfile(
+  profileId: string,
+): Promise<string | null> {
+  const profile = await requireOwnedProfile(profileId);
+  if (!profile.gbpLocationId || !profile.oauthConnectionId) {
+    return null;
+  }
+
+  const [run] = await db
+    .insert(gbpAuditRuns)
+    .values({ profileId: profile.id, status: "running" })
+    .returning();
+
+  const runId = run.id;
+  const ownedProfileId = profile.id;
+
+  after(() => {
+    void (async () => {
+      try {
+        const [owned] = await db
+          .select()
+          .from(profiles)
+          .where(eq(profiles.id, ownedProfileId))
+          .limit(1);
+        if (!owned?.gbpLocationId || !owned.oauthConnectionId) {
+          await db
+            .update(gbpAuditRuns)
+            .set({
+              status: "failed",
+              error: "Brak wizytówki Google na profilu",
+              finishedAt: new Date(),
+            })
+            .where(eq(gbpAuditRuns.id, runId));
+          return;
+        }
+        const insights = await executeAudit(owned);
+        await db
+          .update(gbpAuditRuns)
+          .set({
+            status: "done",
+            finishedAt: new Date(),
+            insights: insights as unknown as Record<string, unknown>,
+          })
+          .where(eq(gbpAuditRuns.id, runId));
+      } catch (error) {
+        console.error("GBP audit after onboarding failed:", error);
+        await db
+          .update(gbpAuditRuns)
+          .set({
+            status: "failed",
+            error: error instanceof Error ? error.message : "Nieznany błąd",
+            finishedAt: new Date(),
+          })
+          .where(eq(gbpAuditRuns.id, runId));
+      }
+    })();
+  });
+
+  return runId;
+}
+
 async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
   const accessToken = await getGbpAccessTokenForProfile(profile);
   const locationName = profile.gbpLocationId!;
@@ -343,6 +410,13 @@ async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
             ourCount: competitorInsights.photoStats.ourCount,
             competitorMedian: competitorInsights.photoStats.competitorMedian,
             competitorMax: competitorInsights.photoStats.competitorMax,
+          }
+        : null,
+      hoursStats: competitorInsights.hoursStats
+        ? {
+            ourWeeklyMinutes: competitorInsights.hoursStats.ourWeeklyMinutes,
+            competitorMedian: competitorInsights.hoursStats.competitorMedian,
+            competitorMax: competitorInsights.hoursStats.competitorMax,
           }
         : null,
     },

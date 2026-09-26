@@ -3,6 +3,10 @@ import {
   isCategoryRefinement,
   normalizeCategoryLabel,
 } from "@/features/wizytowka/reconcile-additional-categories";
+import {
+  weeklyMinutesFromGbpPeriods,
+  weeklyMinutesFromOperatingHours,
+} from "@/features/wizytowka/hours-compare";
 import { cityFromStorefrontAddress } from "@/features/wizytowka/rank/city-from-address";
 import type { GbpLocation } from "@/features/wizytowka/types";
 import {
@@ -30,12 +34,25 @@ export type CompetitorPhotoStats = {
   samples: CompetitorPhotoSample[];
 };
 
+export type CompetitorHoursSample = {
+  title: string;
+  weeklyMinutes: number;
+};
+
+export type CompetitorHoursStats = {
+  ourWeeklyMinutes: number;
+  competitorMedian: number | null;
+  competitorMax: number | null;
+  samples: CompetitorHoursSample[];
+};
+
 export type CompetitorInsights = {
   phrases: string[];
   categoryStats: CompetitorCategoryStat[];
   titleSamples: string[];
   descriptionSamples: string[];
   photoStats: CompetitorPhotoStats | null;
+  hoursStats: CompetitorHoursStats | null;
   suggestedRankPhrases: string[];
 };
 
@@ -47,6 +64,7 @@ const EMPTY_INSIGHTS: CompetitorInsights = {
   titleSamples: [],
   descriptionSamples: [],
   photoStats: null,
+  hoursStats: null,
   suggestedRankPhrases: [],
 };
 
@@ -227,6 +245,10 @@ export async function fetchCompetitorInsights(input: {
 }): Promise<CompetitorInsights> {
   const city = cityFromStorefrontAddress(input.location.storefrontAddress);
   const coords = readLatLng(input.location);
+  const ourWeeklyMinutes = weeklyMinutesFromGbpPeriods(
+    input.location.regularHours?.periods,
+  );
+  const ourPlaceId = input.location.metadata?.placeId?.trim() || null;
   const phrases = buildCompetitorSeedPhrases({
     primaryDisplayName: input.primaryDisplayName,
     city,
@@ -238,6 +260,12 @@ export async function fetchCompetitorInsights(input: {
     return {
       ...EMPTY_INSIGHTS,
       phrases,
+      hoursStats: {
+        ourWeeklyMinutes,
+        competitorMedian: null,
+        competitorMax: null,
+        samples: [],
+      },
       suggestedRankPhrases: input.suggestRankPhrases ? phrases : [],
     };
   }
@@ -257,6 +285,13 @@ export async function fetchCompetitorInsights(input: {
     const byKey = new Map<string, ScrapingDogPlaceResult>();
     for (const pack of packs) {
       for (const place of pack.slice(0, 10)) {
+        if (
+          ourPlaceId &&
+          place.placeId &&
+          place.placeId === ourPlaceId
+        ) {
+          continue;
+        }
         const key = placeKey(place);
         if (!byKey.has(key)) byKey.set(key, place);
         if (byKey.size >= 20) break;
@@ -342,18 +377,40 @@ export async function fetchCompetitorInsights(input: {
             samples: [],
           };
 
+    const hoursSamples: CompetitorHoursSample[] = [];
+    for (const place of places) {
+      const weekly = weeklyMinutesFromOperatingHours(place.operatingHours);
+      if (weekly == null) continue;
+      hoursSamples.push({ title: place.title, weeklyMinutes: weekly });
+      if (hoursSamples.length >= 10) break;
+    }
+    const hoursCounts = hoursSamples.map((s) => s.weeklyMinutes);
+    const hoursStats: CompetitorHoursStats = {
+      ourWeeklyMinutes,
+      competitorMedian: median(hoursCounts),
+      competitorMax: hoursCounts.length ? Math.max(...hoursCounts) : null,
+      samples: hoursSamples,
+    };
+
     return {
       phrases,
       categoryStats,
       titleSamples,
       descriptionSamples,
       photoStats,
+      hoursStats,
       suggestedRankPhrases: input.suggestRankPhrases ? phrases : [],
     };
   } catch {
     return {
       ...EMPTY_INSIGHTS,
       phrases,
+      hoursStats: {
+        ourWeeklyMinutes,
+        competitorMedian: null,
+        competitorMax: null,
+        samples: [],
+      },
       suggestedRankPhrases: input.suggestRankPhrases ? phrases : [],
     };
   }
@@ -424,12 +481,45 @@ export function parseAuditInsights(raw: unknown): GbpAuditInsights | null {
     };
   }
 
+  let hoursStats: CompetitorHoursStats | null = null;
+  if (obj.hoursStats && typeof obj.hoursStats === "object") {
+    const h = obj.hoursStats as Record<string, unknown>;
+    const samples = Array.isArray(h.samples)
+      ? h.samples
+          .map((s) => {
+            if (!s || typeof s !== "object") return null;
+            const row = s as Record<string, unknown>;
+            if (
+              typeof row.title !== "string" ||
+              typeof row.weeklyMinutes !== "number"
+            ) {
+              return null;
+            }
+            return {
+              title: row.title,
+              weeklyMinutes: row.weeklyMinutes,
+            };
+          })
+          .filter((s): s is CompetitorHoursSample => Boolean(s))
+      : [];
+    hoursStats = {
+      ourWeeklyMinutes:
+        typeof h.ourWeeklyMinutes === "number" ? h.ourWeeklyMinutes : 0,
+      competitorMedian:
+        typeof h.competitorMedian === "number" ? h.competitorMedian : null,
+      competitorMax:
+        typeof h.competitorMax === "number" ? h.competitorMax : null,
+      samples,
+    };
+  }
+
   return {
     phrases,
     categoryStats,
     titleSamples,
     descriptionSamples,
     photoStats,
+    hoursStats,
     suggestedRankPhrases,
   };
 }
