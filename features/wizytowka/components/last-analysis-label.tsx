@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 function formatAnalyzedAt(iso: string | null): string {
@@ -13,12 +13,16 @@ function formatAnalyzedAt(iso: string | null): string {
   }).format(date);
 }
 
-export function LastAnalysisLabel({ iso }: { iso: string | null }) {
-  const [slot, setSlot] = useState<HTMLElement | null>(null);
+function subscribe() {
+  return () => {};
+}
 
-  useEffect(() => {
-    setSlot(document.getElementById("wiz-topbar-slot"));
-  }, []);
+function getTopbarSlot() {
+  return document.getElementById("wiz-topbar-slot");
+}
+
+export function LastAnalysisLabel({ iso }: { iso: string | null }) {
+  const slot = useSyncExternalStore(subscribe, getTopbarSlot, () => null);
 
   if (!slot) return null;
 

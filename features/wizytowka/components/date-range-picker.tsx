@@ -74,11 +74,22 @@ export function DateRangePicker({ start, end }: Props) {
   const [viewMonth, setViewMonth] = useState(() => startOfMonth(end));
   const maxEnd = yesterdayParts();
 
-  useEffect(() => {
-    if (!open) return;
-    setDraft({ start, end });
-    setViewMonth(startOfMonth(end));
-  }, [open, start, end]);
+  const [draftSyncedFor, setDraftSyncedFor] = useState<{
+    open: boolean;
+    start: DateParts;
+    end: DateParts;
+  }>({ open: false, start, end });
+  if (
+    open !== draftSyncedFor.open ||
+    (open &&
+      (start !== draftSyncedFor.start || end !== draftSyncedFor.end))
+  ) {
+    setDraftSyncedFor({ open, start, end });
+    if (open) {
+      setDraft({ start, end });
+      setViewMonth(startOfMonth(end));
+    }
+  }
 
   useEffect(() => {
     if (!open) return;

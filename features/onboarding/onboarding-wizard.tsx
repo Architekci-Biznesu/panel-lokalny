@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
 import { createPortal } from "react-dom";
@@ -118,13 +119,23 @@ export function OnboardingWizard({
   const [existingGroupId, setExistingGroupId] = useState(groups[0]?.id ?? "");
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenNote, setRegenNote] = useState("");
-  const [regenPortal, setRegenPortal] = useState<HTMLElement | null>(null);
   const [regenerating, setRegenerating] = useState(false);
   const autoConfirmed = useRef(false);
 
-  useEffect(() => {
-    setRegenPortal(document.getElementById("split-right"));
-  }, []);
+  const regenPortal = useSyncExternalStore(
+    () => () => {},
+    () => document.getElementById("split-right"),
+    () => null,
+  );
+
+  const filteredLocations = useMemo(() => {
+    const q = locationQuery.trim().toLowerCase();
+    if (!q) return initialDraft.pendingLocations;
+    return initialDraft.pendingLocations.filter((loc) => {
+      const haystack = `${loc.title} ${loc.storefrontAddress ?? ""}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [initialDraft.pendingLocations, locationQuery]);
 
   useEffect(() => {
     if (scrapeWarned.current || !initialDraft.scrapeWarning) return;
@@ -593,15 +604,6 @@ export function OnboardingWizard({
   // Step 3
   const showLocationPicker =
     initialDraft.hasConnection && initialDraft.pendingLocations.length > 0;
-
-  const filteredLocations = useMemo(() => {
-    const q = locationQuery.trim().toLowerCase();
-    if (!q) return initialDraft.pendingLocations;
-    return initialDraft.pendingLocations.filter((loc) => {
-      const haystack = `${loc.title} ${loc.storefrontAddress ?? ""}`.toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [initialDraft.pendingLocations, locationQuery]);
 
   return (
     <>

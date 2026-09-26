@@ -477,7 +477,6 @@ function ServiceAreaPlacePicker({
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) {
-      setResults([]);
       return;
     }
     const handle = window.setTimeout(() => {
@@ -514,7 +513,9 @@ function ServiceAreaPlacePicker({
           aria-controls={listId}
           aria-expanded={open && visible.length > 0}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const next = e.target.value;
+            setQuery(next);
+            if (next.trim().length < 2) setResults([]);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}

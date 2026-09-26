@@ -130,33 +130,65 @@ export function RankPositionsSection({
   const [addRadius, setAddRadius] = useState<RankRadiusKm>(10);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
+  const [propsSnap, setPropsSnap] = useState({
+    initialKeywords,
+    initialLatest,
+    initialByDay,
+    placeId,
+  });
+  if (
+    initialKeywords !== propsSnap.initialKeywords ||
+    initialLatest !== propsSnap.initialLatest ||
+    initialByDay !== propsSnap.initialByDay ||
+    placeId !== propsSnap.placeId
+  ) {
+    setPropsSnap({
+      initialKeywords,
+      initialLatest,
+      initialByDay,
+      placeId,
+    });
     setKeywords(initialKeywords);
     setLatestByKeyword(initialLatest);
     setScansByKeywordDay(initialByDay);
     setHasPlaceId(Boolean(placeId));
-  }, [initialKeywords, initialLatest, initialByDay, placeId]);
+  }
 
   const selectedKeyword = keywords.find((k) => k.id === selectedKeywordId);
 
-  useEffect(() => {
-    if (scan?.status === "running" && scan.keywordId === selectedKeywordId) {
-      return;
-    }
-    const dayMap = scansByKeywordDay[selectedKeywordId] ?? {};
-    if (selectedDay && dayMap[selectedDay]) {
-      setScan(dayMap[selectedDay]);
-      return;
-    }
-    setScan(latestByKeyword[selectedKeywordId] ?? null);
-  }, [
+  const selectionScan =
+    selectedDay && scansByKeywordDay[selectedKeywordId]?.[selectedDay]
+      ? scansByKeywordDay[selectedKeywordId][selectedDay]
+      : (latestByKeyword[selectedKeywordId] ?? null);
+  const keepRunning =
+    scan?.status === "running" && scan.keywordId === selectedKeywordId;
+  const [scanSnap, setScanSnap] = useState({
     selectedKeywordId,
     selectedDay,
-    scansByKeywordDay,
-    latestByKeyword,
-    scan?.status,
-    scan?.keywordId,
-  ]);
+    selectionScan,
+    keepRunning,
+  });
+  if (
+    !keepRunning &&
+    (selectedKeywordId !== scanSnap.selectedKeywordId ||
+      selectedDay !== scanSnap.selectedDay ||
+      selectionScan !== scanSnap.selectionScan)
+  ) {
+    setScanSnap({
+      selectedKeywordId,
+      selectedDay,
+      selectionScan,
+      keepRunning,
+    });
+    setScan(selectionScan);
+  } else if (keepRunning !== scanSnap.keepRunning) {
+    setScanSnap({
+      selectedKeywordId,
+      selectedDay,
+      selectionScan,
+      keepRunning,
+    });
+  }
 
   useEffect(() => {
     if (!scan || scan.status !== "running") return;

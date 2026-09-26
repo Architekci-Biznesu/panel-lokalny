@@ -69,7 +69,7 @@ export function ProfileSwitcher({
   useEffect(() => {
     function onDocClick(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+        closeMenu();
       }
     }
     document.addEventListener("mousedown", onDocClick);
@@ -77,14 +77,21 @@ export function ProfileSwitcher({
   }, []);
 
   useEffect(() => {
-    if (!open) {
-      setQuery("");
-      return;
-    }
+    if (!open) return;
     if (!adminImpersonating) {
       searchRef.current?.focus();
     }
   }, [open, adminImpersonating]);
+
+  function closeMenu() {
+    setOpen(false);
+    setQuery("");
+  }
+
+  function toggleMenu() {
+    if (open) closeMenu();
+    else setOpen(true);
+  }
 
   if (profiles.length === 0 || (compact && !activeProfileId)) {
     return null;
@@ -100,7 +107,7 @@ export function ProfileSwitcher({
 
   function selectProfile(profileId: string) {
     if (profileId === activeProfileId) {
-      setOpen(false);
+      closeMenu();
       if (isOnboarding) {
         router.push("/pulpit");
       }
@@ -115,7 +122,7 @@ export function ProfileSwitcher({
         });
         return;
       }
-      setOpen(false);
+      closeMenu();
       goToSelectedProfile();
     });
   }
@@ -144,7 +151,7 @@ export function ProfileSwitcher({
               ? "profile-nav-trigger"
               : "profile-switcher-btn"
         }
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleMenu}
         aria-expanded={open}
         disabled={pending}
       >

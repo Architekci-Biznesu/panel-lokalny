@@ -19,6 +19,21 @@ export default async function RaportyPage({
 }: {
   searchParams: Promise<{ start?: string; end?: string; keyword?: string }>;
 }) {
+  let viewProps: {
+    series: ReturnType<typeof emptySeriesForMetrics>;
+    start: ReturnType<typeof resolveRangeFromSearchParams>["start"];
+    end: ReturnType<typeof resolveRangeFromSearchParams>["end"];
+    loadError: boolean;
+    rank: Awaited<ReturnType<typeof loadRankRaportPayload>> | {
+      placeId: string | null;
+      businessName: string;
+      keywords: [];
+      latestByKeyword: Record<string, never>;
+      scansByKeywordDay: Record<string, never>;
+      activeScan: null;
+    };
+  } | null = null;
+
   try {
     const params = await searchParams;
     const { start, end } = resolveRangeFromSearchParams(params);
@@ -67,17 +82,19 @@ export default async function RaportyPage({
       };
     }
 
-    return (
-      <RaportyView
-        series={series}
-        start={start}
-        end={end}
-        loadError={loadError}
-        rank={rank}
-      />
-    );
+    viewProps = { series, start, end, loadError, rank };
   } catch (error) {
     if (error instanceof GbpNotConnectedError) return null;
     throw error;
   }
+
+  return (
+    <RaportyView
+      series={viewProps.series}
+      start={viewProps.start}
+      end={viewProps.end}
+      loadError={viewProps.loadError}
+      rank={viewProps.rank}
+    />
+  );
 }
