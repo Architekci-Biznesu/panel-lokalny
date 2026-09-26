@@ -1168,11 +1168,14 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: none;
-    overflow: visible;
+    max-height: min(280px, 38vh);
+    overflow-x: hidden;
+    overflow-y: auto;
     border: 0;
     background: transparent;
     padding: 0;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .location-item {
@@ -1180,15 +1183,15 @@
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
-    border: 1px solid transparent;
-    border-bottom: 1px solid transparent;
+    border: 1px solid var(--border);
     border-radius: var(--radius-block);
     background: var(--card);
-    box-shadow: var(--shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.04));
+    box-shadow: none;
+    cursor: pointer;
   }
 
   .location-item:last-child {
-    border-bottom: 1px solid transparent;
+    border-bottom-color: var(--border);
   }
 
   .location-item.is-selected {
@@ -1211,6 +1214,83 @@
     line-height: 1.35;
     font-family: var(--font-mono), ui-monospace, monospace;
     font-size: 11px;
+  }
+
+  .location-pick-hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted-foreground);
+  }
+
+  .location-link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .location-link-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-block);
+    background: var(--card);
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+
+  .location-link-item::before {
+    content: "";
+    box-sizing: border-box;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 1px;
+    flex-shrink: 0;
+    border: 1px solid var(--neutral-300);
+    border-radius: 999px;
+    background: var(--card);
+  }
+
+  .location-link-item.is-active {
+    border-color: var(--foreground);
+  }
+
+  .location-link-item.is-active::before {
+    border-color: var(--primary);
+    background: var(--primary);
+    box-shadow: inset 0 0 0 3px var(--card);
+  }
+
+  .location-link-item-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .location-link-item-copy strong {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .location-link-item-copy span {
+    font-size: 12px;
+    color: var(--muted-foreground);
+    line-height: 1.35;
+  }
+
+  .location-link-extra {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
   }
 }
 

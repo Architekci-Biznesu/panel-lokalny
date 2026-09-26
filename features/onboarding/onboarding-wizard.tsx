@@ -130,6 +130,25 @@ export function OnboardingWizard({
   const [regenerating, setRegenerating] = useState(false);
   const autoConfirmed = useRef(false);
 
+  useEffect(() => {
+    const multi = selected.length > 1;
+    const singleAdd = mode === "add" && selected.length === 1;
+    const allowed =
+      groupMode === "none" ||
+      (groupMode === "new" && multi) ||
+      (groupMode === "with_profile" &&
+        singleAdd &&
+        ungroupedProfiles.length > 0) ||
+      (groupMode === "existing" && groups.length > 0);
+    if (!allowed) setGroupMode("none");
+  }, [
+    selected.length,
+    mode,
+    groupMode,
+    ungroupedProfiles.length,
+    groups.length,
+  ]);
+
   const regenPortal = useSyncExternalStore(
     () => () => {},
     () => document.getElementById("split-right"),
@@ -697,6 +716,12 @@ export function OnboardingWizard({
             />
           </div>
 
+          {selected.length === 0 ? (
+            <p className="location-pick-hint">
+              Zaznacz lokalizacje, które chcesz podłączyć do panelu.
+            </p>
+          ) : null}
+
           <div className="location-list">
             {filteredLocations.length === 0 ? (
               <p className="auth-hint">Brak wyników dla podanego hasła.</p>
@@ -741,7 +766,7 @@ export function OnboardingWizard({
             selected.length === 1 &&
             (ungroupedProfiles.length > 0 || groups.length > 0)) ? (
             <div className="auth-field">
-              <label htmlFor="groupMode">
+              <label>
                 {selected.length > 1
                   ? "Jak połączyć te lokalizacje?"
                   : "Jak powiązać ten profil?"}
@@ -749,99 +774,132 @@ export function OnboardingWizard({
               <p className="auth-hint">
                 {selected.length > 1
                   ? "Zaznaczyłeś kilka miejsc. Możesz trzymać je osobno albo wrzucić do jednej grupy - wtedy łatwiej publikujesz te same treści na wszystkich naraz."
-                  : "Możesz trzymać go osobno albo połączyć z firmą, którą już masz w panelu - wtedy łatwiej publikujesz te same treści na obu naraz."}
+                  : "Domyślnie zostaje osobno. Połączenie w grupę ułatwia publikację tych samych treści na kilku profilach naraz."}
               </p>
-              <UiSelect
-                id="groupMode"
-                value={groupMode}
-                onChange={(value) => {
-                  const next = value as LinkMode;
-                  setGroupMode(next);
-                  if (
-                    next === "with_profile" &&
-                    !groupName.trim() &&
-                    anchorProfileId
-                  ) {
-                    const anchor = ungroupedProfiles.find(
-                      (p) => p.id === anchorProfileId,
-                    );
-                    if (anchor) setGroupName(anchor.name);
-                  }
-                }}
-                options={[
-                  {
-                    value: "none",
-                    label:
-                      selected.length > 1
+              <div className="location-link-list" role="radiogroup" aria-label="Sposób powiązania">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={groupMode === "none"}
+                  className={`location-link-item${groupMode === "none" ? " is-active" : ""}`}
+                  onClick={() => setGroupMode("none")}
+                >
+                  <span className="location-link-item-copy">
+                    <strong>
+                      {selected.length > 1
                         ? "Osobno - każde miejsce to osobny profil"
-                        : "Osobno - bez grupy publikacji",
-                  },
-                  ...(selected.length > 1
-                    ? [
-                        {
-                          value: "new",
-                          label: "Razem - utwórz nową grupę publikacji",
-                        },
-                      ]
-                    : []),
-                  ...(mode === "add" &&
-                  selected.length === 1 &&
-                  ungroupedProfiles.length > 0
-                    ? [
-                        {
-                          value: "with_profile",
-                          label: "Połącz z istniejącym profilem",
-                        },
-                      ]
-                    : []),
-                  ...(groups.length > 0
-                    ? [
-                        {
-                          value: "existing",
-                          label:
-                            selected.length > 1
-                              ? "Razem - dodaj do istniejącej grupy"
-                              : "Dodaj do istniejącej grupy",
-                        },
-                      ]
-                    : []),
-                ]}
-              />
+                        : "Osobno - bez grupy publikacji"}
+                    </strong>
+                    <span>Najprostszy wybór, jeśli nie publikujesz wspólnie.</span>
+                  </span>
+                </button>
+                {selected.length > 1 ? (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={groupMode === "new"}
+                    className={`location-link-item${groupMode === "new" ? " is-active" : ""}`}
+                    onClick={() => setGroupMode("new")}
+                  >
+                    <span className="location-link-item-copy">
+                      <strong>Razem - utwórz nową grupę publikacji</strong>
+                      <span>Wszystkie zaznaczone lokalizacje w jednej grupie.</span>
+                    </span>
+                  </button>
+                ) : null}
+                {mode === "add" &&
+                selected.length === 1 &&
+                ungroupedProfiles.length > 0 ? (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={groupMode === "with_profile"}
+                    className={`location-link-item${groupMode === "with_profile" ? " is-active" : ""}`}
+                    onClick={() => setGroupMode("with_profile")}
+                  >
+                    <span className="location-link-item-copy">
+                      <strong>Połącz z istniejącym profilem</strong>
+                      <span>
+                        Utwórz grupę z firmą, którą już masz w panelu.
+                      </span>
+                    </span>
+                  </button>
+                ) : null}
+                {groups.length > 0 ? (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={groupMode === "existing"}
+                    className={`location-link-item${groupMode === "existing" ? " is-active" : ""}`}
+                    onClick={() => setGroupMode("existing")}
+                  >
+                    <span className="location-link-item-copy">
+                      <strong>
+                        {selected.length > 1
+                          ? "Razem - dodaj do istniejącej grupy"
+                          : "Dodaj do istniejącej grupy"}
+                      </strong>
+                      <span>Dołącz do grupy, którą już masz w panelu.</span>
+                    </span>
+                  </button>
+                ) : null}
+              </div>
+
               {groupMode === "with_profile" ? (
-                <UiSelect
-                  value={anchorProfileId}
-                  onChange={(value) => {
-                    setAnchorProfileId(value);
-                    const anchor = ungroupedProfiles.find(
-                      (p) => p.id === value,
-                    );
-                    if (anchor) setGroupName(anchor.name);
-                  }}
-                  aria-label="Profil do połączenia"
-                  options={ungroupedProfiles.map((p) => ({
-                    value: p.id,
-                    label: p.name,
-                  }))}
-                />
+                <div className="location-link-extra">
+                  <div className="auth-field">
+                    <label htmlFor="anchorProfile">Z którym profilem w panelu?</label>
+                    <UiSelect
+                      id="anchorProfile"
+                      value={anchorProfileId}
+                      onChange={setAnchorProfileId}
+                      options={ungroupedProfiles.map((p) => ({
+                        value: p.id,
+                        label: p.name,
+                      }))}
+                    />
+                  </div>
+                  <div className="auth-field">
+                    <label htmlFor="groupNameWithProfile">Nazwa grupy publikacji</label>
+                    <input
+                      id="groupNameWithProfile"
+                      className="ui-field"
+                      placeholder="np. Salony Warszawa"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                    />
+                  </div>
+                </div>
               ) : null}
-              {groupMode === "new" || groupMode === "with_profile" ? (
-                <input
-                  className="ui-field"
-                  placeholder="Nazwa grupy, np. Salony Warszawa"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                />
+              {groupMode === "new" ? (
+                <div className="location-link-extra">
+                  <div className="auth-field">
+                    <label htmlFor="groupNameNew">Nazwa grupy publikacji</label>
+                    <input
+                      id="groupNameNew"
+                      className="ui-field"
+                      placeholder="np. Salony Warszawa"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                    />
+                  </div>
+                </div>
               ) : null}
               {groupMode === "existing" ? (
-                <UiSelect
-                  value={existingGroupId}
-                  onChange={setExistingGroupId}
-                  aria-label="Istniejąca grupa publikacji"
-                  options={groups.map((g) => ({
-                    value: g.id,
-                    label: g.name,
-                  }))}
-                />
+                <div className="location-link-extra">
+                  <div className="auth-field">
+                    <label htmlFor="existingGroup">Która grupa?</label>
+                    <UiSelect
+                      id="existingGroup"
+                      value={existingGroupId}
+                      onChange={setExistingGroupId}
+                      options={groups.map((g) => ({
+                        value: g.id,
+                        label: g.name,
+                      }))}
+                    />
+                  </div>
+                </div>
               ) : null}
             </div>
           ) : null}
