@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowUpRight, CalendarDays } from "lucide-react";
 import { ImproveCard } from "@/features/pulpit/improve-card";
 import { RankPhrasesCard } from "@/features/pulpit/rank-phrases-card";
 import { ReportKpiStrip } from "@/features/pulpit/report-kpi-strip";
@@ -12,6 +13,19 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
         <div>
           <h1>Pulpit</h1>
           <p>Skrót raportu wizytówki i rzeczy do poprawy.</p>
+        </div>
+        <div className="pulpit-header-actions">
+          <span className="pulpit-range mono">
+            <CalendarDays aria-hidden />
+            {data.reportRangeLabel ?? "Ostatnie 30 dni"}
+          </span>
+          <Link
+            href="/wizytowka/raporty"
+            className="ui-btn ui-btn-outline ui-btn-sm"
+          >
+            Pełny raport
+            <ArrowUpRight aria-hidden />
+          </Link>
         </div>
       </div>
 
@@ -27,29 +41,21 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
 
       {data.loadError ? <p className="locked-note">{data.loadError}</p> : null}
 
+      <ReportKpiStrip summary={data.reportSummary} />
+
       <div className="pulpit-grid">
-        <div className="pulpit-span-12">
-          <ReportKpiStrip
-            summary={data.reportSummary}
-            rangeLabel={data.reportRangeLabel}
-          />
-        </div>
-
-        <div className="pulpit-span-12">
+        <div className="pulpit-main">
           <VisibilityCard visibility={data.monthVisibility} />
-        </div>
-
-        <div className="pulpit-span-12">
           <RankPhrasesCard phrases={data.rankPhrases} />
         </div>
 
-        <div className="pulpit-span-12">
+        <aside className="pulpit-side">
           <ImproveCard
             improve={data.improve}
             proposals={data.proposals}
             proposalsTotal={data.proposalsTotal}
           />
-        </div>
+        </aside>
       </div>
     </div>
   );

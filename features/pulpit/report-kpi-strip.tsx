@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import {
   formatIntPl,
   formatRatePl,
@@ -62,13 +60,8 @@ function RateTicks({ value }: { value: number }) {
   );
 }
 
-export function ReportKpiStrip({
-  summary,
-  rangeLabel,
-}: {
-  summary: ReportSummary | null;
-  rangeLabel: string | null;
-}) {
+/** Trzy kafle KPI jak w Raportach; zakres dat i link do raportu są w nagłówku Pulpitu. */
+export function ReportKpiStrip({ summary }: { summary: ReportSummary | null }) {
   const hasData =
     summary != null && (summary.viewsTotal > 0 || summary.actionsTotal > 0);
   const mobilePct =
@@ -82,22 +75,11 @@ export function ReportKpiStrip({
   const rateRounded = summary ? Math.round(summary.actionsPer100) : 0;
 
   return (
-    <section className="pulpit-section">
-      <header className="pulpit-card-head">
-        <div>
-          <h2 className="pulpit-card-title">Statystyki wizytówki</h2>
-          <p className="pulpit-card-lead mono">
-            {rangeLabel ?? "Ostatnie 30 dni"}
-          </p>
-        </div>
-        <Link href="/wizytowka/raporty" className="pulpit-card-cta">
-          Pełny raport
-          <ArrowUpRight aria-hidden />
-        </Link>
-      </header>
-
+    <section className="pulpit-section" aria-label="Statystyki wizytówki">
       {!hasData || !summary ? (
-        <p className="pulpit-empty">Brak danych o widoczności w tym okresie.</p>
+        <p className="pulpit-card pulpit-empty">
+          Brak danych o widoczności w tym okresie.
+        </p>
       ) : (
         <div className="wiz-report-summary">
           <div className="ui-kpi wiz-report-kpi">

@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { ArrowUpRight, CircleAlert, Sparkles } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  ArrowUpRight,
+  ChevronRight,
+  CircleAlert,
+  CircleDashed,
+  ExternalLink,
+  Sparkles,
+} from "lucide-react";
 import type {
   PulpitImproveGap,
   PulpitPayload,
@@ -7,10 +15,65 @@ import type {
 } from "@/features/pulpit/load-pulpit";
 import type { CompletenessCheck } from "@/features/wizytowka/completeness";
 
-type ImproveEntry =
-  | { kind: "ai"; item: PulpitProposalItem }
-  | { kind: "check"; item: CompletenessCheck }
-  | { kind: "gap"; item: PulpitImproveGap };
+type Tone = "ai" | "check" | "gap";
+
+function ActionRow({
+  tone,
+  icon,
+  title,
+  meta,
+  href,
+}: {
+  tone: Tone;
+  icon: ReactNode;
+  title: string;
+  meta: string;
+  href?: string;
+}) {
+  const inner = (
+    <>
+      <span className={`pulpit-action-icon is-${tone}`} aria-hidden>
+        {icon}
+      </span>
+      <span className="pulpit-action-copy">
+        <span className="pulpit-action-title">{title}</span>
+        <span className="pulpit-action-meta">{meta}</span>
+      </span>
+      {href ? <ChevronRight aria-hidden className="pulpit-action-go" /> : null}
+    </>
+  );
+  return (
+    <li>
+      {href ? (
+        <Link href={href} className="pulpit-action-row">
+          {inner}
+        </Link>
+      ) : (
+        <div className="pulpit-action-row is-static">{inner}</div>
+      )}
+    </li>
+  );
+}
+
+function Group({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count: number;
+  children: ReactNode;
+}) {
+  return (
+    <div className="pulpit-action-group">
+      <p className="pulpit-action-group-title">
+        {title}
+        <span className="mono">{count}</span>
+      </p>
+      <ul className="pulpit-action-list">{children}</ul>
+    </div>
+  );
+}
 
 export function ImproveCard({
   improve,
@@ -21,17 +84,10 @@ export function ImproveCard({
   proposals: PulpitProposalItem[];
   proposalsTotal: number;
 }) {
-  const entries: ImproveEntry[] = [
-    ...proposals.map((item) => ({ kind: "ai" as const, item })),
-    ...(improve?.checks ?? []).map((item) => ({
-      kind: "check" as const,
-      item,
-    })),
-    ...(improve?.gaps ?? []).map((item) => ({
-      kind: "gap" as const,
-      item,
-    })),
-  ];
+  const checks: CompletenessCheck[] = improve?.checks ?? [];
+  const gaps: PulpitImproveGap[] = improve?.gaps ?? [];
+  const isEmpty =
+    proposals.length === 0 && checks.length === 0 && gaps.length === 0;
 
   const lead =
     proposalsTotal > 0
@@ -47,8 +103,8 @@ export function ImproveCard({
   return (
     <section className="pulpit-card pulpit-improve">
       <header className="pulpit-card-head">
-        <div className="pulpit-visibility-title-row">
-          <span className="pulpit-icon-circle" aria-hidden>
+        <div className="pulpit-title-row">
+          <span className="pulpit-icon-circle is-warn" aria-hidden>
             <CircleAlert />
           </span>
           <div>
@@ -56,84 +112,76 @@ export function ImproveCard({
             <p className="pulpit-card-lead">{lead}</p>
           </div>
         </div>
-        <Link href="/wizytowka/informacje" className="pulpit-card-cta">
-          Wizytówka
-          <ArrowUpRight aria-hidden />
-        </Link>
       </header>
 
-      {entries.length === 0 ? (
+      {isEmpty ? (
         <p className="pulpit-empty">
           Nic do poprawy - profil wygląda kompletnie.
         </p>
       ) : (
-        <ul className="pulpit-action-list">
-          {entries.map((entry) => {
-            if (entry.kind === "ai") {
-              return (
-                <li key={`ai-${entry.item.id}`}>
-                  <Link href={entry.item.href} className="pulpit-action-row">
-                    <span className="pulpit-action-badge">
-                      <Sparkles aria-hidden />
-                      AI
-                    </span>
-                    <span className="pulpit-action-title">
-                      {entry.item.label}
-                    </span>
-                    <span className="pulpit-action-meta">
-                      {entry.item.hint}
-                    </span>
+        <div className="pulpit-action-groups">
+          {proposals.length > 0 ? (
+            <Group title="Propozycje AI" count={proposalsTotal}>
+              {proposals.map((item) => (
+                <ActionRow
+                  key={`ai-${item.id}`}
+                  tone="ai"
+                  icon={<Sparkles />}
+                  title={item.label}
+                  meta={item.hint}
+                  href={item.href}
+                />
+              ))}
+              {proposalsTotal > proposals.length ? (
+                <li>
+                  <Link
+                    href="/wizytowka/informacje"
+                    className="pulpit-action-more"
+                  >
+                    +{proposalsTotal - proposals.length} więcej propozycji AI
+                    <ArrowUpRight aria-hidden />
                   </Link>
                 </li>
-              );
-            }
-            if (entry.kind === "check") {
-              return (
-                <li key={`check-${entry.item.id}`}>
-                  <Link href={entry.item.href} className="pulpit-action-row">
-                    <span className="pulpit-action-title">
-                      {entry.item.label}
-                    </span>
-                    <span className="pulpit-action-meta">
-                      Uzupełnij w panelu
-                    </span>
-                  </Link>
-                </li>
-              );
-            }
-            const gap = entry.item;
-            const inner = (
-              <>
-                <span className="pulpit-action-title">{gap.label}</span>
-                <span className="pulpit-action-meta">{gap.why}</span>
-              </>
-            );
-            return (
-              <li key={`gap-${gap.id}`}>
-                {gap.href ? (
-                  <Link href={gap.href} className="pulpit-action-row">
-                    {inner}
-                  </Link>
-                ) : (
-                  <div className="pulpit-action-row is-static">{inner}</div>
-                )}
-              </li>
-            );
-          })}
-          {proposalsTotal > proposals.length ? (
-            <li>
-              <Link
-                href="/wizytowka/informacje"
-                className="pulpit-action-row is-more"
-              >
-                <span className="pulpit-action-title">
-                  +{proposalsTotal - proposals.length} więcej propozycji AI
-                </span>
-              </Link>
-            </li>
+              ) : null}
+            </Group>
           ) : null}
-        </ul>
+
+          {checks.length > 0 ? (
+            <Group title="Do uzupełnienia" count={checks.length}>
+              {checks.map((item) => (
+                <ActionRow
+                  key={`check-${item.id}`}
+                  tone="check"
+                  icon={<CircleDashed />}
+                  title={item.label}
+                  meta="Uzupełnij w panelu"
+                  href={item.href}
+                />
+              ))}
+            </Group>
+          ) : null}
+
+          {gaps.length > 0 ? (
+            <Group title="Poza panelem" count={gaps.length}>
+              {gaps.map((gap) => (
+                <ActionRow
+                  key={`gap-${gap.id}`}
+                  tone="gap"
+                  icon={<ExternalLink />}
+                  title={gap.label}
+                  meta={gap.why}
+                  href={gap.href}
+                />
+              ))}
+            </Group>
+          ) : null}
+        </div>
       )}
+
+      <Link href="/wizytowka/informacje" className="pulpit-card-foot">
+        Przejdź do wizytówki
+        <ArrowUpRight aria-hidden />
+      </Link>
     </section>
   );
 }

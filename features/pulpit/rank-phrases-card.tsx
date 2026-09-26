@@ -21,18 +21,20 @@ function AgrSparkline({
     return <span className="pulpit-spark is-empty" aria-hidden />;
   }
 
-  const width = 88;
-  const height = 28;
+  const width = 112;
+  const height = 32;
   const min = Math.min(...series);
   const max = Math.max(...series);
   const span = Math.max(max - min, 0.01);
-  const pts = series
-    .map((v, i) => {
-      const x = (i / (series.length - 1)) * width;
-      const y = height - ((v - min) / span) * (height - 4) - 2;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const coords = series.map((v, i) => {
+    const x = (i / (series.length - 1)) * (width - 4) + 2;
+    // Niższy AGR = lepiej, więc lepsze wartości rysujemy wyżej.
+    const y = 4 + ((v - min) / span) * (height - 8);
+    return [x, y] as const;
+  });
+  const line = coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`);
+  const area = `2,${height} ${line.join(" ")} ${(width - 2).toFixed(1)},${height}`;
+  const [lastX, lastY] = coords[coords.length - 1]!;
 
   return (
     <svg
@@ -42,14 +44,16 @@ function AgrSparkline({
       height={height}
       aria-hidden
     >
+      <polygon className="pulpit-spark-area" points={area} />
       <polyline
         fill="none"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        points={pts}
+        points={line.join(" ")}
       />
+      <circle cx={lastX} cy={lastY} r="3" fill="currentColor" />
     </svg>
   );
 }
@@ -83,14 +87,15 @@ export function RankPhrasesCard({ phrases }: { phrases: PulpitRankPhrase[] }) {
   return (
     <section className="pulpit-card pulpit-phrases">
       <header className="pulpit-card-head">
-        <div className="pulpit-visibility-title-row">
+        <div className="pulpit-title-row">
           <span className="pulpit-icon-circle" aria-hidden>
             <MapPinned />
           </span>
           <div>
             <h2 className="pulpit-card-title">Mapa pozycji</h2>
             <p className="pulpit-card-lead">
-              Hasła i trend AGR z ostatnich skanów.
+              Średnia pozycja (AGR) i trend z ostatnich skanów - im niżej, tym
+              lepiej.
             </p>
           </div>
         </div>

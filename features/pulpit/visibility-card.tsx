@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye } from "lucide-react";
+import { Eye, TrendingDown, TrendingUp } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -37,10 +37,12 @@ export function VisibilityCard({
       ? "-"
       : `${change >= 0 ? "+" : ""}${Math.round(change).toLocaleString("pl-PL")}%`;
 
+  const hasSummary = hasData && visibility != null;
+
   return (
     <section className="pulpit-card pulpit-visibility">
       <header className="pulpit-card-head">
-        <div className="pulpit-visibility-title-row">
+        <div className="pulpit-title-row">
           <span className="pulpit-icon-circle" aria-hidden>
             <Eye />
           </span>
@@ -51,33 +53,39 @@ export function VisibilityCard({
             </p>
           </div>
         </div>
+        {hasSummary ? (
+          <div className="pulpit-month-summary">
+            <p className="pulpit-month-label">Wyświetlenia łącznie</p>
+            <p className="pulpit-month-total mono">
+              {formatIntPl(visibility.total)}
+            </p>
+            {change != null && visibility.compareLabel ? (
+              <p className="pulpit-month-compare">
+                <span
+                  className={`ui-pill mono${change > 0 ? " ui-pill-success" : ""}${change < 0 ? " ui-pill-danger" : ""}`}
+                >
+                  {change < 0 ? (
+                    <TrendingDown aria-hidden />
+                  ) : (
+                    <TrendingUp aria-hidden />
+                  )}
+                  {changeLabel}
+                </span>
+                {visibility.compareLabel}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
-      {!hasData || !visibility ? (
+      {!hasSummary ? (
         <p className="pulpit-empty">
           Brak danych o wyświetleniach w ostatnim miesiącu.
         </p>
       ) : (
         <div className="pulpit-month-body">
-          <div className="pulpit-month-summary">
-            <p className="pulpit-month-total mono">
-              {formatIntPl(visibility.total)}
-            </p>
-            <p className="pulpit-card-lead">Wyświetlenia łącznie</p>
-            {change != null && visibility.compareLabel ? (
-              <>
-                <p
-                  className={`pulpit-month-change mono${change < 0 ? " is-down" : ""}${change > 0 ? " is-up" : ""}`}
-                >
-                  {changeLabel}
-                </p>
-                <p className="pulpit-card-lead">{visibility.compareLabel}</p>
-              </>
-            ) : null}
-          </div>
-
           <div className="pulpit-month-chart">
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={240}>
               <AreaChart
                 data={days}
                 margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
@@ -93,12 +101,12 @@ export function VisibilityCard({
                     <stop
                       offset="0%"
                       stopColor={REPORT_COLORS.maps}
-                      stopOpacity={0.28}
+                      stopOpacity={0.22}
                     />
                     <stop
                       offset="100%"
                       stopColor={REPORT_COLORS.maps}
-                      stopOpacity={0.02}
+                      stopOpacity={0}
                     />
                   </linearGradient>
                 </defs>
@@ -124,13 +132,25 @@ export function VisibilityCard({
                   allowDecimals={false}
                 />
                 <Tooltip
-                  cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+                  cursor={{
+                    stroke: "var(--brand-soft)",
+                    strokeWidth: 1,
+                    strokeDasharray: "4 4",
+                  }}
                   contentStyle={{
                     borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
+                    border: 0,
+                    background: "var(--primary)",
+                    boxShadow: "var(--shadow-pop)",
+                    padding: "8px 12px",
                     fontSize: 12,
                   }}
+                  labelStyle={{
+                    color: "var(--primary-foreground)",
+                    opacity: 0.7,
+                    marginBottom: 2,
+                  }}
+                  itemStyle={{ color: "var(--primary-foreground)", padding: 0 }}
                   labelFormatter={(label) => formatTick(String(label))}
                   formatter={(value) => [
                     formatIntPl(Number(value ?? 0)),
@@ -143,6 +163,12 @@ export function VisibilityCard({
                   stroke={REPORT_COLORS.maps}
                   strokeWidth={2}
                   fill="url(#pulpitViewsFill)"
+                  activeDot={{
+                    r: 5,
+                    fill: REPORT_COLORS.maps,
+                    stroke: "var(--card)",
+                    strokeWidth: 2,
+                  }}
                   isAnimationActive={false}
                 />
               </AreaChart>
