@@ -7983,4 +7983,61 @@
     font-weight: 500;
   }
 
+
+  /* Taby: bez ramki po kliknięciu (focus zostaje tylko jako podkreślenie przy klawiaturze) */
+  .wiz-subnav-link:focus,
+  .wiz-subnav-link:focus-visible {
+    outline: none;
+    border-radius: 0;
+  }
+
+  .wiz-subnav-link:focus-visible span:first-child {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  /* Baner "Brak nadchodzących dni specjalnych" wewnątrz kafla, jak banery luk */
+  #wiz-field-special-hours.wiz-hours-tile:has(.wiz-hours-tip) {
+    padding-bottom: 24px;
+  }
+
+  .wiz-hours-tile .wiz-hours-tip {
+    margin: 16px 0 0;
+    padding: 14px 16px;
+    gap: 12px;
+    border: 0;
+    border-radius: var(--radius-block);
+    background: var(--warning-soft);
+  }
+
+  .wiz-hours-tile .wiz-hours-tip-icon-wrap {
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    color: var(--warning);
+  }
+
+  .wiz-hours-tile .wiz-hours-tip-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .wiz-hours-tile .wiz-hours-tip-title {
+    font-size: var(--type-base);
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .wiz-hours-tile .wiz-hours-tip-text {
+    margin-top: 2px;
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
+  }
+
+  /* Ołówek / plus na białym kaflu: szare kółko; na płótnie: białe kółko */
+  .wiz-hours-col-head .wiz-field-edit:not(.is-open) {
+    background: var(--muted);
+  }
 }
