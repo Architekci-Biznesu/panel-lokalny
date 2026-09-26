@@ -1,5 +1,4 @@
 import {
-  Check,
   Globe,
   LayoutGrid,
   MapPin,
@@ -8,12 +7,7 @@ import {
   Star,
 } from "lucide-react";
 
-export type SplitDecorVariant =
-  | "login"
-  | "register"
-  | "onboarding-1"
-  | "onboarding-2"
-  | "onboarding-3";
+export type SplitDecorVariant = "login" | "register";
 
 function CompletenessBars() {
   return (
@@ -66,7 +60,7 @@ function LoginDecor() {
               </div>
             </div>
             <p className="split-decor-card-body">
-              [Tytuł wpisu przygotowanego przez AI na podstawie briefu]
+              5 sposobów na więcej klientów z Google Maps w lokalnej firmie
             </p>
             <div className="split-decor-card-actions">
               <span className="split-decor-chip">
@@ -132,7 +126,7 @@ function LoginDecor() {
           <div className="split-decor-card split-decor-review">
             <span className="split-decor-avatar">AK</span>
             <div className="split-decor-review-text">
-              <p className="split-decor-card-title">[Autor opinii]</p>
+              <p className="split-decor-card-title">Anna Kowalska</p>
               <p className="split-decor-card-sub">Czeka na odpowiedź</p>
             </div>
             <span className="split-decor-rating">
@@ -188,143 +182,12 @@ function RegisterDecor() {
   );
 }
 
-function Onboarding1Decor() {
-  return (
-    <div className="split-decor split-decor-onb1" aria-hidden>
-      <div className="split-decor-domain">
-        <span className="split-decor-icon is-sm">
-          <Globe aria-hidden />
-        </span>
-        <span className="mono">architekcibiznesu.pl</span>
-        <span className="split-decor-reading">
-          <span className="split-decor-spinner" />
-          Czytam stronę
-        </span>
-      </div>
-
-      <div className="split-decor-card">
-        <div className="split-decor-brief-head">
-          <span>
-            <Sparkles aria-hidden /> Brief od AI
-          </span>
-          <span className="split-decor-card-sub">następny krok</span>
-        </div>
-        {[
-          "Usługi",
-          "Ton komunikacji",
-          "Grupa docelowa",
-          "Czym się wyróżniacie",
-        ].map((label) => (
-          <div key={label} className="split-decor-skel-row">
-            <span className="split-decor-card-sub">{label}</span>
-            <SkeletonLine />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Onboarding2Decor() {
-  const items = [
-    {
-      title: "Publikacje",
-      sub: "Tematy i treści postów, bloga i social",
-    },
-    {
-      title: "Odpowiedzi na opinie",
-      sub: "Ton i sposób zwracania się do klientów",
-    },
-    {
-      title: "Propozycje do wizytówki",
-      sub: "Opis, usługi i produkty w Google",
-    },
-  ];
-
-  return (
-    <div className="split-decor split-decor-onb2" aria-hidden>
-      <div className="split-decor-card">
-        <p className="split-decor-card-sub">Brief zasila</p>
-        {items.map((item) => (
-          <div key={item.title} className="split-decor-feed-row">
-            <span className="split-decor-icon is-sm">
-              <Sparkles aria-hidden />
-            </span>
-            <div>
-              <p className="split-decor-card-title">{item.title}</p>
-              <p className="split-decor-card-sub">{item.sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="split-decor-note">
-        <span className="split-decor-note-check">
-          <Check aria-hidden />
-        </span>
-        Każde pole możesz poprawić teraz albo później w Ustawieniach
-      </div>
-    </div>
-  );
-}
-
-function Onboarding3Decor() {
-  const chips = [
-    "Nazwa i adres",
-    "Godziny",
-    "Kategorie",
-    "Usługi",
-    "Opinie",
-    "Zdjęcia",
-  ];
-
-  return (
-    <div className="split-decor split-decor-onb3" aria-hidden>
-      <div className="split-decor-card">
-        <div className="split-decor-gbp-head">
-          <span className="split-decor-card-title">Profil Firmy w Google</span>
-          <span className="ui-pill ui-pill-success">Połączono</span>
-        </div>
-        <div className="split-decor-gbp-photo">[Zdjęcie wizytówki]</div>
-        <p className="split-decor-card-title">[Nazwa firmy]</p>
-        <p className="split-decor-card-sub">
-          [Kategoria] · [ul. Przykładowa 1, Warszawa]
-        </p>
-        <div className="split-decor-gbp-meta">
-          <span className="split-decor-rating">
-            <span className="mono">4.9</span> <Star aria-hidden />
-          </span>
-          <span className="split-decor-card-sub">
-            <span className="mono">289</span> opinii
-          </span>
-        </div>
-      </div>
-
-      <div className="split-decor-card">
-        <p className="split-decor-card-sub">Pobierzemy z Google</p>
-        <div className="split-decor-chips">
-          {chips.map((chip) => (
-            <span key={chip} className="split-decor-chip is-muted">
-              {chip}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function SplitHeroDecor({ variant }: { variant: SplitDecorVariant }) {
   switch (variant) {
     case "login":
       return <LoginDecor />;
     case "register":
       return <RegisterDecor />;
-    case "onboarding-1":
-      return <Onboarding1Decor />;
-    case "onboarding-2":
-      return <Onboarding2Decor />;
-    case "onboarding-3":
-      return <Onboarding3Decor />;
     default:
       return null;
   }

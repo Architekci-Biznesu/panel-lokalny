@@ -140,7 +140,7 @@ export function SplitScreenLayout({
           <div className="split-left-copy">
             {hero.topic ? (
               <span className="split-topic-pill">
-                <Sparkles aria-hidden />
+                {hero.showTrustBar ? <Sparkles aria-hidden /> : null}
                 {hero.topic}
               </span>
             ) : null}

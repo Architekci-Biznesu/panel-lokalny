@@ -48,8 +48,8 @@ function pinIcon(position: number | null): L.DivIcon {
   return L.divIcon({
     className: "rank-map-pin",
     html: `<span style="--pin-fill:${fill}">${pinLabel(position)}</span>`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
   });
 }
 

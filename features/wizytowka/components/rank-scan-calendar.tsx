@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { RANK_TIMEZONE } from "@/lib/config/rank-limits";
@@ -48,10 +49,12 @@ export function RankScanCalendar({
   scanDays,
   selectedDay,
   onSelectDay,
+  children,
 }: {
   scanDays: string[];
   selectedDay: string | null;
   onSelectDay: (dayKey: string) => void;
+  children?: ReactNode;
 }) {
   const today = warsawTodayKey();
   const initial = selectedDay ?? today;
@@ -172,6 +175,19 @@ export function RankScanCalendar({
           );
         })}
       </div>
+
+      <div className="rank-calendar-legend" aria-hidden>
+        <span className="rank-calendar-legend-item">
+          <span className="rank-calendar-legend-dot" />
+          Dzień ze skanem
+        </span>
+        <span className="rank-calendar-legend-item">
+          <span className="rank-calendar-legend-picked" />
+          Wybrany
+        </span>
+      </div>
+
+      {children}
 
       {scanDays.length === 0 ? (
         <p className="rank-calendar-empty">Brak historii skanów</p>

@@ -595,46 +595,46 @@ export function RankPositionsSection({
       ) : null}
 
       <div className="rank-main-grid">
-        <div className="rank-main-left">
-          <div className="rank-pills">
-            {keywords.map((k) => {
-              const active = k.id === selectedKeywordId;
-              return (
-                <div
-                  key={k.id}
-                  className={active ? "rank-pill is-active" : "rank-pill"}
+        <div className="rank-pills">
+          {keywords.map((k) => {
+            const active = k.id === selectedKeywordId;
+            return (
+              <div
+                key={k.id}
+                className={active ? "rank-pill is-active" : "rank-pill"}
+              >
+                <button
+                  type="button"
+                  className="rank-pill-label"
+                  onClick={() => {
+                    setSelectedKeywordId(k.id);
+                    const days = k.scanDays;
+                    setSelectedDay(days[0] ?? warsawTodayKey());
+                  }}
                 >
+                  <span className="rank-pill-phrase">{k.phrase}</span>
+                  <span className="rank-pill-radius mono">
+                    {k.defaultRadiusKm} km
+                  </span>
+                </button>
+                {active ? (
                   <button
                     type="button"
-                    className="rank-pill-label"
-                    onClick={() => {
-                      setSelectedKeywordId(k.id);
-                      const days = k.scanDays;
-                      setSelectedDay(days[0] ?? warsawTodayKey());
-                    }}
+                    className="rank-pill-x"
+                    aria-label={`Usuń frazę ${k.phrase}`}
+                    disabled={pending || Boolean(k.runningScanId)}
+                    onClick={() => onRemove(k.id)}
                   >
-                    <span className="rank-pill-phrase">{k.phrase}</span>
-                    <span className="rank-pill-radius mono">
-                      {k.defaultRadiusKm} km
-                    </span>
+                    <X aria-hidden />
                   </button>
-                  {active ? (
-                    <button
-                      type="button"
-                      className="rank-pill-x"
-                      aria-label={`Usuń frazę ${k.phrase}`}
-                      disabled={pending || Boolean(k.runningScanId)}
-                      onClick={() => onRemove(k.id)}
-                    >
-                      <X aria-hidden />
-                    </button>
-                  ) : null}
-                </div>
-              );
-            })}
-            {renderAddControls(false)}
-          </div>
+                ) : null}
+              </div>
+            );
+          })}
+          {renderAddControls(false)}
+        </div>
 
+        <div className="rank-main-left">
           {isRunning ? (
             <div className="rank-running">
               <div className="rank-running-grid" aria-hidden>
@@ -750,27 +750,36 @@ export function RankPositionsSection({
               const found = scansByKeywordDay[selectedKeywordId]?.[day];
               if (found) setScan(found);
             }}
-          />
-          <div className="rank-scan-summary">
-            <div className="rank-scan-summary-row">
-              <span>Punkty siatki</span>
-              <span className="mono">
-                {(scan?.gridSize ?? RANK_GRID_SIZE) *
-                  (scan?.gridSize ?? RANK_GRID_SIZE)}{" "}
-                + 1
-              </span>
+          >
+            <div className="rank-scan-summary">
+              {selectedDay ? (
+                <p className="rank-scan-summary-label">
+                  Skan z{" "}
+                  <span className="mono">
+                    {selectedDay.split("-").reverse().join(".")}
+                  </span>
+                </p>
+              ) : null}
+              <div className="rank-scan-summary-row">
+                <span>Punkty siatki</span>
+                <span className="mono">
+                  {(scan?.gridSize ?? RANK_GRID_SIZE) *
+                    (scan?.gridSize ?? RANK_GRID_SIZE)}{" "}
+                  + 1
+                </span>
+              </div>
+              <div className="rank-scan-summary-row">
+                <span>Zasięg</span>
+                <span className="mono">
+                  {scan?.radiusKm ?? selectedKeyword?.defaultRadiusKm ?? "-"} km
+                </span>
+              </div>
+              <div className="rank-scan-summary-row">
+                <span>Poza top 20</span>
+                <span className="mono">{hasMapData ? outsideTop20 : "-"}</span>
+              </div>
             </div>
-            <div className="rank-scan-summary-row">
-              <span>Zasięg</span>
-              <span className="mono">
-                {scan?.radiusKm ?? selectedKeyword?.defaultRadiusKm ?? "-"} km
-              </span>
-            </div>
-            <div className="rank-scan-summary-row">
-              <span>Poza top 20</span>
-              <span className="mono">{hasMapData ? outsideTop20 : "-"}</span>
-            </div>
-          </div>
+          </RankScanCalendar>
         </div>
       </div>
 

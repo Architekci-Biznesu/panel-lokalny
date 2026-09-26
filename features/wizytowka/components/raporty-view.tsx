@@ -31,7 +31,13 @@ function BreakdownBars({
         const pct = Math.round((row.value / max) * 100);
         return (
           <li key={row.key} className="wiz-report-bar-row">
-            <span className="wiz-report-bar-label">{row.label}</span>
+            <div className="wiz-report-bar-meta">
+              <span className="wiz-report-bar-label">{row.label}</span>
+              <span className="wiz-report-bar-value mono">
+                {formatIntPl(row.value)}{" "}
+                <span className="wiz-report-bar-pct">{pct}%</span>
+              </span>
+            </div>
             <span className="wiz-report-bar-track">
               <span
                 className="wiz-report-bar-fill"
@@ -41,10 +47,6 @@ function BreakdownBars({
                 }}
               />
             </span>
-            <span className="wiz-report-bar-value mono">
-              {formatIntPl(row.value)}{" "}
-              <span className="wiz-report-bar-pct">{pct}%</span>
-            </span>
           </li>
         );
       })}
@@ -53,13 +55,17 @@ function BreakdownBars({
 }
 
 function RateTicks({ value }: { value: number }) {
-  const filled = Math.max(0, Math.min(20, Math.round(value)));
+  const total = 20;
+  const filled = Math.max(
+    0,
+    Math.min(total, Math.round((value / 100) * total)),
+  );
   return (
-    <div className="wiz-report-rate-ticks" aria-hidden>
-      {Array.from({ length: 20 }, (_, i) => (
+    <div className="wiz-complete-bar wiz-report-rate-ticks" aria-hidden>
+      {Array.from({ length: total }, (_, i) => (
         <span
           key={i}
-          className={`wiz-report-rate-tick${i < filled ? " is-on" : ""}`}
+          className={`wiz-complete-tick${i < filled ? " is-on" : ""}`}
         />
       ))}
     </div>

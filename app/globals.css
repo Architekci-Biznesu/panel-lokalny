@@ -4563,28 +4563,36 @@
   .wiz-report-bars {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: 10px;
     margin: var(--space-1) 0 0;
     padding: 0;
     list-style: none;
   }
 
   .wiz-report-bar-row {
-    display: grid;
-    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
-    gap: 0.5rem;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .wiz-report-bar-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .wiz-report-bar-label {
-    font-size: var(--type-base);
-    color: var(--muted-foreground);
+    font-size: 13px;
+    color: var(--foreground);
+    white-space: nowrap;
   }
 
   .wiz-report-bar-track {
-    height: 0.5rem;
+    height: 8px;
     border-radius: 999px;
-    background: var(--secondary);
+    background: var(--muted);
     overflow: hidden;
   }
 
@@ -4596,9 +4604,10 @@
   }
 
   .wiz-report-bar-value {
-    font-size: var(--type-base);
+    font-size: 13px;
     color: var(--foreground);
     text-align: right;
+    white-space: nowrap;
   }
 
   .wiz-report-charts {
@@ -5070,17 +5079,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
     border-radius: 999px;
     background: var(--pin-fill);
     color: #fff;
-    font-size: 0.8125rem;
+    font-size: 0.6875rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
     border: none;
-    box-shadow: 0 3px 10px rgb(0 0 0 / 0.22);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
     text-shadow: 0 1px 1px rgb(0 0 0 / 0.18);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
@@ -7565,7 +7574,7 @@
   .wiz-complete-tick {
     flex: 1 1 0;
     min-width: 0;
-    border-radius: 1px;
+    border-radius: 3px;
     background: var(--border);
   }
 
@@ -8659,17 +8668,19 @@
     text-underline-offset: 4px;
   }
 
-  /* Baner "Brak nadchodzących dni specjalnych" wewnątrz kafla, jak banery luk */
+  /* Baner "Brak nadchodzących dni specjalnych" jako stopka kafla (jak "Dlaczego ta zmiana") */
   #wiz-field-special-hours.wiz-hours-tile:has(.wiz-hours-tip) {
-    padding-bottom: 24px;
+    padding-bottom: 0;
+    overflow: hidden;
   }
 
   .wiz-hours-tile .wiz-hours-tip {
-    margin: 16px 0 0;
-    padding: 14px 16px;
+    margin: 20px -24px 0;
+    padding: 16px 24px 18px;
     gap: 12px;
     border: 0;
-    border-radius: var(--radius-block);
+    border-top: 1px solid color-mix(in srgb, var(--warning) 18%, transparent);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
     background: var(--warning-soft);
   }
 
@@ -8860,9 +8871,23 @@
     box-shadow: none;
   }
 
-  /* --- Wspólne: dni jako kółka 34px, cyfry mono --- */
-  .wiz-range-day,
+  /* --- Wspólne: cyfry mono; rank = kwadraty r8, range = kółka --- */
   .rank-calendar-cell {
+    width: 28px;
+    height: 28px;
+    min-height: 0;
+    justify-self: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--foreground);
+    background: transparent;
+  }
+
+  .wiz-range-day {
     width: 34px;
     height: 34px;
     min-height: 0;
@@ -8887,7 +8912,7 @@
   .wiz-range-weekdays,
   .wiz-range-days,
   .rank-calendar-grid {
-    gap: 4px 2px;
+    gap: 6px 4px;
   }
 
   .wiz-range-month-title,
@@ -8904,18 +8929,29 @@
     color: var(--foreground);
   }
 
-  /* zakres = jasne indygo, końce / wybrany = czarne */
+  /* zakres i picked = ten sam rozmiar kółka (26px), picked czarne */
   .wiz-range-day.is-in-range {
+    width: 26px;
+    height: 26px;
     background: var(--brand-50);
     color: var(--foreground);
   }
 
   .wiz-range-day.is-selected,
   .rank-calendar-cell.is-selected {
+    width: 28px;
+    height: 28px;
     background: var(--primary);
     color: var(--primary-foreground);
     font-weight: 500;
     border: 0;
+  }
+
+  /* range picker: picked = ten sam rozmiar co jasny zakres (26px), kółko */
+  .wiz-range-day.is-selected {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-pill);
   }
 
   .wiz-range-day.is-disabled,
@@ -8930,20 +8966,74 @@
     box-shadow: inset 0 0 0 1px var(--border);
   }
 
-  /* Historia skanów: kropka pod dniem ze skanem, na wybranym koralowa */
+  /* Historia skanów: kropka brand pod dniem ze skanem; na wybranym - koralowa */
   .rank-calendar-cell .rank-calendar-dot {
-    bottom: 4px;
+    bottom: 3px;
     width: 4px;
     height: 4px;
+    background: var(--brand);
   }
 
   .rank-calendar-cell.is-selected .rank-calendar-dot {
     background: var(--warning);
   }
 
+  .rank-calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+  }
+
+  .rank-calendar-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .rank-calendar-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--brand);
+    flex-shrink: 0;
+  }
+
+  .rank-calendar-legend-picked {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background: var(--primary);
+    flex-shrink: 0;
+  }
+
+  .rank-scan-summary-label {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+  }
+
+  .rank-calendar .rank-scan-summary {
+    margin-top: 16px;
+  }
+
+  /* Dni ze skanem: szare zaokrąglone tło; wybrany: czarne, ten sam rozmiar */
+  .rank-calendar-cell.has-scan:not(.is-selected) {
+    background: var(--muted);
+    border-radius: 8px;
+  }
+
+  .rank-calendar-cell,
+  .rank-calendar-cell.is-selected {
+    border-radius: 8px;
+  }
+
   /* Kafel Historii skanów jak reszta kafli */
   .rank-calendar {
-    padding: 20px 24px 24px;
+    padding: 16px 14px 18px;
     border: 0;
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
@@ -9680,20 +9770,7 @@
   }
 
   .wiz-report-rate-ticks {
-    display: flex;
-    gap: 4px;
-    margin-top: 8px;
-  }
-
-  .wiz-report-rate-tick {
-    flex: 1 1 0;
-    height: 28px;
-    border-radius: 999px;
-    background: var(--muted);
-  }
-
-  .wiz-report-rate-tick.is-on {
-    background: var(--primary);
+    margin-top: auto;
   }
 
   .wiz-report-chart-head {
@@ -9867,13 +9944,36 @@
   }
 
   .rank-main-grid {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    gap: 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    grid-template-areas:
+      "pills ."
+      "map calendar";
+    column-gap: 24px;
+    row-gap: 16px;
+    align-items: start;
+  }
+
+  .rank-main-grid > .rank-pills {
+    grid-area: pills;
+    margin-bottom: 0;
+  }
+
+  .rank-main-grid > .rank-main-left {
+    grid-area: map;
+  }
+
+  .rank-main-grid > .rank-main-right {
+    grid-area: calendar;
   }
 
   @media (max-width: 1099px) {
     .rank-main-grid {
       grid-template-columns: 1fr;
+      grid-template-areas:
+        "pills"
+        "map"
+        "calendar";
     }
   }
 
@@ -9885,7 +9985,7 @@
   }
 
   .rank-pills {
-    margin-bottom: 4px;
+    margin-bottom: 0;
   }
 
   .rank-map-frame,
