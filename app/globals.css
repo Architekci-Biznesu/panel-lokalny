@@ -7634,11 +7634,19 @@
     color: var(--foreground);
   }
 
+  /* Wiersz z propozycją AI: jedna kolumna, siatkę 180px / reszta robi .wiz-inline-suggestion */
+  .wiz-field-row.wiz-field-row-suggestion {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   @media (max-width: 639px) {
-    .wiz-field-row,
-    .wiz-inline-suggestion {
+    .wiz-field-row {
       grid-template-columns: 1fr auto;
       padding: 14px 16px;
+    }
+
+    .wiz-inline-suggestion {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
