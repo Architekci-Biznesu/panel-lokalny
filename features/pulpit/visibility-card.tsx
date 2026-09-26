@@ -1,38 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { Eye } from "lucide-react";
-import { UiSelect } from "@/features/shell/ui-select";
-import type { PulpitVisibility } from "@/features/pulpit/load-pulpit";
-import { formatIntPl } from "@/features/wizytowka/performance";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import type { PulpitMonthVisibility } from "@/features/pulpit/load-pulpit";
+import { formatIntPl, REPORT_COLORS } from "@/features/wizytowka/performance";
 
-const PERIOD_OPTIONS = [
-  { value: "week", label: "Tydzień" },
-  // TODO Styl 4: inne okresy, gdy loader będzie je wspierał
-];
+function formatTick(iso: string) {
+  const [, m, d] = iso.split("-");
+  return `${Number(d)}.${Number(m)}`;
+}
+
+const AXIS_TICK = {
+  fill: "var(--muted-foreground)",
+  fontSize: 11,
+  fontFamily: "var(--font-mono), ui-monospace, monospace",
+};
 
 export function VisibilityCard({
   visibility,
 }: {
-  visibility: PulpitVisibility | null;
+  visibility: PulpitMonthVisibility | null;
 }) {
-  const [period, setPeriod] = useState("week");
   const days = visibility?.days ?? [];
-  const todayIso = useMemo(() => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }, []);
-  const [activeDate, setActiveDate] = useState<string | null>(null);
-  const selected =
-    activeDate ??
-    days.find((d) => d.date === todayIso)?.date ??
-    days.find((d) => d.value > 0)?.date ??
-    days[0]?.date ??
-    null;
-  const max = Math.max(1, ...days.map((d) => d.value));
+  const hasData = days.some((d) => d.value > 0);
   const change = visibility?.changePct ?? null;
   const changeLabel =
     change == null
@@ -41,71 +39,114 @@ export function VisibilityCard({
 
   return (
     <section className="pulpit-card pulpit-visibility">
-      <header className="pulpit-visibility-head">
+      <header className="pulpit-card-head">
         <div className="pulpit-visibility-title-row">
           <span className="pulpit-icon-circle" aria-hidden>
             <Eye />
           </span>
           <div>
-            <h2 className="pulpit-card-title is-lg">Widoczność wizytówki</h2>
+            <h2 className="pulpit-card-title">Widoczność wizytówki</h2>
             <p className="pulpit-card-lead">
-              Wyświetlenia wizytówki w Google dzień po dniu. Najedź na dzień,
-              żeby zobaczyć szczegóły.
+              Wyświetlenia w Google z ostatnich 30 dni.
             </p>
           </div>
         </div>
-        <UiSelect
-          aria-label="Okres"
-          value={period}
-          options={PERIOD_OPTIONS}
-          onChange={setPeriod}
-        />
       </header>
 
-      {!visibility || days.every((d) => d.value === 0) ? (
+      {!hasData || !visibility ? (
         <p className="pulpit-empty">
-          Brak danych o wyświetleniach w tym tygodniu.
+          Brak danych o wyświetleniach w ostatnim miesiącu.
         </p>
       ) : (
-        <div className="pulpit-visibility-body">
-          <div className="pulpit-visibility-change">
-            <p className="pulpit-visibility-pct mono">{changeLabel}</p>
-            <p className="pulpit-card-lead">Ten tydzień vs poprzedni</p>
+        <div className="pulpit-month-body">
+          <div className="pulpit-month-summary">
+            <p className="pulpit-month-total mono">
+              {formatIntPl(visibility.total)}
+            </p>
+            <p className="pulpit-card-lead">Wyświetlenia łącznie</p>
+            {change != null && visibility.compareLabel ? (
+              <>
+                <p
+                  className={`pulpit-month-change mono${change < 0 ? " is-down" : ""}${change > 0 ? " is-up" : ""}`}
+                >
+                  {changeLabel}
+                </p>
+                <p className="pulpit-card-lead">{visibility.compareLabel}</p>
+              </>
+            ) : null}
           </div>
 
-          <div
-            className="pulpit-lollipop"
-            role="img"
-            aria-label="Wykres tygodnia"
-          >
-            {days.map((day) => {
-              const isActive = day.date === selected;
-              const height = `${Math.max(8, (day.value / max) * 100)}%`;
-              return (
-                <button
-                  key={day.date}
-                  type="button"
-                  className={`pulpit-lollipop-col${isActive ? " is-active" : ""}`}
-                  onMouseEnter={() => setActiveDate(day.date)}
-                  onFocus={() => setActiveDate(day.date)}
-                  onClick={() => setActiveDate(day.date)}
-                >
-                  {isActive ? (
-                    <span className="pulpit-lollipop-tip mono">
-                      {formatIntPl(day.value)}
-                    </span>
-                  ) : (
-                    <span className="pulpit-lollipop-tip-spacer" aria-hidden />
-                  )}
-                  <span className="pulpit-lollipop-stem-wrap">
-                    <span className="pulpit-lollipop-stem" style={{ height }}>
-                      <span className="pulpit-lollipop-dot" />
-                    </span>
-                  </span>
-                  <span className="pulpit-lollipop-day">{day.label}</span>
-                </button>
-              );
-            })}
+          <div className="pulpit-month-chart">
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart
+                data={days}
+                margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient
+                    id="pulpitViewsFill"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor={REPORT_COLORS.maps}
+                      stopOpacity={0.28}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={REPORT_COLORS.maps}
+                      stopOpacity={0.02}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  stroke="var(--border)"
+                  vertical={false}
+                  strokeDasharray="0"
+                />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={formatTick}
+                  tick={AXIS_TICK}
+                  axisLine={false}
+                  tickLine={false}
+                  minTickGap={36}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={AXIS_TICK}
+                  axisLine={false}
+                  tickLine={false}
+                  width={36}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+                  contentStyle={{
+                    borderRadius: 12,
+                    border: "1px solid var(--border)",
+                    background: "var(--card)",
+                    fontSize: 12,
+                  }}
+                  labelFormatter={(label) => formatTick(String(label))}
+                  formatter={(value) => [
+                    formatIntPl(Number(value ?? 0)),
+                    "Wyświetlenia",
+                  ]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={REPORT_COLORS.maps}
+                  strokeWidth={2}
+                  fill="url(#pulpitViewsFill)"
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}

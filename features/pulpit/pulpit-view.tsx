@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ImproveCard } from "@/features/pulpit/improve-card";
-import { ProposalsSummaryCard } from "@/features/pulpit/proposals-summary-card";
-import { RankSnapshotCard } from "@/features/pulpit/rank-snapshot-card";
+import { RankPhrasesCard } from "@/features/pulpit/rank-phrases-card";
 import { ReportKpiStrip } from "@/features/pulpit/report-kpi-strip";
 import { VisibilityCard } from "@/features/pulpit/visibility-card";
 import type { PulpitPayload } from "@/features/pulpit/load-pulpit";
@@ -37,19 +36,16 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
         </div>
 
         <div className="pulpit-span-12">
-          <VisibilityCard visibility={data.visibility} />
+          <VisibilityCard visibility={data.monthVisibility} />
         </div>
 
         <div className="pulpit-span-12">
-          <RankSnapshotCard rank={data.rank} />
+          <RankPhrasesCard phrases={data.rankPhrases} />
         </div>
 
-        <div className="pulpit-span-6">
-          <ImproveCard improve={data.improve} />
-        </div>
-
-        <div className="pulpit-span-6">
-          <ProposalsSummaryCard
+        <div className="pulpit-span-12">
+          <ImproveCard
+            improve={data.improve}
             proposals={data.proposals}
             proposalsTotal={data.proposalsTotal}
           />

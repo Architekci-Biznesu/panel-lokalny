@@ -29,25 +29,27 @@ import {
   IMPRESSION_METRICS,
   METRIC_LABELS,
   parsePerformancePayload,
+  toDateParts,
   type MetricSeries,
   type ReportSummary,
 } from "@/features/wizytowka/performance";
 import {
-  loadPulpitRankSnapshot,
-  type PulpitRankSnapshot,
+  loadPulpitRankPhrases,
+  type PulpitRankPhrase,
 } from "@/features/pulpit/load-pulpit-rank";
 
-export type PulpitDayPoint = {
+export type PulpitMonthDay = {
   date: string;
-  label: string;
   value: number;
 };
 
-export type PulpitVisibility = {
-  days: PulpitDayPoint[];
-  thisWeekTotal: number;
-  prevWeekTotal: number;
+export type PulpitMonthVisibility = {
+  days: PulpitMonthDay[];
+  total: number;
+  /** Ten sam miesiąc rok wcześniej (MTD). null = brak danych / nie pokazuj. */
   changePct: number | null;
+  /** np. "vs wrzesień 2025" */
+  compareLabel: string | null;
 };
 
 export type PulpitImproveGap = {
@@ -69,8 +71,8 @@ export type PulpitPayload = {
   connected: boolean;
   reportSummary: ReportSummary | null;
   reportRangeLabel: string | null;
-  visibility: PulpitVisibility | null;
-  rank: PulpitRankSnapshot | null;
+  monthVisibility: PulpitMonthVisibility | null;
+  rankPhrases: PulpitRankPhrase[];
   improve: {
     checks: CompletenessCheck[];
     gaps: PulpitImproveGap[];
@@ -80,8 +82,7 @@ export type PulpitPayload = {
   loadError: string | null;
 };
 
-const DAY_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "Sb", "Nd"] as const;
-const PROPOSALS_PREVIEW = 5;
+const PROPOSALS_PREVIEW = 8;
 
 function proposalHint(suggestion: GbpSuggestion): string {
   if (suggestion.risk === "high" || suggestion.field === "title") {
@@ -100,15 +101,6 @@ function proposalHint(suggestion: GbpSuggestion): string {
     return "AI proponuje zmianę · opis";
   }
   return "AI proponuje zmianę";
-}
-
-function startOfWeekMonday(d: Date): Date {
-  const copy = new Date(d);
-  copy.setHours(0, 0, 0, 0);
-  const day = copy.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  copy.setDate(copy.getDate() + diff);
-  return copy;
 }
 
 function addDaysDate(d: Date, n: number): Date {
@@ -148,38 +140,90 @@ export function dailyImpressionTotals(
   return map;
 }
 
-export function buildWeekVisibility(
-  series: MetricSeries[],
-  now = new Date(),
-): PulpitVisibility {
-  const byDay = dailyImpressionTotals(series);
-  const weekStart = startOfWeekMonday(now);
-  const prevStart = addDaysDate(weekStart, -7);
-
-  const days: PulpitDayPoint[] = DAY_LABELS.map((label, i) => {
-    const date = isoDay(addDaysDate(weekStart, i));
-    return {
-      date,
-      label,
-      value: byDay.get(date) ?? 0,
-    };
-  });
-
-  let thisWeekTotal = 0;
-  let prevWeekTotal = 0;
-  for (let i = 0; i < 7; i++) {
-    thisWeekTotal += byDay.get(isoDay(addDaysDate(weekStart, i))) ?? 0;
-    prevWeekTotal += byDay.get(isoDay(addDaysDate(prevStart, i))) ?? 0;
+function sumImpressionsInRange(
+  byDay: Map<string, number>,
+  start: Date,
+  end: Date,
+): number {
+  let total = 0;
+  for (let d = new Date(start); d <= end; d = addDaysDate(d, 1)) {
+    total += byDay.get(isoDay(d)) ?? 0;
   }
+  return total;
+}
+
+function hasImpressionsInRange(
+  byDay: Map<string, number>,
+  start: Date,
+  end: Date,
+): boolean {
+  for (let d = new Date(start); d <= end; d = addDaysDate(d, 1)) {
+    if ((byDay.get(isoDay(d)) ?? 0) > 0) return true;
+  }
+  return false;
+}
+
+function monthCompareLabel(monthDate: Date): string {
+  const label = new Intl.DateTimeFormat("pl-PL", {
+    month: "long",
+    year: "numeric",
+  }).format(monthDate);
+  return `vs ${label}`;
+}
+
+/**
+ * Wykres: okno `rangeStart`–`rangeEnd` (30 dni).
+ * Porównanie: ten sam miesiąc kalendarzowy rok wcześniej (MTD do `rangeEnd`).
+ * Bez danych w poprzednim roku → changePct = null.
+ */
+export function buildMonthVisibility(
+  series: MetricSeries[],
+  rangeStart: Date,
+  rangeEnd: Date,
+  prevYearSeries: MetricSeries[] | null = null,
+): PulpitMonthVisibility {
+  const byDay = dailyImpressionTotals(series);
+  const days: PulpitMonthDay[] = [];
+  const start = new Date(rangeStart);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(rangeEnd);
+  end.setHours(0, 0, 0, 0);
+
+  for (let d = new Date(start); d <= end; d = addDaysDate(d, 1)) {
+    const date = isoDay(d);
+    days.push({ date, value: byDay.get(date) ?? 0 });
+  }
+
+  const total = days.reduce((sum, day) => sum + day.value, 0);
+
+  const monthStart = new Date(end.getFullYear(), end.getMonth(), 1);
+  monthStart.setHours(0, 0, 0, 0);
+  const currentMonthTotal = sumImpressionsInRange(byDay, monthStart, end);
 
   let changePct: number | null = null;
-  if (prevWeekTotal > 0) {
-    changePct = ((thisWeekTotal - prevWeekTotal) / prevWeekTotal) * 100;
-  } else if (thisWeekTotal > 0) {
-    changePct = 100;
+  let compareLabel: string | null = null;
+
+  if (prevYearSeries) {
+    const prevByDay = dailyImpressionTotals(prevYearSeries);
+    const prevStart = new Date(end.getFullYear() - 1, end.getMonth(), 1);
+    prevStart.setHours(0, 0, 0, 0);
+    const prevEnd = new Date(
+      end.getFullYear() - 1,
+      end.getMonth(),
+      end.getDate(),
+    );
+    prevEnd.setHours(0, 0, 0, 0);
+
+    if (hasImpressionsInRange(prevByDay, prevStart, prevEnd)) {
+      const prevTotal = sumImpressionsInRange(prevByDay, prevStart, prevEnd);
+      if (prevTotal > 0) {
+        changePct = ((currentMonthTotal - prevTotal) / prevTotal) * 100;
+        compareLabel = monthCompareLabel(prevStart);
+      }
+    }
   }
 
-  return { days, thisWeekTotal, prevWeekTotal, changePct };
+  return { days, total, changePct, compareLabel };
 }
 
 function emptyPayload(
@@ -191,8 +235,8 @@ function emptyPayload(
   return {
     reportSummary: null,
     reportRangeLabel: null,
-    visibility: null,
-    rank: null,
+    monthVisibility: null,
+    rankPhrases: [],
     improve: null,
     proposals: [],
     proposalsTotal: 0,
@@ -202,7 +246,6 @@ function emptyPayload(
 
 export async function loadPulpitPayload(): Promise<PulpitPayload> {
   try {
-    const now = new Date();
     const range = defaultRange();
     const rangeStart = fromDateParts(range.start);
     const rangeEnd = fromDateParts(range.end);
@@ -211,6 +254,7 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
     const token = await getGbpAccessTokenForProfile(profile);
 
     let series = emptySeriesForMetrics(ALL_PERFORMANCE_METRICS);
+    let prevYearSeries: MetricSeries[] | null = null;
     let metricsError: string | null = null;
     try {
       const payload = await fetchGbpMultiDailyMetrics(
@@ -232,6 +276,32 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
               points: [],
             },
         );
+      }
+
+      const prevStart = new Date(
+        rangeEnd.getFullYear() - 1,
+        rangeEnd.getMonth(),
+        1,
+      );
+      const prevEnd = new Date(
+        rangeEnd.getFullYear() - 1,
+        rangeEnd.getMonth(),
+        rangeEnd.getDate(),
+      );
+      try {
+        const prevPayload = await fetchGbpMultiDailyMetrics(
+          token,
+          profile.gbpLocationId!,
+          IMPRESSION_METRICS,
+          toDateParts(prevStart),
+          toDateParts(prevEnd),
+        );
+        const prevParsed = parsePerformancePayload(prevPayload);
+        if (prevParsed.length > 0) {
+          prevYearSeries = prevParsed;
+        }
+      } catch {
+        prevYearSeries = null;
       }
     } catch {
       metricsError = "Nie udało się pobrać widoczności z Google.";
@@ -272,19 +342,24 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
         href: PROPOSAL_META[s.field].href,
       }));
 
-    let rank: PulpitRankSnapshot | null = null;
+    let rankPhrases: PulpitRankPhrase[] = [];
     try {
-      rank = await loadPulpitRankSnapshot();
+      rankPhrases = await loadPulpitRankPhrases();
     } catch {
-      rank = null;
+      rankPhrases = [];
     }
 
     return {
       connected: true,
       reportSummary: buildReportSummary(series),
       reportRangeLabel: formatRangeLabel(rangeStart, rangeEnd),
-      visibility: buildWeekVisibility(series, now),
-      rank,
+      monthVisibility: buildMonthVisibility(
+        series,
+        rangeStart,
+        rangeEnd,
+        prevYearSeries,
+      ),
+      rankPhrases,
       improve: {
         checks: summary.checks.filter((c) => !c.filled),
         gaps: summary.outsidePanelGaps,
