@@ -1,5 +1,13 @@
-import { computeCompleteness } from "@/features/wizytowka/completeness";
+import {
+  computeCompleteness,
+  type CompletenessCheck,
+} from "@/features/wizytowka/completeness";
 import { loadActiveGbpBundle } from "@/features/wizytowka/load-location";
+import {
+  isProposalField,
+  PROPOSAL_META,
+  uniquePendingByField,
+} from "@/features/wizytowka/proposal-meta";
 import {
   getActiveGbpProfile,
   getGbpAccessTokenForProfile,
@@ -11,15 +19,23 @@ import {
   listGbpLocationMedia,
 } from "@/lib/integrations/gbp/client";
 import { AuthError } from "@/lib/session";
+import type { GbpSuggestion } from "@/lib/db/schema";
 import {
   ALL_PERFORMANCE_METRICS,
+  buildReportSummary,
+  defaultRange,
   emptySeriesForMetrics,
+  fromDateParts,
   IMPRESSION_METRICS,
   METRIC_LABELS,
   parsePerformancePayload,
-  toDateParts,
   type MetricSeries,
+  type ReportSummary,
 } from "@/features/wizytowka/performance";
+import {
+  loadPulpitRankSnapshot,
+  type PulpitRankSnapshot,
+} from "@/features/pulpit/load-pulpit-rank";
 
 export type PulpitDayPoint = {
   date: string;
@@ -34,23 +50,57 @@ export type PulpitVisibility = {
   changePct: number | null;
 };
 
-export type PulpitStatus = {
-  filledCount: number;
-  filledTotal: number;
-  pendingSuggestions: number;
-  /** // TODO Styl 4: podłączyć loader opinii, gdy będzie w projekcie */
-  newReviewsCount: number | null;
-  lastAnalyzedAt: string | null;
+export type PulpitImproveGap = {
+  id: string;
+  label: string;
+  why: string;
+  href?: string;
+};
+
+export type PulpitProposalItem = {
+  id: string;
+  field: string;
+  label: string;
+  hint: string;
+  href: string;
 };
 
 export type PulpitPayload = {
   connected: boolean;
+  reportSummary: ReportSummary | null;
+  reportRangeLabel: string | null;
   visibility: PulpitVisibility | null;
-  status: PulpitStatus | null;
+  rank: PulpitRankSnapshot | null;
+  improve: {
+    checks: CompletenessCheck[];
+    gaps: PulpitImproveGap[];
+  } | null;
+  proposals: PulpitProposalItem[];
+  proposalsTotal: number;
   loadError: string | null;
 };
 
 const DAY_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "Sb", "Nd"] as const;
+const PROPOSALS_PREVIEW = 5;
+
+function proposalHint(suggestion: GbpSuggestion): string {
+  if (suggestion.risk === "high" || suggestion.field === "title") {
+    return "AI proponuje zmianę · pod SEO";
+  }
+  if (suggestion.field === "primary_category") {
+    return "AI proponuje zmianę · kategoria główna";
+  }
+  if (suggestion.field === "additional_categories") {
+    return "AI proponuje zmianę · kategorie";
+  }
+  if (suggestion.field === "services") {
+    return "AI proponuje zmianę · usługi";
+  }
+  if (suggestion.field === "description") {
+    return "AI proponuje zmianę · opis";
+  }
+  return "AI proponuje zmianę";
+}
 
 function startOfWeekMonday(d: Date): Date {
   const copy = new Date(d);
@@ -61,7 +111,7 @@ function startOfWeekMonday(d: Date): Date {
   return copy;
 }
 
-function addDays(d: Date, n: number): Date {
+function addDaysDate(d: Date, n: number): Date {
   const copy = new Date(d);
   copy.setDate(copy.getDate() + n);
   return copy;
@@ -72,6 +122,15 @@ function isoDay(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function formatRangeLabel(start: Date, end: Date): string {
+  const fmt = new Intl.DateTimeFormat("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  return `${fmt.format(start)} - ${fmt.format(end)}`;
 }
 
 /** Sum impression metrics per calendar day. */
@@ -95,10 +154,10 @@ export function buildWeekVisibility(
 ): PulpitVisibility {
   const byDay = dailyImpressionTotals(series);
   const weekStart = startOfWeekMonday(now);
-  const prevStart = addDays(weekStart, -7);
+  const prevStart = addDaysDate(weekStart, -7);
 
   const days: PulpitDayPoint[] = DAY_LABELS.map((label, i) => {
-    const date = isoDay(addDays(weekStart, i));
+    const date = isoDay(addDaysDate(weekStart, i));
     return {
       date,
       label,
@@ -109,8 +168,8 @@ export function buildWeekVisibility(
   let thisWeekTotal = 0;
   let prevWeekTotal = 0;
   for (let i = 0; i < 7; i++) {
-    thisWeekTotal += byDay.get(isoDay(addDays(weekStart, i))) ?? 0;
-    prevWeekTotal += byDay.get(isoDay(addDays(prevStart, i))) ?? 0;
+    thisWeekTotal += byDay.get(isoDay(addDaysDate(weekStart, i))) ?? 0;
+    prevWeekTotal += byDay.get(isoDay(addDaysDate(prevStart, i))) ?? 0;
   }
 
   let changePct: number | null = null;
@@ -123,12 +182,30 @@ export function buildWeekVisibility(
   return { days, thisWeekTotal, prevWeekTotal, changePct };
 }
 
+function emptyPayload(
+  partial: Partial<PulpitPayload> & {
+    connected: boolean;
+    loadError: string | null;
+  },
+): PulpitPayload {
+  return {
+    reportSummary: null,
+    reportRangeLabel: null,
+    visibility: null,
+    rank: null,
+    improve: null,
+    proposals: [],
+    proposalsTotal: 0,
+    ...partial,
+  };
+}
+
 export async function loadPulpitPayload(): Promise<PulpitPayload> {
   try {
     const now = new Date();
-    const weekStart = startOfWeekMonday(now);
-    const rangeStart = addDays(weekStart, -7);
-    const rangeEnd = addDays(weekStart, 6);
+    const range = defaultRange();
+    const rangeStart = fromDateParts(range.start);
+    const rangeEnd = fromDateParts(range.end);
 
     const profile = await getActiveGbpProfile();
     const token = await getGbpAccessTokenForProfile(profile);
@@ -140,8 +217,8 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
         token,
         profile.gbpLocationId!,
         ALL_PERFORMANCE_METRICS,
-        toDateParts(rangeStart),
-        toDateParts(rangeEnd),
+        range.start,
+        range.end,
       );
       const parsed = parsePerformancePayload(payload);
       if (parsed.length > 0) {
@@ -184,44 +261,48 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
           : (bundle.latestAuditRun?.startedAt ?? null),
     });
 
-    const analyzedAt = summary.lastAnalyzedAt;
-    const lastAnalyzedAt =
-      analyzedAt instanceof Date
-        ? analyzedAt.toISOString()
-        : analyzedAt
-          ? new Date(analyzedAt).toISOString()
-          : null;
+    const pending = uniquePendingByField(bundle.pendingSuggestions);
+    const proposalItems: PulpitProposalItem[] = pending
+      .filter((s) => isProposalField(s.field))
+      .map((s) => ({
+        id: s.id,
+        field: s.field,
+        label: PROPOSAL_META[s.field].label,
+        hint: proposalHint(s),
+        href: PROPOSAL_META[s.field].href,
+      }));
+
+    let rank: PulpitRankSnapshot | null = null;
+    try {
+      rank = await loadPulpitRankSnapshot();
+    } catch {
+      rank = null;
+    }
 
     return {
       connected: true,
+      reportSummary: buildReportSummary(series),
+      reportRangeLabel: formatRangeLabel(rangeStart, rangeEnd),
       visibility: buildWeekVisibility(series, now),
-      status: {
-        filledCount: summary.filledCount,
-        filledTotal: summary.filledTotal,
-        pendingSuggestions: summary.pendingSuggestions,
-        // TODO Styl 4: podłączyć loader opinii, gdy będzie w projekcie
-        newReviewsCount: null,
-        lastAnalyzedAt,
+      rank,
+      improve: {
+        checks: summary.checks.filter((c) => !c.filled),
+        gaps: summary.outsidePanelGaps,
       },
+      proposals: proposalItems.slice(0, PROPOSALS_PREVIEW),
+      proposalsTotal: proposalItems.length,
       loadError: metricsError,
     };
   } catch (error) {
     if (error instanceof GbpNotConnectedError || error instanceof AuthError) {
-      return {
-        connected: false,
-        visibility: null,
-        status: null,
-        loadError: null,
-      };
+      return emptyPayload({ connected: false, loadError: null });
     }
-    return {
+    return emptyPayload({
       connected: false,
-      visibility: null,
-      status: null,
       loadError:
         error instanceof Error
           ? error.message
           : "Nie udało się wczytać pulpitu",
-    };
+    });
   }
 }

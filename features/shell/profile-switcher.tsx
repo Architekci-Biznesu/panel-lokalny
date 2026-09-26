@@ -5,10 +5,12 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronsUpDown,
+  Loader2,
   Plus,
   Search,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "gooey-toast";
 import { exitAdminMode } from "@/features/admin/actions";
 import {
@@ -42,12 +44,21 @@ export function ProfileSwitcher({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [pendingProfileId, setPendingProfileId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const isOnboarding = pathname === "/onboarding";
+
+  if (pendingProfileId !== null && pendingProfileId === activeProfileId) {
+    setPendingProfileId(null);
+  }
+
+  const switching =
+    pendingProfileId !== null && pendingProfileId !== activeProfileId;
+  const busy = switching || pending;
 
   const active =
     profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
@@ -113,9 +124,11 @@ export function ProfileSwitcher({
       }
       return;
     }
+    setPendingProfileId(profileId);
     startTransition(async () => {
       const result = await switchActiveProfile(profileId);
       if (!result.ok) {
+        setPendingProfileId(null);
         toast.error({
           title: "Nie udało się przełączyć profilu",
           description: result.error,
@@ -153,7 +166,7 @@ export function ProfileSwitcher({
         }
         onClick={toggleMenu}
         aria-expanded={open}
-        disabled={pending}
+        disabled={busy}
       >
         {compact ? (
           <>
@@ -223,7 +236,7 @@ export function ProfileSwitcher({
                       : "profile-menu-option"
                   }
                   role="menuitem"
-                  disabled={pending}
+                  disabled={busy}
                   onClick={() => selectProfile(profile.id)}
                 >
                   <span className="profile-menu-name">{profile.name}</span>
@@ -242,7 +255,7 @@ export function ProfileSwitcher({
                   type="button"
                   role="menuitem"
                   className="profile-menu-admin-exit"
-                  disabled={pending}
+                  disabled={busy}
                   onClick={() => {
                     startTransition(async () => {
                       await exitAdminMode();
@@ -258,7 +271,7 @@ export function ProfileSwitcher({
                     type="submit"
                     className="profile-menu-add"
                     role="menuitem"
-                    disabled={pending}
+                    disabled={busy}
                   >
                     <Plus aria-hidden />
                     Dodaj profil
@@ -269,6 +282,28 @@ export function ProfileSwitcher({
           ) : null}
         </div>
       ) : null}
+
+      {busy
+        ? createPortal(
+            <div
+              className="app-profile-switch-overlay"
+              role="status"
+              aria-busy="true"
+              aria-live="polite"
+            >
+              <div className="app-profile-switch-content">
+                <Loader2
+                  aria-hidden
+                  className="app-profile-switch-spinner ui-btn-spinner"
+                />
+                <p className="app-profile-switch-label">
+                  Przełączanie profilu…
+                </p>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

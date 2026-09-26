@@ -80,7 +80,7 @@ export function AppShell({
 
   return (
     <div className="app-shell">
-      <header className="topnav">
+      <header className={`topnav${drawerOpen ? " is-drawer-open" : ""}`}>
         <div className="topnav-left">
           <button
             type="button"
@@ -115,37 +115,39 @@ export function AppShell({
                 {item.shortLabel ?? item.label}
               </Link>
             ))}
-            <div className="topnav-more" ref={moreRef}>
-              <button
-                type="button"
-                className={`topnav-link ${moreActive ? "active" : ""}`}
-                aria-haspopup="menu"
-                aria-expanded={moreOpen}
-                onClick={() => setMoreOpen((v) => !v)}
-              >
-                Więcej
-                <ChevronDown aria-hidden className="topnav-chevron" />
-              </button>
-              {moreOpen ? (
-                <div className="topnav-menu" role="menu">
-                  {topNavMore.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={closeAll}
-                        role="menuitem"
-                        className={`topnav-menu-item ${isActive(pathname, item.href) ? "active" : ""}`}
-                      >
-                        <Icon aria-hidden />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
+            {topNavMore.length > 0 ? (
+              <div className="topnav-more" ref={moreRef}>
+                <button
+                  type="button"
+                  className={`topnav-link ${moreActive ? "active" : ""}`}
+                  aria-haspopup="menu"
+                  aria-expanded={moreOpen}
+                  onClick={() => setMoreOpen((v) => !v)}
+                >
+                  Więcej
+                  <ChevronDown aria-hidden className="topnav-chevron" />
+                </button>
+                {moreOpen ? (
+                  <div className="topnav-menu" role="menu">
+                    {topNavMore.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={closeAll}
+                          role="menuitem"
+                          className={`topnav-menu-item ${isActive(pathname, item.href) ? "active" : ""}`}
+                        >
+                          <Icon aria-hidden />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </nav>
         </div>
 

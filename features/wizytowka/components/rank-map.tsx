@@ -76,9 +76,12 @@ function FitBounds({ points }: { points: RankMapPoint[] }) {
 export function RankMap({
   points,
   className,
+  canvasHeight,
 }: {
   points: RankMapPoint[];
   className?: string;
+  /** Override default canvas height (px), e.g. compact Pulpit map. */
+  canvasHeight?: number;
 }) {
   const center = useMemo<[number, number]>(() => {
     if (points.length === 0) return [52.23, 21.01];
@@ -106,6 +109,7 @@ export function RankMap({
           zoom={15}
           scrollWheelZoom={false}
           className="rank-map-canvas"
+          style={canvasHeight ? { height: canvasHeight } : undefined}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

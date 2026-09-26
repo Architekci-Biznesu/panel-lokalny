@@ -2,6 +2,7 @@
 
 @layer components {
   .app-shell {
+    position: relative;
     height: 100dvh;
     overflow: hidden;
     display: flex;
@@ -66,7 +67,7 @@
     width: 100%;
     max-width: none;
     margin-inline: 0;
-    padding: var(--space-4) var(--space-6) var(--space-7);
+    padding: calc(76px + var(--space-4)) var(--space-6) var(--space-7);
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -80,7 +81,7 @@
 @layer components {
   @media (max-width: 899px) {
     .app-content {
-      padding: var(--space-4) var(--space-4);
+      padding: calc(76px + var(--space-4)) var(--space-4) var(--space-7);
     }
   }
 }
@@ -109,15 +110,16 @@
     left: 0;
     right: auto;
     top: calc(100% + 0.4rem);
-    width: var(--profile-menu-width);
-    min-width: var(--profile-menu-width);
+    width: min(var(--profile-menu-width), calc(100vw - 24px));
+    min-width: 0;
+    max-width: calc(100vw - 24px);
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 0;
     border-radius: calc(var(--radius) + 2px);
-    box-shadow: 0 12px 32px -12px rgba(15, 15, 20, 0.28);
+    box-shadow: var(--shadow-pop);
     padding: 0.5rem;
     z-index: 30;
     overflow: visible;
@@ -126,8 +128,9 @@
   .profile-menu-end .profile-menu-panel {
     left: auto;
     right: 0;
-    width: var(--profile-menu-width);
-    min-width: var(--profile-menu-width);
+    width: min(var(--profile-menu-width), calc(100vw - 24px));
+    min-width: 0;
+    max-width: calc(100vw - 24px);
     transform-origin: top right;
   }
 
@@ -274,8 +277,11 @@
 
 @layer components {
   .topnav {
-    position: relative;
-    z-index: 20;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -283,8 +289,37 @@
     height: 76px;
     min-height: 76px;
     padding: 0 var(--space-6);
-    background: var(--background);
+    background: transparent;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
     flex-shrink: 0;
+    isolation: isolate;
+  }
+
+  /* Blur na ::before - żeby nie tworzyć containing block dla fixed dropdownów */
+  .topnav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: color-mix(in srgb, var(--card) 42%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    pointer-events: none;
+  }
+
+  /* Przyciemnienie paska przy otwartej szufladzie - X zostaje nad nim */
+  .topnav.is-drawer-open::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: color-mix(in srgb, var(--foreground) 30%, transparent);
+    pointer-events: none;
+  }
+
+  .topnav.is-drawer-open .topnav-burger {
+    position: relative;
+    z-index: 2;
   }
 
   .topnav-left {
@@ -368,7 +403,7 @@
     gap: 2px;
     padding: 6px;
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 0;
     border-radius: var(--radius-block);
     box-shadow: var(--shadow-pop);
     z-index: 40;
@@ -451,7 +486,15 @@
     transition: background-color 0.15s ease;
   }
 
-  .topnav-avatar:hover,
+  .topnav-avatar {
+    background: var(--brand-100);
+    color: var(--brand-deep);
+  }
+
+  .topnav-avatar:hover {
+    background: var(--brand-200);
+  }
+
   .topnav-icon-btn:hover {
     background: var(--border);
   }
@@ -476,7 +519,7 @@
     max-width: 240px;
     height: 40px;
     padding: 0 14px 0 6px;
-    border: 0;
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, var(--border));
     border-radius: var(--radius-pill);
     background: var(--card);
     color: var(--foreground);
@@ -484,11 +527,14 @@
     font-size: var(--type-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
   }
 
   .profile-nav-trigger:hover {
     background: var(--neutral-50);
+    border-color: color-mix(in srgb, var(--foreground) 18%, var(--border));
   }
 
   .profile-nav-avatar {
@@ -511,21 +557,26 @@
   }
 
   .topnav-profile .profile-menu-panel {
+    left: auto;
+    right: 0;
     border-radius: var(--radius-block);
     box-shadow: var(--shadow-pop);
   }
 
   .topnav-backdrop {
     position: fixed;
-    inset: 0;
+    top: 76px;
+    right: 0;
+    bottom: 0;
+    left: 0;
     z-index: 30;
     border: 0;
-    background: rgba(10, 10, 10, 0.3);
+    background: color-mix(in srgb, var(--foreground) 30%, transparent);
   }
 
   .topnav-drawer {
     position: fixed;
-    top: 76px;
+    top: calc(76px + 12px);
     left: 12px;
     bottom: 12px;
     z-index: 35;
@@ -582,8 +633,54 @@
       display: none;
     }
 
-    .app-content {
-      padding: var(--space-3) var(--space-4) var(--space-6);
+    .topnav-profile .profile-menu-panel,
+    .profile-menu-end .profile-menu-panel {
+      position: fixed;
+      top: 68px;
+      left: 12px;
+      right: 12px;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      z-index: 45;
     }
+
+    .app-content {
+      padding: calc(76px + var(--space-3)) var(--space-4) var(--space-6);
+    }
+  }
+}
+
+@layer components {
+  .app-profile-switch-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--canvas) 55%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  .app-profile-switch-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .app-profile-switch-spinner {
+    width: 36px;
+    height: 36px;
+    color: var(--foreground);
+    stroke-width: 2;
+  }
+
+  .app-profile-switch-label {
+    margin: 0;
+    font-size: var(--type-base);
+    font-weight: 500;
+    color: var(--foreground);
   }
 }

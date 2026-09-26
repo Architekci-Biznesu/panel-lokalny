@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   MessageSquare,
   Send,
-  Settings,
   ShoppingBag,
   Users,
   Globe,
@@ -67,17 +66,14 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Rozwój",
-    items: [
-      { href: "/sklep", label: "Sklep i dodatki", icon: ShoppingBag },
-      { href: "/ustawienia", label: "Ustawienia i plan", icon: Settings },
-    ],
+    items: [{ href: "/sklep", label: "Sklep i dodatki", icon: ShoppingBag }],
   },
 ];
 
 const allItems = navGroups.flatMap((group) => group.items);
 const byHref = (href: string) => allItems.find((item) => item.href === href)!;
 
-/** Górny navbar (styl 4): 8 pozycji w pasku + „Więcej”. */
+/** Górny navbar (styl 4): pozycje w pasku. Ustawienia tylko z menu awatara. */
 export const topNavPrimary: NavItem[] = [
   "/pulpit",
   "/wizytowka",
@@ -89,7 +85,7 @@ export const topNavPrimary: NavItem[] = [
   "/sklep",
 ].map(byHref);
 
-export const topNavMore: NavItem[] = ["/ustawienia"].map(byHref);
+export const topNavMore: NavItem[] = [];
 
 /** All leaf routes that need a placeholder page in phase 1 */
 export const placeholderRoutes: { href: string; title: string }[] = [

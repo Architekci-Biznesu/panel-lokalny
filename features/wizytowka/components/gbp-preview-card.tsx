@@ -72,7 +72,9 @@ export function GbpPreviewCard({
               className={
                 collage.length === 1
                   ? "wiz-preview-collage is-single"
-                  : "wiz-preview-collage"
+                  : collage.length === 2
+                    ? "wiz-preview-collage is-duo"
+                    : "wiz-preview-collage"
               }
             >
               {collage.map((url) => (
