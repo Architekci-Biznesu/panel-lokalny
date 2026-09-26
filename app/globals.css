@@ -8156,3 +8156,173 @@
     opacity: 1;
   }
 }
+
+/* ============ Styl 4 - kalendarze (zakres dat w Raportach + Historia skanów) i segment zasięgu ============ */
+@layer components {
+  /* --- Segment 5 / 10 / 15 km: aktywny czarny z białą liczbą --- */
+  .rank-radius-seg {
+    height: 36px;
+    padding: 3px;
+    gap: 2px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    box-shadow: var(--shadow-xs);
+    overflow: visible;
+  }
+
+  .rank-radius-opt {
+    padding: 0 12px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .rank-radius-opt + .rank-radius-opt {
+    border-left: 0;
+  }
+
+  .rank-radius-opt:hover:not(:disabled):not(.is-active) {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  .rank-radius-opt.is-active {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: none;
+  }
+
+  /* --- Wspólne: dni jako kółka 34px, cyfry mono --- */
+  .wiz-range-day,
+  .rank-calendar-cell {
+    width: 34px;
+    height: 34px;
+    min-height: 0;
+    justify-self: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--foreground);
+    background: transparent;
+  }
+
+  .wiz-range-weekdays span,
+  .rank-calendar-wd {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-range-weekdays,
+  .wiz-range-days,
+  .rank-calendar-grid {
+    gap: 4px 2px;
+  }
+
+  .wiz-range-month-title,
+  .rank-calendar-month {
+    font-size: var(--type-base);
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  /* hover */
+  .wiz-range-day:hover:not(:disabled):not(.is-empty):not(.is-selected),
+  .rank-calendar-cell.has-scan:hover:not(.is-selected) {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  /* zakres = jasne indygo, końce / wybrany = czarne */
+  .wiz-range-day.is-in-range {
+    background: var(--brand-50);
+    color: var(--foreground);
+  }
+
+  .wiz-range-day.is-selected,
+  .rank-calendar-cell.is-selected {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 500;
+    border: 0;
+  }
+
+  .wiz-range-day.is-disabled,
+  .rank-calendar-cell.is-outside {
+    color: #d4d4d4;
+    opacity: 1;
+  }
+
+  .rank-calendar-cell.is-today:not(.is-selected) {
+    background: transparent;
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+
+  /* Historia skanów: kropka pod dniem ze skanem, na wybranym koralowa */
+  .rank-calendar-cell .rank-calendar-dot {
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+  }
+
+  .rank-calendar-cell.is-selected .rank-calendar-dot {
+    background: var(--warning);
+  }
+
+  /* Kafel Historii skanów jak reszta kafli */
+  .rank-calendar {
+    padding: 20px 24px 24px;
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .rank-calendar-title {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  /* Strzałki miesięcy: przezroczyste kółka w obu kalendarzach */
+  .rank-calendar-nav-btn,
+  .wiz-range-nav .ui-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--foreground);
+  }
+
+  .rank-calendar-nav-btn:hover,
+  .wiz-range-nav .ui-btn:hover:not(:disabled) {
+    background: var(--muted);
+  }
+
+  /* Popover zakresu: presety jako pigułki */
+  .wiz-range-presets {
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .wiz-range-presets .ui-btn {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .wiz-range-presets .ui-btn:hover:not(:disabled) {
+    background: var(--muted);
+  }
+}
