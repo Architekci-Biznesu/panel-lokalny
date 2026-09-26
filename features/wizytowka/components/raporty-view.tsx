@@ -1,6 +1,7 @@
 "use client";
 
 import { DateRangePicker } from "@/features/wizytowka/components/date-range-picker";
+import { RankPositionsSection } from "@/features/wizytowka/components/rank-positions-section";
 import { RaportyCharts } from "@/features/wizytowka/components/raporty-charts";
 import {
   buildReportSummary,
@@ -11,6 +12,10 @@ import {
   type MetricSeries,
   type ReportBreakdownRow,
 } from "@/features/wizytowka/performance";
+import type {
+  RankKeywordView,
+  RankScanView,
+} from "@/features/wizytowka/rank/load-raport";
 
 function BreakdownBars({
   rows,
@@ -46,11 +51,20 @@ export function RaportyView({
   start,
   end,
   loadError = false,
+  rank,
 }: {
   series: MetricSeries[];
   start: DateParts;
   end: DateParts;
   loadError?: boolean;
+  rank: {
+    placeId: string | null;
+    businessName: string;
+    keywords: RankKeywordView[];
+    latestByKeyword: Record<string, RankScanView | null>;
+    scansByKeywordDay: Record<string, Record<string, RankScanView>>;
+    activeScan: RankScanView | null;
+  } | null;
 }) {
   const summary = buildReportSummary(series);
   const rangeLabel = `${formatDatePl(start)} - ${formatDatePl(end)}`;
@@ -122,6 +136,17 @@ export function RaportyView({
       </div>
 
       <RaportyCharts series={series} />
+
+      {rank ? (
+        <RankPositionsSection
+          placeId={rank.placeId}
+          businessName={rank.businessName}
+          keywords={rank.keywords}
+          latestByKeyword={rank.latestByKeyword}
+          scansByKeywordDay={rank.scansByKeywordDay}
+          activeScan={rank.activeScan}
+        />
+      ) : null}
     </div>
   );
 }

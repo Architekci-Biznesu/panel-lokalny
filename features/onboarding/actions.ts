@@ -573,6 +573,11 @@ export async function confirmGbpLocations(
   for (const loc of selected) {
     try {
       const details = await fetchGbpLocationDetails(accessToken, loc.name);
+      const placeId =
+        typeof (details.metadata as { placeId?: string } | undefined)
+          ?.placeId === "string"
+          ? (details.metadata as { placeId: string }).placeId.trim()
+          : null;
       const [created] = await db
         .insert(profiles)
         .values({
@@ -580,6 +585,7 @@ export async function confirmGbpLocations(
           name: loc.title.slice(0, 120),
           kind: "local_business",
           gbpLocationId: loc.name,
+          gbpPlaceId: placeId,
           oauthConnectionId: connection.id,
         })
         .returning();

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { logoutAction } from "@/features/auth/actions";
+import { BrandLogo } from "@/features/shell/brand-logo";
 import { auth } from "@/lib/auth";
 
 export default async function AdminLayout({
@@ -14,7 +15,7 @@ export default async function AdminLayout({
     <div className="admin-shell">
       <header className="admin-topbar">
         <Link href="/admin" className="admin-brand">
-          <span className="sidebar-brand-mark">PL</span>
+          <BrandLogo />
           <span className="sidebar-brand-text">
             <span className="sidebar-brand-name">Panel Lokalny</span>
             <span className="sidebar-brand-sub">admin</span>

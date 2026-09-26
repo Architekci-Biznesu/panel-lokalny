@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ArrowUpRight, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { logoutAction } from "@/features/auth/actions";
+import { BrandLogo } from "@/features/shell/brand-logo";
 import { navGroups } from "@/features/shell/nav-config";
 import { ProfileSwitcher } from "@/features/shell/profile-switcher";
 import { ReanalyzeButton } from "@/features/wizytowka/components/reanalyze-button";
@@ -54,7 +55,7 @@ export function AppShell({
     <div className="app-shell">
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-brand">
-          <span className="sidebar-brand-mark">PL</span>
+          <BrandLogo />
           <div className="sidebar-brand-text">
             <span className="sidebar-brand-name">Panel Lokalny</span>
             <span className="sidebar-brand-sub">Panel klienta</span>

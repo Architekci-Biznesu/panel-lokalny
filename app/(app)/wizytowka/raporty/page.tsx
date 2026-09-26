@@ -6,6 +6,7 @@ import {
   parsePerformancePayload,
   resolveRangeFromSearchParams,
 } from "@/features/wizytowka/performance";
+import { loadRankRaportPayload } from "@/features/wizytowka/rank/load-raport";
 import {
   getActiveGbpProfile,
   getGbpAccessTokenForProfile,
@@ -16,7 +17,7 @@ import { fetchGbpMultiDailyMetrics } from "@/lib/integrations/gbp/client";
 export default async function RaportyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ start?: string; end?: string }>;
+  searchParams: Promise<{ start?: string; end?: string; keyword?: string }>;
 }) {
   try {
     const params = await searchParams;
@@ -52,12 +53,27 @@ export default async function RaportyPage({
       loadError = true;
     }
 
+    let rank = null;
+    try {
+      rank = await loadRankRaportPayload(params.keyword ?? null);
+    } catch {
+      rank = {
+        placeId: profile.gbpPlaceId,
+        businessName: profile.name,
+        keywords: [],
+        latestByKeyword: {},
+        scansByKeywordDay: {},
+        activeScan: null,
+      };
+    }
+
     return (
       <RaportyView
         series={series}
         start={start}
         end={end}
         loadError={loadError}
+        rank={rank}
       />
     );
   } catch (error) {

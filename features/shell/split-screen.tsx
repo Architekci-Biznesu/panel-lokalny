@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LogOut, Users } from "lucide-react";
 import { logoutAction } from "@/features/auth/actions";
+import { BrandLogo } from "@/features/shell/brand-logo";
 import {
   SplitLeftCarousel,
   type CarouselSlide,
@@ -43,10 +44,7 @@ type SplitScreenProps = {
 function BrandMark() {
   return (
     <div className="split-brand">
-      <span className="split-brand-logo" aria-hidden>
-        <span />
-        <span />
-      </span>
+      <BrandLogo />
       <div>
         <p className="split-brand-name">Panel Lokalny</p>
         <p className="split-brand-sub">by Architekci Biznesu</p>

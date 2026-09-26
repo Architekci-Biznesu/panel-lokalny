@@ -97,6 +97,7 @@ export type GbpLocation = {
     newReviewUri?: string;
     placeId?: string;
   };
+  latlng?: { latitude?: number; longitude?: number };
   openInfo?: GbpOpenInfo;
   serviceArea?: GbpServiceArea;
   labels?: string[];

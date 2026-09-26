@@ -6,7 +6,11 @@ import {
   boolean,
   pgEnum,
   uniqueIndex,
+  index,
   jsonb,
+  integer,
+  numeric,
+  doublePrecision,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -49,6 +53,7 @@ export const profiles = pgTable("profiles", {
   name: text("name").notNull(),
   kind: profileKindEnum("kind").notNull().default("local_business"),
   gbpLocationId: text("gbp_location_id"),
+  gbpPlaceId: text("gbp_place_id"),
   oauthConnectionId: uuid("oauth_connection_id").references(
     (): AnyPgColumn => oauthConnections.id,
     { onDelete: "set null" },
@@ -208,6 +213,8 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
     fields: [profiles.oauthConnectionId],
     references: [oauthConnections.id],
   }),
+  rankKeywords: many(rankKeywords),
+  rankScans: many(rankScans),
 }));
 
 export const publishGroupsRelations = relations(
@@ -335,3 +342,123 @@ export const napInterestRequests = pgTable("nap_interest_requests", {
 export type GbpSuggestion = typeof gbpSuggestions.$inferSelect;
 export type GbpAuditRun = typeof gbpAuditRuns.$inferSelect;
 export type NapInterestRequest = typeof napInterestRequests.$inferSelect;
+
+export const rankScanStatusEnum = pgEnum("rank_scan_status", [
+  "running",
+  "done",
+  "failed",
+]);
+
+export const rankMatchMethodEnum = pgEnum("rank_match_method", [
+  "place_id",
+  "name_fallback",
+  "none",
+]);
+
+export const rankKeywords = pgTable(
+  "rank_keywords",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    phrase: text("phrase").notNull(),
+    defaultRadiusKm: numeric("default_radius_km", { precision: 6, scale: 2 })
+      .notNull()
+      .default("10"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [index("rank_keywords_profile_id_idx").on(table.profileId)],
+);
+
+export type LocalPackSnapshotItem = {
+  position: number;
+  title: string;
+  placeId: string | null;
+  rating: number | null;
+  reviews: number | null;
+  address: string | null;
+};
+
+export const rankScans = pgTable(
+  "rank_scans",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    keywordId: uuid("keyword_id")
+      .notNull()
+      .references(() => rankKeywords.id, { onDelete: "cascade" }),
+    gridSize: integer("grid_size").notNull(),
+    radiusKm: numeric("radius_km", { precision: 6, scale: 2 }).notNull(),
+    zoom: integer("zoom").notNull().default(14),
+    status: rankScanStatusEnum("status").notNull().default("running"),
+    error: text("error"),
+    localPackPosition: integer("local_pack_position"),
+    localPackResults: jsonb("local_pack_results").$type<LocalPackSnapshotItem[]>(),
+    agr: numeric("agr", { precision: 8, scale: 3 }),
+    atgr: numeric("atgr", { precision: 8, scale: 4 }),
+    shareToken: text("share_token"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("rank_scans_profile_id_idx").on(table.profileId),
+    index("rank_scans_keyword_id_idx").on(table.keywordId),
+    uniqueIndex("rank_scans_share_token_uidx").on(table.shareToken),
+  ],
+);
+
+export const rankResults = pgTable(
+  "rank_results",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    scanId: uuid("scan_id")
+      .notNull()
+      .references(() => rankScans.id, { onDelete: "cascade" }),
+    lat: doublePrecision("lat").notNull(),
+    lng: doublePrecision("lng").notNull(),
+    position: integer("position"),
+    matchMethod: rankMatchMethodEnum("match_method").notNull(),
+    checkedAt: timestamp("checked_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [index("rank_results_scan_id_idx").on(table.scanId)],
+);
+
+export const rankKeywordsRelations = relations(rankKeywords, ({ one, many }) => ({
+  profile: one(profiles, {
+    fields: [rankKeywords.profileId],
+    references: [profiles.id],
+  }),
+  scans: many(rankScans),
+}));
+
+export const rankScansRelations = relations(rankScans, ({ one, many }) => ({
+  profile: one(profiles, {
+    fields: [rankScans.profileId],
+    references: [profiles.id],
+  }),
+  keyword: one(rankKeywords, {
+    fields: [rankScans.keywordId],
+    references: [rankKeywords.id],
+  }),
+  results: many(rankResults),
+}));
+
+export const rankResultsRelations = relations(rankResults, ({ one }) => ({
+  scan: one(rankScans, {
+    fields: [rankResults.scanId],
+    references: [rankScans.id],
+  }),
+}));
+
+export type RankKeyword = typeof rankKeywords.$inferSelect;
+export type RankScan = typeof rankScans.$inferSelect;
+export type RankResult = typeof rankResults.$inferSelect;

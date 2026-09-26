@@ -43,6 +43,20 @@
       "when": 1790490000000,
       "tag": "0005_onboarding_profile_later",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790500000000,
+      "tag": "0006_rank_mapa_pozycji",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790510000000,
+      "tag": "0007_rank_ui_mapa",
+      "breakpoints": true
     }
   ]
 }
