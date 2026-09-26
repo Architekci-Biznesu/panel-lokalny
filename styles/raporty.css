@@ -295,19 +295,43 @@
     flex-wrap: wrap;
   }
 
+  /* Mapa siatki: biały kafel z mapą w środku i paskiem skanu na dole (jak stopki kafli). */
+  .rank-map-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    border-radius: var(--radius-card);
+    background: var(--card);
+    box-shadow: var(--shadow-card);
+    min-width: 0;
+  }
+
   .rank-map {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
     min-width: 0;
+  }
+
+  .rank-map-frame {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    border-radius: 20px;
+    overflow: hidden;
   }
 
   .rank-map-canvas {
     width: 100%;
-    height: 480px;
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) + 2px);
+    height: 520px;
     z-index: 0;
+    background: var(--canvas);
+    font-family: var(--font-sans);
+  }
+
+  /* Minimalistyczny podkład: wyszarzone kafelki OSM, kolorowe są tylko pinezki. */
+  .rank-map-canvas .leaflet-tile-pane {
+    filter: grayscale(1) brightness(1.06) contrast(0.88);
   }
 
   .rank-map-loading,
@@ -315,12 +339,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 480px;
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) + 2px);
-    background: var(--muted);
+    height: 520px;
+    border-radius: 20px;
+    background: var(--canvas);
     color: var(--muted-foreground);
     font-size: var(--type-sm);
+  }
+
+  .rank-map-card .rank-running {
+    min-height: 520px;
+    border-radius: 20px;
+    background: var(--canvas);
+    box-shadow: none;
   }
 
   .rank-map-pin {
@@ -332,38 +362,88 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 999px;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-pill);
     background: var(--pin-fill);
     color: var(--white);
-    font-size: 0.6875rem;
-    font-weight: 700;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
-    border: none;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
-    text-shadow: 0 1px 1px rgb(0 0 0 / 0.18);
+    box-shadow:
+      0 0 0 2px rgb(255 255 255 / 0.9),
+      0 4px 10px rgb(0 0 0 / 0.18);
     transition:
       transform 0.15s ease,
       box-shadow 0.15s ease;
   }
 
+  .rank-map-pin.is-center span {
+    box-shadow:
+      0 0 0 3px var(--card),
+      0 0 0 5px var(--brand),
+      0 4px 10px rgb(0 0 0 / 0.18);
+  }
+
   .rank-map-pin:hover span {
     transform: scale(1.12);
-    box-shadow: 0 5px 14px rgb(0 0 0 / 0.28);
+  }
+
+  .rank-map-zoom {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--card);
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.12);
+  }
+
+  .rank-map-zoom button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    cursor: pointer;
+  }
+
+  .rank-map-zoom button + button {
+    border-top: 1px solid var(--neutral-150);
+  }
+
+  .rank-map-zoom button:hover {
+    background: var(--muted);
+  }
+
+  .rank-map-zoom button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+
+  .rank-map-zoom svg {
+    width: 14px;
+    height: 14px;
   }
 
   .rank-map-legend li {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 6px;
   }
 
   .rank-map-swatch {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 999px;
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-pill);
     flex-shrink: 0;
   }
 
@@ -787,36 +867,27 @@
     font-weight: 500;
   }
 
-  .rank-map-frame {
-    position: relative;
-    width: 100%;
-    min-width: 0;
-    border-radius: 20px;
-    overflow: hidden;
-  }
-
   .rank-map-legend {
     position: absolute;
-    bottom: 12px;
-    left: 12px;
+    bottom: 14px;
+    left: 14px;
     z-index: 500;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.65rem 0.85rem;
+    gap: 6px 12px;
     margin: 0;
-    padding: 0.55rem 0.75rem;
+    padding: 8px 14px;
     list-style: none;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    color: var(--muted-foreground);
-    background: color-mix(in srgb, var(--card) 92%, transparent);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
-    pointer-events: none;
     border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--card) 94%, transparent);
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.12);
+    pointer-events: none;
     font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
   }
 
   .rank-local-pack tr.is-own {
@@ -1387,10 +1458,6 @@
     margin-bottom: 0;
   }
 
-  .rank-map-frame,
-  .rank-map-canvas,
-  .rank-map-loading,
-  .rank-map-empty,
   .rank-empty,
   .rank-running {
     border: 0;
@@ -1448,8 +1515,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
+    padding: 4px 8px 6px;
   }
 
   .rank-scan-meta {
@@ -1515,5 +1583,58 @@
 
   .rank-local-pack .ui-section-header {
     margin-bottom: 12px;
+  }
+}
+
+/* Nadpisania leaflet.css poza @layer: arkusz Leafleta jest bez warstwy, więc wygrywa z @layer components. */
+.rank-map-tip.leaflet-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--type-xs);
+  white-space: nowrap;
+  box-shadow: var(--shadow-pop);
+}
+
+.rank-map-tip strong {
+  font-weight: 500;
+}
+
+.rank-map-tip span {
+  opacity: 0.7;
+}
+
+.rank-map-tip.leaflet-tooltip-top::before {
+  border-top-color: var(--primary);
+}
+
+.rank-map-canvas .leaflet-control-attribution {
+  margin: 0 12px 10px 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  color: var(--muted-foreground);
+  font-size: var(--type-badge);
+}
+
+.rank-map-canvas .leaflet-control-attribution a {
+  color: inherit;
+}
+
+@layer components {
+  @media (max-width: 639px) {
+    .rank-map-canvas,
+    .rank-map-loading,
+    .rank-map-empty,
+    .rank-map-card .rank-running {
+      height: 400px;
+      min-height: 400px;
+    }
   }
 }

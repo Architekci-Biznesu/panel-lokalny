@@ -660,35 +660,66 @@ export function RankPositionsSection({
         </div>
 
         <div className="rank-main-left">
-          {isRunning ? (
-            <div className="rank-running">
-              <div className="rank-running-grid" aria-hidden>
-                {Array.from({ length: queryTotal }, (_, i) => (
-                  <span
-                    key={i}
-                    className={`rank-running-dot${
-                      i < queryDone ? " is-on" : ""
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="rank-running-title">Skan w toku…</p>
-              <p className="rank-running-desc">
-                Trwa pobieranie pozycji w siatce…{" "}
-                <span className="mono">
-                  {queryDone} / {queryTotal}
-                </span>
-              </p>
-              <button
-                type="button"
-                className="ui-btn ui-btn-primary ui-btn-sm"
-                disabled
-              >
-                Skan w toku…
-              </button>
-            </div>
-          ) : hasMapData ? (
-            <RankMap points={scan!.results} />
+          {isRunning || hasMapData ? (
+            <section className="rank-map-card">
+              {isRunning ? (
+                <div className="rank-running">
+                  <div className="rank-running-grid" aria-hidden>
+                    {Array.from({ length: queryTotal }, (_, i) => (
+                      <span
+                        key={i}
+                        className={`rank-running-dot${
+                          i < queryDone ? " is-on" : ""
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="rank-running-title">Skan w toku…</p>
+                  <p className="rank-running-desc">
+                    Trwa pobieranie pozycji w siatce…{" "}
+                    <span className="mono">
+                      {queryDone} / {queryTotal}
+                    </span>
+                  </p>
+                  <button
+                    type="button"
+                    className="ui-btn ui-btn-primary ui-btn-sm"
+                    disabled
+                  >
+                    Skan w toku…
+                  </button>
+                </div>
+              ) : (
+                <RankMap
+                  points={scan!.results}
+                  phrase={selectedKeyword?.phrase}
+                />
+              )}
+              {selectedKeyword ? (
+                <div className="rank-scan-bar">
+                  <p className="rank-scan-meta mono">
+                    {scanMeta ??
+                      (isRunning
+                        ? `Skan w toku · ${selectedKeyword.phrase}`
+                        : null)}
+                  </p>
+                  <button
+                    type="button"
+                    className="ui-btn ui-btn-primary ui-btn-sm"
+                    disabled={!canScan}
+                    title={
+                      selectedKeyword.scannedToday
+                        ? "Dziś już wykonano skan tej frazy"
+                        : undefined
+                    }
+                    onClick={onScan}
+                  >
+                    <RefreshCw aria-hidden />
+                    {isRunning ? "Skan w toku…" : "Skanuj teraz"}
+                  </button>
+                </div>
+              ) : null}
+            </section>
           ) : (
             <div className="rank-empty">
               <MapIcon aria-hidden className="rank-empty-icon" />
@@ -725,30 +756,6 @@ export function RankPositionsSection({
               ) : null}
             </div>
           )}
-
-          {(hasMapData || isRunning) && selectedKeyword ? (
-            <div className="rank-scan-bar">
-              <p className="rank-scan-meta mono">
-                {scanMeta ??
-                  (isRunning
-                    ? `Skan w toku · ${selectedKeyword.phrase}`
-                    : null)}
-              </p>
-              <button
-                type="button"
-                className="ui-btn ui-btn-primary ui-btn-sm"
-                disabled={!canScan}
-                title={
-                  selectedKeyword.scannedToday
-                    ? "Dziś już wykonano skan tej frazy"
-                    : undefined
-                }
-                onClick={onScan}
-              >
-                {isRunning ? "Skan w toku…" : "Skanuj teraz"}
-              </button>
-            </div>
-          ) : null}
 
           {selectedKeyword?.scannedToday && hasMapData ? (
             <p className="locked-note rank-daily-hint">
