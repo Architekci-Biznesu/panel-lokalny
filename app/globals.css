@@ -7228,3 +7228,204 @@
     color: var(--warning-foreground);
   }
 }
+
+/* ============ Styl 4 - poprawki Wizytówki (wiersze pól, taby, nagłówki, atrybuty) ============ */
+@layer components {
+  /* Taby: badge zawsze czarny, bez ramki focusu po kliknięciu */
+  .wiz-subnav-link {
+    padding: 10px 0;
+  }
+
+  .wiz-subnav-link.active {
+    color: var(--foreground);
+    border-bottom-color: var(--foreground);
+  }
+
+  .wiz-subnav-link .wiz-subnav-badge,
+  .wiz-subnav-link.active .wiz-subnav-badge {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .wiz-subnav-link:focus {
+    outline: none;
+  }
+
+  .wiz-subnav-link:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+    border-radius: 6px;
+  }
+
+  /* Kontener pól = kafel r24 */
+  .wiz-fields {
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 8px 0;
+  }
+
+  /* Wiersz pola: 180px etykieta | wartość | ołówek, poziomy padding 24 */
+  .wiz-field-row {
+    grid-template-columns: 180px minmax(0, 1fr) auto;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--muted);
+  }
+
+  .wiz-inline-suggestion {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+
+  .wiz-field-label {
+    font-size: var(--type-sm);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-field-row:has(.wiz-field-editor) .wiz-field-label {
+    border: 0;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 639px) {
+    .wiz-field-row,
+    .wiz-inline-suggestion {
+      grid-template-columns: 1fr auto;
+      padding: 14px 16px;
+    }
+  }
+
+  /* Atrybuty: grupy jako osobne kafle w 2 kolumnach (masonry) */
+  .wiz-fields:has(.wiz-attr-group) {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .wiz-attr-scroll:has(.wiz-attr-group) {
+    column-count: 2;
+    column-gap: 24px;
+    overflow: visible;
+  }
+
+  .wiz-attr-group {
+    break-inside: avoid;
+    margin: 0 0 24px;
+    padding: 20px 24px 8px;
+    background: var(--card);
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .wiz-attr-group + .wiz-attr-group {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 20px;
+  }
+
+  .wiz-attr-group-title,
+  .wiz-attr-group .wiz-attr-group-title {
+    margin: 0 0 8px;
+    padding: 0;
+    border: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--foreground);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .wiz-attr-repeated-title {
+    margin: 8px 0 0;
+    font-size: var(--type-xs);
+    color: var(--muted-foreground);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .wiz-attr-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 52px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--muted);
+  }
+
+  .wiz-attr-group > .wiz-attr-list > .wiz-attr-row:last-child,
+  .wiz-attr-repeated .wiz-attr-row:last-child {
+    border-bottom: 0;
+  }
+
+  .wiz-attr-row .wiz-field-content {
+    font-size: var(--type-sm);
+  }
+
+  .wiz-attr-value {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  /* Pasek zapisu atrybutów/usług: czarna pigułka przyklejona do dołu */
+  .wiz-fields:has(.wiz-attr-group) .wiz-services-sticky {
+    position: sticky;
+    bottom: 24px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 0;
+    padding: 10px 10px 10px 24px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.35);
+  }
+
+  .wiz-fields:has(.wiz-attr-group) .wiz-attr-sticky-hint {
+    color: var(--primary-foreground);
+  }
+
+  .wiz-fields:has(.wiz-attr-group) .wiz-services-sticky .ui-btn-outline {
+    background: #2e2e2e;
+    border-color: transparent;
+    color: var(--primary-foreground);
+  }
+
+  .wiz-fields:has(.wiz-attr-group) .wiz-services-sticky .ui-btn-primary {
+    background: var(--card);
+    color: var(--foreground);
+  }
+
+  @media (max-width: 900px) {
+    .wiz-attr-scroll:has(.wiz-attr-group) {
+      column-count: 1;
+    }
+  }
+}
+
+/* Nagłówek zakładki Wizytówki: poza @layer, żeby wygrać z utility text-lg/font-semibold w JSX */
+.wiz-tab-head h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+.wiz-tab-head h2 + p {
+  margin-top: 6px;
+  font-size: var(--type-base);
+  color: var(--muted-foreground);
+}
+
