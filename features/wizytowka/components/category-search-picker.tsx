@@ -114,6 +114,7 @@ export function CategorySearchPicker({
             className="ui-field ui-search-input"
             value={query}
             placeholder={placeholder}
+            role="combobox"
             aria-autocomplete="list"
             aria-controls={listId}
             aria-expanded={open}

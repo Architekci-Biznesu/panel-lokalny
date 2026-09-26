@@ -16,9 +16,9 @@ export default async function AdminLayout({
       <header className="admin-topbar">
         <Link href="/admin" className="admin-brand">
           <BrandLogo />
-          <span className="sidebar-brand-text">
-            <span className="sidebar-brand-name">Panel Lokalny</span>
-            <span className="sidebar-brand-sub">admin</span>
+          <span className="admin-brand-text">
+            <span className="admin-brand-name">Panel Lokalny</span>
+            <span className="admin-brand-sub">admin</span>
           </span>
         </Link>
         <div className="admin-topbar-user">
@@ -33,7 +33,7 @@ export default async function AdminLayout({
           </form>
         </div>
       </header>
-      <main className="admin-main app-canvas-dots">{children}</main>
+      <main className="admin-main">{children}</main>
     </div>
   );
 }

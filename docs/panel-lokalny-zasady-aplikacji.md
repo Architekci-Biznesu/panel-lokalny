@@ -6,52 +6,25 @@ Dokument referencyjny dla kodu (do wklejenia jako kontekst dla Cursor/Claude Cod
 
 ## 1. CSS i design system
 
-Wygląd aplikacji ma odpowiadać makiecie (https://claude.ai/artifact/Wn2ZrSXrAJ64WWwh28aFTY) - poniższe tokeny są wyciągnięte wprost z jej kodu, nie do wymyślania na nowo.
+Obowiązuje **Styl 4** - specyfikacja i makiety: `docs/design/styl-4/README.md` (PNG w `docs/design/styl-4/screens/`). Wartości nie przepisuj stąd ani z makiety - źródłem prawdy jest kod.
 
-**Design tokeny (`styles/tokens.css`, `:root`)**
+**Design tokeny: `styles/tokens.css`** (`:root`, jedyne miejsce z wartościami). Skrót:
 
-```css
-:root{
-  --brand:#6d4de8;
-  --brand-deep:#4c2fd4;
-  --brand-soft:#c4b5fd;
+- Marka indygo `--brand` (+ `--brand-deep`, `--brand-soft`, `--brand-50...700`), akcent koral `--warning` (+ `--warning-soft`, `--warning-strong`).
+- Szare płótno `--canvas`, białe kafle `--card`, tekst `--foreground`, opisy `--muted-foreground`, separatory `--border`.
+- Statusy: `--success*`, `--danger*` / `--destructive`, `--info`. Szarości: `--neutral-50...700`.
+- Promienie: `--radius-pill` (przyciski, pola, pille, segmenty), `--radius-card` 24px (kafle), `--radius-block` 16px (bloki wewnętrzne, textarea). Cień kafla `--shadow-card` - kafle bez obramowania.
+- Fonty: Geist (`--font-sans`) i JetBrains Mono (`--font-mono`, klasa `.mono`) dla liczb, dat, godzin, telefonów, URL-i, liczników. Font bazowy 14px.
 
-  --background:#fafafa;
-  --foreground:#171717;
-  --card:#ffffff;
-  --primary:#171717;
-  --primary-foreground:#fafafa;
-  --secondary:#f4f4f5;
-  --secondary-foreground:#27272a;
-  --muted:#f4f4f5;
-  --muted-foreground:#71717a;
-  --accent:#f5f3ff;
-  --accent-foreground:#4c2fd4;
-  --destructive:#dc2626;
-  --border:#e4e4e7;
-  --input:#d4d4d8;
-  --ring:#6d4de8;
-  --radius:0.5rem;
+**Primary CTA:** `.ui-btn-primary` - czarny (`--primary`), nie indygo. Indygo to marka i akcent (logo, aktywne stany, soft fills). Na szarym płótnie drugorzędny przycisk to `.ui-btn-white`.
 
-  --font-sans:'Montserrat', system-ui, sans-serif;
-  --font-mono:'JetBrains Mono', ui-monospace, monospace;
-}
-```
+Ikony: obrys (nie wypełnienie), `stroke-width:2`, zaokrąglone końce - `lucide-react`.
 
-Fonty: Montserrat (tekst), JetBrains Mono (liczby, daty, wartości - `.mono` z `font-variant-numeric:tabular-nums`). Font podstawowy 14px (`0.875rem`), line-height 1.4.
+**Gdzie są style:** `app/globals.css` to tylko importy i `@theme`. Reguły: `styles/ui.css` (design system `.ui-*`), `styles/shell.css`, `styles/auth.css` i po jednym pliku na moduł (`styles/wizytowka.css`, `styles/raporty.css`, `styles/pulpit.css`...). Szczegóły i procedura dodania modułu: `.cursor/rules/agents.mdc`, sekcja Design system. Porządku pilnuje `npm run lint:css`.
 
-**Primary CTA:** `.ui-btn-primary` używa `--primary` (czarny `#171717`), nie fioletu. Fiolet (`--brand` / `--brand-deep` / `--brand-soft`) to accent: focus ring, logo, soft fills, pills, aktywne ikony nawigacji - zgodnie z Heio Design System.
+**Szkielety ładowania:** klocki `.ui-skel`, `.ui-skel-circle`, `.ui-skel-block`, `.ui-skel-row`, `.ui-skel-stack`, `.ui-skel-grid` (`styles/ui.css`). Szkielet ma odwzorowywać układ widoku (te same kontenery), żeby po załadowaniu nic nie skakało. Wspólny szkielet modułów: `app/(app)/loading.tsx`.
 
-Ikony: obrys (nie wypełnienie), `stroke-width:2`, zaokrąglone końce (`stroke-linecap:round`) - biblioteka typu Lucide pasuje 1:1 do tego stylu.
-
-**Skala promieni zaokrągleń** - konsekwentnie pochodna jednego `--radius` (0.5rem), nie dowolne wartości:
-- `var(--radius)` - standardowe elementy (przyciski, inputy, ikony akcji)
-- `calc(var(--radius) + 2px)` - kontenery najwyższego poziomu (karty, sekcje, panele, `.ui-kpi`)
-- `calc(var(--radius) - 2px)` / `calc(var(--radius) - 3px)` - elementy zagnieżdżone wewnątrz kontenera (item w liście, mały przycisk akcji)
-
-**Cień** - używany oszczędnie, tylko przy elementach unoszących się nad treścią (dropdown, hover na karcie kanban), nigdy jako domyślna dekoracja karty: `0 8px 24px -8px rgba(0,0,0,0.18)` (menu/dropdown), `0 4px 14px -6px rgba(0,0,0,0.12)` (hover karty).
-
-**Biblioteka globalnych klas komponentowych** (nazewnictwo z makiety, do przeniesienia 1:1 jako `@layer components`): `.ui-card`, `.ui-section` (kontener sekcji - pojedyncza ramka + tło, patrz zasada niżej), `.ui-btn` + warianty `-primary` / `-outline` / `-ghost` / `-danger` + rozmiar `-sm`, `.ui-field` / `.ui-select` / `.ui-textarea` (focus: `box-shadow:0 0 0 3px` w kolorze `--ring`), `.ui-pill` + warianty `-heio` / `-heio-soft` / `-info` / `-success` / `-danger` / `-neutral` / `-warn` (statusy i etykiety), `.ui-kpi` (kafelki liczbowe na dashboardzie), `.ui-table-shell`, `.banner` / `.category-note` (komunikaty informacyjne w kolorze marki), `.locked-note` (funkcja zablokowana/do dokupienia).
+**Biblioteka globalnych klas komponentowych** (`styles/ui.css`, `@layer components`): `.ui-card`, `.ui-section` (kontener sekcji - pojedyncza ramka + tło, patrz zasada niżej), `.ui-btn` + warianty `-primary` / `-secondary` / `-white` / `-outline` / `-ghost` / `-danger` + rozmiar `-sm`, `.ui-field` / `.ui-select` / `.ui-textarea` (focus: `box-shadow:0 0 0 3px` w kolorze `--ring`), `.ui-pill` + warianty `-info` / `-success` / `-danger` / `-neutral` / `-warn` (statusy i etykiety), `.ui-kpi` (kafelki liczbowe na dashboardzie), `.ui-table-shell`, `.banner` (komunikaty informacyjne), `.locked-note` (funkcja zablokowana/do dokupienia).
 
 **Jeden plik tokenów.** Wszystkie tokeny (kolory, spacing, promienie zaokrągleń, cienie, typografia) definiowane jako CSS custom properties w jednym pliku (`styles/tokens.css`), nie rozrzucone po komponentach. Style komponentów: `styles/ui.css` (design system) + po jednym pliku na moduł w `styles/`, wszystkie importowane w `app/globals.css`. Tailwind config czyta te tokeny, nie definiuje własnych równoległych wartości.
 
@@ -65,9 +38,9 @@ Ikony: obrys (nie wypełnienie), `stroke-width:2`, zaokrąglone końce (`stroke-
 - wagą i rozmiarem czcionki (nagłówek sekcji vs treść), nie kolorowym tłem
 Jeśli coś wygląda jak "wymaga wydzielenia", w pierwszej kolejności próbuj typografii i odstępu, dopiero na końcu kolejnej ramki.
 
-**Responsywność mobile-first.** Layout projektowany od najmniejszego ekranu (375px) w górę, nie odwrotnie. Sidebar nawigacyjny na mobile chowa się za hamburgerem albo zamienia w dolny pasek nawigacji - nie ściska się do nieczytelnej wersji desktopowej. Tabele z danymi (np. lista leadów, lista publikacji) na mobile przechodzą na układ kart, nie scrollują się w bok jako ścięta tabela.
+**Responsywność mobile-first.** Layout projektowany od najmniejszego ekranu (375px) w górę, nie odwrotnie. Nawigacja na mobile chowa się do szuflady za hamburgerem - nie ściska się do nieczytelnej wersji desktopowej. Tabele z danymi (np. lista leadów, lista publikacji) na mobile przechodzą na układ kart, nie scrollują się w bok jako ścięta tabela.
 
-*Uwaga: makieta faktycznie definiuje breakpoint chowający sidebar - przy `900px` grid `.app` przechodzi na jedną kolumnę, sidebar staje się elementem `position:fixed` chowanym poza ekran (`transform:translateX(-100%)`) i otwieranym przyciskiem-hamburgerem (`.icon-btn.mobile-only`) w topbarze, klasa `.sidebar.open` go pokazuje. Ten sam `900px` przełącza też dwukolumnowy edytor strony (podgląd + czat AI) na jedną kolumnę. Dodatkowy breakpoint `640px` chowa nawigację strony klienta w podglądzie i zwija siatki kart do jednej kolumny. Wzorzec do przeniesienia 1:1 do realnej implementacji, nie do wymyślania na nowo.*
+*Breakpointy (max-width): `639px` telefon (siatki kart w jedną kolumnę), `899px` tablet (split-screen logowania pokazuje tylko formularz, dwukolumnowe układy w jedną kolumnę), `1099px` wąski laptop, `1279px` - poniżej tej szerokości pozycje górnego navbaru chowają się do szuflady (hamburger). Nawigacja to górny navbar (`features/shell/app-shell.tsx`), nie sidebar.*
 
 **Spójna skala odstępów i typografii.** Jedna skala spacingu (np. wielokrotności 4px) i jedna skala rozmiarów czcionek w całej aplikacji - żadnych dowolnych wartości typu `padding: 13px`.
 

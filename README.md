@@ -10,6 +10,7 @@ Panel do zarządzania lokalną obecnością online (wizytówka Google, publikacj
 | `AGENTS.md` | Wskaźnik do powyższych zasad |
 | `docs/panel-lokalny-production-plan.md` | Plan produktowy i kolejność faz |
 | `docs/panel-lokalny-zasady-aplikacji.md` | Design system i zasady aplikacji |
+| `docs/design/styl-4/` | Makiety i specyfikacja wyglądu (Styl 4) |
 | `cursor/faza-XX-*.md` | Specyfikacje kolejnych faz budowy |
 
 ## Setup lokalny
@@ -23,6 +24,13 @@ Panel do zarządzania lokalną obecnością online (wizytówka Google, publikacj
 ```bash
 openssl rand -base64 32
 ```
+
+## Style
+
+- `app/globals.css` - tylko importy i `@theme` Tailwinda
+- `styles/tokens.css` - tokeny (kolory, promienie, cienie, fonty); `styles/ui.css` - design system `.ui-*`
+- `styles/<moduł>.css` - po jednym pliku na moduł (`wizytowka`, `raporty`, `pulpit`...)
+- `npm run lint:css` - pilnuje porządku (kolory tylko w tokenach, każdy plik zaimportowany, klasy w pliku swojego modułu)
 
 ## Stack (skrót)
 

@@ -18,7 +18,6 @@ function displayUrl(url: string) {
 }
 
 export function KontaktEditor({
-  location: _location,
   attributes = [],
   attributeMetadata = [],
 }: {

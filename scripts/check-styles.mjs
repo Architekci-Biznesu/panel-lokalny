@@ -30,7 +30,7 @@ const PREFIXES = {
     "sr-only",
     "brand-logo",
   ],
-  shell: ["app-", "topnav", "profile-", "sidebar-", "placeholder"],
+  shell: ["app-", "topnav", "profile-", "placeholder"],
   auth: [
     "split-",
     "auth-",

@@ -509,6 +509,7 @@ function ServiceAreaPlacePicker({
           placeholder="Szukaj miasta lub regionu…"
           value={query}
           autoComplete="off"
+          role="combobox"
           aria-autocomplete="list"
           aria-controls={listId}
           aria-expanded={open && visible.length > 0}
@@ -535,6 +536,7 @@ function ServiceAreaPlacePicker({
                   type="button"
                   className="wiz-service-area-option"
                   role="option"
+                  aria-selected={false}
                   onClick={() => {
                     onAdd(place);
                     setQuery("");

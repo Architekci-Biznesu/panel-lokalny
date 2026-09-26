@@ -6,8 +6,8 @@ import {
 export default function KontaktLoading() {
   return (
     <div className="wiz-stack" aria-busy="true" aria-label="Ładowanie kontaktu">
-      <TabHeadSkel titleWidth="6rem" descWidth="16rem" />
-      <FieldRowsSkel count={2} />
+      <TabHeadSkel titleWidth="8rem" descWidth="22rem" />
+      <FieldRowsSkel count={8} />
     </div>
   );
 }

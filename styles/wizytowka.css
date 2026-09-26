@@ -91,6 +91,11 @@
     border: 1px solid var(--border);
     border-radius: calc(var(--radius) + 2px);
   }
+
+  /* Szkielet ładowania na szarym kaflu NAP */
+  .wiz-nap-cta .ui-skel {
+    background: var(--card);
+  }
 }
 
 @layer components {
@@ -662,31 +667,6 @@
 
   .wiz-field-content.multiline {
     white-space: pre-wrap;
-  }
-
-  .wiz-skel-block,
-  .wiz-skel-line {
-    border-radius: calc(var(--radius) - 2px);
-    background: color-mix(in srgb, var(--secondary) 85%, var(--border));
-    position: relative;
-    overflow: hidden;
-  }
-
-  .wiz-skel-block::after,
-  .wiz-skel-line::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      110deg,
-      transparent 0%,
-      transparent 40%,
-      color-mix(in srgb, var(--card) 65%, transparent) 50%,
-      transparent 60%,
-      transparent 100%
-    );
-    background-size: 220% 100%;
-    animation: brief-sweep 1.6s ease-in-out infinite;
   }
 
   .wiz-field-editor {
@@ -1801,7 +1781,7 @@
 }
 
 @layer components {
-  @media (max-width: 900px) {
+  @media (max-width: 899px) {
     .wiz-nap-grid {
       grid-template-columns: 1fr;
     }
@@ -2963,7 +2943,7 @@
 }
 
 @layer components {
-  @media (max-width: 900px) {
+  @media (max-width: 899px) {
     .wiz-attr-scroll:has(.wiz-attr-group) {
       column-count: 1;
     }

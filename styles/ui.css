@@ -612,6 +612,75 @@
     gap: 0.4rem;
     font-size: var(--type-base);
   }
+
+  /* Szkielety ładowania (loading.tsx) - wspólne dla wszystkich modułów */
+  .ui-skel {
+    display: block;
+    height: 0.75rem;
+    border-radius: var(--radius-pill);
+    background: var(--canvas-strong);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ui-skel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      transparent 40%,
+      color-mix(in srgb, var(--card) 65%, transparent) 50%,
+      transparent 60%,
+      transparent 100%
+    );
+    background-size: 220% 100%;
+    animation: ui-skel-sweep 1.6s ease-in-out infinite;
+  }
+
+  .ui-skel-block {
+    border-radius: var(--radius-block);
+  }
+
+  .ui-skel-circle {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-pill);
+  }
+
+  .ui-skel-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: 14px 0;
+    border-bottom: 1px solid var(--muted);
+  }
+
+  .ui-skel-row:last-child {
+    border-bottom: 0;
+  }
+
+  .ui-skel-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .ui-skel-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  @media (max-width: 899px) {
+    .ui-skel-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
 }
 
 [data-gooey-viewport] {
@@ -641,5 +710,14 @@
 @keyframes ui-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes ui-skel-sweep {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
   }
 }

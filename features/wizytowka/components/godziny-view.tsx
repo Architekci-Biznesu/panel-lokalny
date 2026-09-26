@@ -39,7 +39,10 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
   const [editing, setEditing] = useState(false);
   const [seedEmptySpecial, setSeedEmptySpecial] = useState(false);
   const periods = location.regularHours?.periods ?? [];
-  const special = location.specialHours?.specialHourPeriods ?? [];
+  const special = useMemo(
+    () => location.specialHours?.specialHourPeriods ?? [],
+    [location.specialHours?.specialHourPeriods],
+  );
   const upcomingHint = useMemo(
     () => getUpcomingHolidayHint(special),
     [special],

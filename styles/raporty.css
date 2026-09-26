@@ -597,7 +597,7 @@
 }
 
 @layer components {
-  @media (max-width: 640px) {
+  @media (max-width: 639px) {
     .rank-local-pack-table-wrap thead {
       display: none;
     }

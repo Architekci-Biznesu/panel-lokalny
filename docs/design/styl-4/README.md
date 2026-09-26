@@ -26,7 +26,9 @@ Style (tokeny, klasy `.ui-*`, nadpisania Wizytówki) są JUŻ w repo - etapy 1-5
 | 4b | `19b97f8` | Blok CSS "Styl 4 - Wizytówka": karty, subnav, pola, porównanie AI, luki, dni specjalne, atrybuty, mapa pozycji |
 | 5 | `37c1b9c` | Usunięte martwe reguły CSS, `CharCount` przy nazwie (100) i opisie (750) |
 
-**Najpierw nałóż `styl4-etap5.patch`**, jeśli jeszcze go nie ma (`git log --oneline | grep "etap 5"`).
+Zadania Z1-Z10 (niżej) są zrobione i zweryfikowane: Wizytówka (wszystkie zakładki), Raporty z mapą pozycji, logowanie, rejestracja, onboarding, Pulpit. Potem: porządki w CSS i podział stylów na pliki w `styles/` (mapa plików i zasady: `.cursor/rules/agents.mdc`, sekcja Design system).
+
+Otwarte: Pulpit - "Ostatnie publikacje" i "Nowe opinie" czekają na dane z modułów Publikacje i Opinie (TODO w `features/pulpit/pulpit-view.tsx`).
 
 ## Assety w repo
 

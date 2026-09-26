@@ -379,7 +379,7 @@
 }
 
 @layer components {
-  @media (max-width: 900px) {
+  @media (max-width: 899px) {
     .split-left {
       max-height: 14rem;
     }
@@ -1215,7 +1215,7 @@
 }
 
 @layer components {
-  @media (max-width: 1100px) {
+  @media (max-width: 1099px) {
     .split-headline {
       font-size: clamp(2rem, 4vw, 3.25rem);
     }
@@ -1258,7 +1258,7 @@
 }
 
 @layer components {
-  @media (max-width: 1100px) {
+  @media (max-width: 1099px) {
     .split-decor-login-cols {
       grid-template-columns: 1fr;
     }
@@ -1296,7 +1296,7 @@
 }
 
 @layer components {
-  @media (max-width: 1100px) {
+  @media (max-width: 1099px) {
     .split-decor-login .split-decor-col.is-end {
       display: none;
     }
