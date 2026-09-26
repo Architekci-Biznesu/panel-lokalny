@@ -27,22 +27,42 @@ function BreakdownBars({
   const max = Math.max(total, 1);
   return (
     <ul className="wiz-report-bars">
-      {rows.map((row) => (
-        <li key={row.key} className="wiz-report-bar-row">
-          <span className="wiz-report-bar-label">{row.label}</span>
-          <span className="wiz-report-bar-track">
-            <span
-              className="wiz-report-bar-fill"
-              style={{
-                width: `${(row.value / max) * 100}%`,
-                background: row.color,
-              }}
-            />
-          </span>
-          <span className="wiz-report-bar-value mono">{formatIntPl(row.value)}</span>
-        </li>
-      ))}
+      {rows.map((row) => {
+        const pct = Math.round((row.value / max) * 100);
+        return (
+          <li key={row.key} className="wiz-report-bar-row">
+            <span className="wiz-report-bar-label">{row.label}</span>
+            <span className="wiz-report-bar-track">
+              <span
+                className="wiz-report-bar-fill"
+                style={{
+                  width: `${(row.value / max) * 100}%`,
+                  background: row.color,
+                }}
+              />
+            </span>
+            <span className="wiz-report-bar-value mono">
+              {formatIntPl(row.value)}{" "}
+              <span className="wiz-report-bar-pct">{pct}%</span>
+            </span>
+          </li>
+        );
+      })}
     </ul>
+  );
+}
+
+function RateTicks({ value }: { value: number }) {
+  const filled = Math.max(0, Math.min(20, Math.round(value)));
+  return (
+    <div className="wiz-report-rate-ticks" aria-hidden>
+      {Array.from({ length: 20 }, (_, i) => (
+        <span
+          key={i}
+          className={`wiz-report-rate-tick${i < filled ? " is-on" : ""}`}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -77,15 +97,15 @@ export function RaportyView({
       ? Math.round((summary.desktopViews / summary.viewsTotal) * 100)
       : 0;
   const rateRounded = Math.round(summary.actionsPer100);
+  const hasAnyData =
+    summary.viewsTotal > 0 || summary.actionsTotal > 0;
 
   return (
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div className="wiz-tab-head-text">
-          <h2 className="text-lg font-semibold">Raporty wizytówki</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Dane z Google Business Profile · {rangeLabel}
-          </p>
+          <h2>Raporty wizytówki</h2>
+          <p className="mono">{rangeLabel}</p>
         </div>
         <DateRangePicker start={start} end={end} />
       </div>
@@ -94,6 +114,10 @@ export function RaportyView({
         <p className="locked-note">
           Nie udało się pobrać statystyk z Google. Spróbuj ponownie później.
         </p>
+      ) : null}
+
+      {!loadError && !hasAnyData ? (
+        <p className="locked-note">Brak danych w wybranym okresie</p>
       ) : null}
 
       <div className="wiz-report-summary">
@@ -132,6 +156,7 @@ export function RaportyView({
             Na każde 100 wyświetleń przypada ok. {rateRounded} telefonów, tras
             lub wejść na stronę.
           </p>
+          <RateTicks value={summary.actionsPer100} />
         </div>
       </div>
 

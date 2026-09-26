@@ -22,6 +22,12 @@ function formatTick(iso: string) {
   return `${Number(d)}.${Number(m)}`;
 }
 
+const AXIS_TICK = {
+  fill: "var(--muted-foreground)",
+  fontSize: 11,
+  fontFamily: "var(--font-mono), ui-monospace, monospace",
+};
+
 function ChartLegend({
   items,
 }: {
@@ -35,8 +41,9 @@ function ChartLegend({
             className="wiz-report-legend-swatch"
             style={{ background: item.color }}
           />
-          <span>
-            {item.label} {formatIntPl(item.value)}
+          <span className="wiz-report-legend-label">{item.label}</span>
+          <span className="wiz-report-legend-value mono">
+            {formatIntPl(item.value)}
           </span>
         </li>
       ))}
@@ -52,9 +59,9 @@ function ViewsChart({ series }: { series: MetricSeries[] }) {
 
   return (
     <section className="ui-kpi wiz-report-chart">
-      <h3 className="wiz-field-label">Wyświetlenia tygodniowo</h3>
-      {hasData ? (
-        <>
+      <div className="wiz-report-chart-head">
+        <h3 className="wiz-report-chart-title">Wyświetlenia tygodniowo</h3>
+        {hasData ? (
           <ChartLegend
             items={[
               {
@@ -69,65 +76,69 @@ function ViewsChart({ series }: { series: MetricSeries[] }) {
               },
             ]}
           />
-          <div className="wiz-report-chart-body">
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart
-                data={data}
-                margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
-                barCategoryGap="18%"
-              >
-                <CartesianGrid
-                  stroke="var(--border)"
-                  vertical={false}
-                  strokeDasharray="0"
-                />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatTick}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  minTickGap={28}
-                />
-                <YAxis
-                  allowDecimals={false}
-                  width={36}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  cursor={{ fill: "var(--secondary)" }}
-                  contentStyle={{
-                    borderRadius: "var(--radius)",
-                    border: "1px solid var(--border)",
-                    fontSize: 12,
-                  }}
-                  labelFormatter={(label) => formatTick(String(label))}
-                  formatter={(value, name) => [
-                    formatIntPl(Number(value ?? 0)),
-                    name === "maps" ? "Mapy" : "Wyszukiwarka",
-                  ]}
-                />
-                <Bar
-                  dataKey="maps"
-                  stackId="views"
-                  fill={REPORT_COLORS.maps}
-                  maxBarSize={28}
-                />
-                <Bar
-                  dataKey="search"
-                  stackId="views"
-                  fill={REPORT_COLORS.search}
-                  maxBarSize={28}
-                  radius={[3, 3, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </>
+        ) : null}
+      </div>
+      {hasData ? (
+        <div className="wiz-report-chart-body">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart
+              data={data}
+              margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+              barCategoryGap="18%"
+            >
+              <CartesianGrid
+                stroke="var(--border)"
+                vertical={false}
+                strokeDasharray="0"
+              />
+              <XAxis
+                dataKey="date"
+                tickFormatter={formatTick}
+                tick={AXIS_TICK}
+                axisLine={false}
+                tickLine={false}
+                minTickGap={28}
+              />
+              <YAxis
+                allowDecimals={false}
+                width={36}
+                tick={AXIS_TICK}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                cursor={{ fill: "var(--secondary)" }}
+                contentStyle={{
+                  borderRadius: "var(--radius-card)",
+                  border: "1px solid var(--border)",
+                  fontSize: 12,
+                }}
+                labelFormatter={(label) => formatTick(String(label))}
+                formatter={(value, name) => [
+                  formatIntPl(Number(value ?? 0)),
+                  name === "maps" ? "Mapy" : "Wyszukiwarka",
+                ]}
+              />
+              <Bar
+                dataKey="maps"
+                stackId="views"
+                fill={REPORT_COLORS.maps}
+                maxBarSize={28}
+              />
+              <Bar
+                dataKey="search"
+                stackId="views"
+                fill={REPORT_COLORS.search}
+                maxBarSize={28}
+                radius={[6, 6, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       ) : (
-        <p className="locked-note wiz-tab-note">Brak danych w wybranym okresie</p>
+        <p className="locked-note wiz-tab-note">
+          Brak danych w wybranym okresie
+        </p>
       )}
     </section>
   );
@@ -142,9 +153,9 @@ function ActionsChart({ series }: { series: MetricSeries[] }) {
 
   return (
     <section className="ui-kpi wiz-report-chart">
-      <h3 className="wiz-field-label">Akcje tygodniowo</h3>
-      {hasData ? (
-        <>
+      <div className="wiz-report-chart-head">
+        <h3 className="wiz-report-chart-title">Akcje tygodniowo</h3>
+        {hasData ? (
           <ChartLegend
             items={[
               {
@@ -164,75 +175,79 @@ function ActionsChart({ series }: { series: MetricSeries[] }) {
               },
             ]}
           />
-          <div className="wiz-report-chart-body">
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart
-                data={data}
-                margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
-                barCategoryGap="18%"
-              >
-                <CartesianGrid
-                  stroke="var(--border)"
-                  vertical={false}
-                  strokeDasharray="0"
-                />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatTick}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  minTickGap={28}
-                />
-                <YAxis
-                  allowDecimals={false}
-                  width={36}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  cursor={{ fill: "var(--secondary)" }}
-                  contentStyle={{
-                    borderRadius: "var(--radius)",
-                    border: "1px solid var(--border)",
-                    fontSize: 12,
-                  }}
-                  labelFormatter={(label) => formatTick(String(label))}
-                  formatter={(value, name) => [
-                    formatIntPl(Number(value ?? 0)),
-                    name === "directions"
-                      ? "Dojazd"
-                      : name === "calls"
-                        ? "Telefon"
-                        : "Witryna",
-                  ]}
-                />
-                <Bar
-                  dataKey="directions"
-                  stackId="actions"
-                  fill={REPORT_COLORS.directions}
-                  maxBarSize={28}
-                />
-                <Bar
-                  dataKey="calls"
-                  stackId="actions"
-                  fill={REPORT_COLORS.calls}
-                  maxBarSize={28}
-                />
-                <Bar
-                  dataKey="website"
-                  stackId="actions"
-                  fill={REPORT_COLORS.website}
-                  maxBarSize={28}
-                  radius={[3, 3, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </>
+        ) : null}
+      </div>
+      {hasData ? (
+        <div className="wiz-report-chart-body">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart
+              data={data}
+              margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+              barCategoryGap="18%"
+            >
+              <CartesianGrid
+                stroke="var(--border)"
+                vertical={false}
+                strokeDasharray="0"
+              />
+              <XAxis
+                dataKey="date"
+                tickFormatter={formatTick}
+                tick={AXIS_TICK}
+                axisLine={false}
+                tickLine={false}
+                minTickGap={28}
+              />
+              <YAxis
+                allowDecimals={false}
+                width={36}
+                tick={AXIS_TICK}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                cursor={{ fill: "var(--secondary)" }}
+                contentStyle={{
+                  borderRadius: "var(--radius-card)",
+                  border: "1px solid var(--border)",
+                  fontSize: 12,
+                }}
+                labelFormatter={(label) => formatTick(String(label))}
+                formatter={(value, name) => [
+                  formatIntPl(Number(value ?? 0)),
+                  name === "directions"
+                    ? "Dojazd"
+                    : name === "calls"
+                      ? "Telefon"
+                      : "Witryna",
+                ]}
+              />
+              <Bar
+                dataKey="directions"
+                stackId="actions"
+                fill={REPORT_COLORS.directions}
+                maxBarSize={28}
+              />
+              <Bar
+                dataKey="calls"
+                stackId="actions"
+                fill={REPORT_COLORS.calls}
+                maxBarSize={28}
+              />
+              <Bar
+                dataKey="website"
+                stackId="actions"
+                fill={REPORT_COLORS.website}
+                maxBarSize={28}
+                radius={[6, 6, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       ) : (
-        <p className="locked-note wiz-tab-note">Brak danych w wybranym okresie</p>
+        <p className="locked-note wiz-tab-note">
+          Brak danych w wybranym okresie
+        </p>
       )}
     </section>
   );

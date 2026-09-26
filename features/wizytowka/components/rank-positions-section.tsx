@@ -7,6 +7,7 @@ import {
   Check,
   Crosshair,
   Map as MapIcon,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -31,6 +32,7 @@ import {
   RANK_MAX_KEYWORDS,
   RANK_RADIUS_OPTIONS_KM,
   RANK_TIMEZONE,
+  rankQueryCount,
   type RankRadiusKm,
 } from "@/lib/config/rank-limits";
 
@@ -386,74 +388,196 @@ export function RankPositionsSection({
   }
 
   const scanDays = selectedKeyword?.scanDays ?? [];
+  const isRunning =
+    Boolean(selectedKeyword?.runningScanId) || scan?.status === "running";
+  const queryTotal = rankQueryCount(scan?.gridSize ?? RANK_GRID_SIZE);
+  const queryDone = isRunning
+    ? Math.min(scan?.results.length ?? 0, queryTotal)
+    : 0;
+  const outsideTop20 =
+    scan?.results.filter((p) => p.position == null || p.position > 20)
+      .length ?? 0;
+  const packDelta = formatDeltaNum(
+    scan?.deltaLocalPack != null ? Number(scan.deltaLocalPack) : null,
+    "lower",
+  );
 
-  const blockReason = useMemo(() => {
-    if (!hasPlaceId) {
-      return "Nie można zidentyfikować wizytówki w wynikach - pobierz ponownie dane z Google.";
+  const scanMeta = useMemo(() => {
+    if (!scan) return null;
+    const when = scan.finishedAt ?? scan.startedAt;
+    if (!when) return null;
+    const d = new Date(when);
+    const date = new Intl.DateTimeFormat("pl-PL", {
+      timeZone: RANK_TIMEZONE,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(d);
+    const time = new Intl.DateTimeFormat("pl-PL", {
+      timeZone: RANK_TIMEZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+    return `Skan ${date} · ${time} · ${scan.radiusKm} km · ${scan.phrase}`;
+  }, [scan]);
+
+  const phrasesAtLimit = keywords.length >= RANK_MAX_KEYWORDS;
+
+  function renderAddControls(emptyContext = false) {
+    if (adding) {
+      return (
+        <div
+          className={`rank-add-row${emptyContext ? " rank-empty-add" : ""}`}
+        >
+          <input
+            className="ui-field rank-add-input"
+            value={phrase}
+            onChange={(e) => setPhrase(e.target.value)}
+            placeholder="np. dentysta Warszawa"
+            maxLength={120}
+            autoFocus
+            disabled={pending}
+            style={{ width: `${phraseInputWidthCh}ch` }}
+          />
+          <div className="rank-radius-seg" role="group" aria-label="Zasięg">
+            {RANK_RADIUS_OPTIONS_KM.map((km) => (
+              <button
+                key={km}
+                type="button"
+                className={
+                  addRadius === km
+                    ? "rank-radius-opt is-active"
+                    : "rank-radius-opt"
+                }
+                onClick={() => setAddRadius(km)}
+                disabled={pending}
+              >
+                {km} km
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="rank-add-confirm"
+            aria-label="Dodaj frazę"
+            disabled={pending || !phrase.trim()}
+            onClick={onConfirmAdd}
+          >
+            <Check aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="rank-add-cancel"
+            aria-label="Anuluj"
+            disabled={pending}
+            onClick={() => {
+              setAdding(false);
+              setPhrase("");
+            }}
+          >
+            <X aria-hidden />
+          </button>
+        </div>
+      );
     }
-    if (!selectedKeyword) return null;
-    if (selectedKeyword.runningScanId || scan?.status === "running") {
-      return "Skan w toku…";
-    }
-    if (selectedKeyword.scannedToday) {
-      return "Dziś już wykonano skan tej frazy - kolejny będzie dostępny jutro.";
-    }
-    return null;
-  }, [hasPlaceId, selectedKeyword, scan?.status]);
+
+    return (
+      <button
+        type="button"
+        className="rank-add-phrase-btn"
+        disabled={pending || phrasesAtLimit || !hasPlaceId}
+        title={
+          phrasesAtLimit
+            ? `Limit ${RANK_MAX_KEYWORDS} fraz - usuń jedną, żeby dodać nową`
+            : undefined
+        }
+        onClick={() => setAdding(true)}
+      >
+        <Plus aria-hidden />
+        Dodaj frazę
+      </button>
+    );
+  }
 
   return (
     <section className="rank-section">
+      <div className="rank-section-head">
+        <h2 className="rank-section-title">
+          <MapIcon aria-hidden />
+          Mapa siatki pozycji
+        </h2>
+        <p className="rank-section-sub">
+          Pozycja w Mapach Google w siatce {RANK_GRID_SIZE}×{RANK_GRID_SIZE}{" "}
+          wokół firmy · max {RANK_MAX_KEYWORDS} fraz · 1 skan frazy dziennie
+        </p>
+      </div>
+
       <div className="rank-kpi-row">
         <div className="ui-kpi rank-kpi-card">
           <div className="rank-kpi-top">
             <p className="wiz-report-kpi-label">AGR (śr. pozycja)</p>
-            <Crosshair aria-hidden className="rank-kpi-icon rank-kpi-icon-brand" />
+            <span className="rank-kpi-icon-wrap rank-kpi-icon-brand">
+              <Crosshair aria-hidden className="rank-kpi-icon" />
+            </span>
           </div>
-          <p className="wiz-report-kpi-value mono">{formatAgr(scan?.agr ?? null)}</p>
+          <p className="wiz-report-kpi-value mono">
+            {formatAgr(scan?.agr ?? null)}
+          </p>
           {agrDelta ? (
-            <p className={`rank-kpi-delta is-${agrDelta.tone} mono`}>
+            <span className={`rank-kpi-delta is-${agrDelta.tone} mono`}>
               {agrDelta.text}
-            </p>
+            </span>
           ) : null}
         </div>
         <div className="ui-kpi rank-kpi-card">
           <div className="rank-kpi-top">
             <p className="wiz-report-kpi-label">ATGR (% w top 3)</p>
-            <TrendingUp aria-hidden className="rank-kpi-icon rank-kpi-icon-success" />
+            <span className="rank-kpi-icon-wrap rank-kpi-icon-success">
+              <TrendingUp aria-hidden className="rank-kpi-icon" />
+            </span>
           </div>
           <p className="wiz-report-kpi-value mono">
             {formatAtgr(scan?.atgr ?? null)}
           </p>
           {atgrDelta ? (
-            <p className={`rank-kpi-delta is-${atgrDelta.tone} mono`}>
+            <span className={`rank-kpi-delta is-${atgrDelta.tone} mono`}>
               {atgrDelta.text}
-            </p>
+            </span>
           ) : null}
         </div>
         <div className="ui-kpi rank-kpi-card">
           <div className="rank-kpi-top">
             <p className="wiz-report-kpi-label">Frazy kluczowe</p>
-            <span className="rank-kpi-icon rank-kpi-icon-warn" aria-hidden>
-              ▮
+            <span className="rank-kpi-icon-wrap rank-kpi-icon-warn">
+              <Pencil aria-hidden className="rank-kpi-icon" />
             </span>
           </div>
-          <p className="wiz-report-kpi-value mono">{keywords.length}</p>
+          <p className="wiz-report-kpi-value mono">
+            {keywords.length} / {RANK_MAX_KEYWORDS}
+          </p>
         </div>
         <div className="ui-kpi rank-kpi-card">
           <div className="rank-kpi-top">
             <p className="wiz-report-kpi-label">Wyszukiwarka</p>
-            <Search aria-hidden className="rank-kpi-icon rank-kpi-icon-info" />
+            <span className="rank-kpi-icon-wrap rank-kpi-icon-info">
+              <Search aria-hidden className="rank-kpi-icon" />
+            </span>
           </div>
           <p className="wiz-report-kpi-value mono">
             {scan?.localPackPosition != null
               ? `poz. ${scan.localPackPosition}`
               : "-"}
           </p>
+          {scan?.deltaLocalPack != null && packDelta ? (
+            <span className={`rank-kpi-delta is-${packDelta.tone} mono`}>
+              {packDelta.text}
+            </span>
+          ) : null}
         </div>
       </div>
 
       {!hasPlaceId ? (
-        <div className="locked-note rank-place-gate">
+        <div className="rank-place-gate">
           <p>
             Nie można zidentyfikować wizytówki w wynikach. Pobierz ponownie dane
             z Google, zanim uruchomisz skan.
@@ -470,12 +594,8 @@ export function RankPositionsSection({
         </div>
       ) : null}
 
-      <div className="rank-toolbar">
-        <div className="rank-toolbar-left">
-          <h2 className="rank-section-title">
-            <MapIcon aria-hidden />
-            Mapa siatki pozycji
-          </h2>
+      <div className="rank-main-grid">
+        <div className="rank-main-left">
           <div className="rank-pills">
             {keywords.map((k) => {
               const active = k.id === selectedKeywordId;
@@ -494,7 +614,7 @@ export function RankPositionsSection({
                     }}
                   >
                     <span className="rank-pill-phrase">{k.phrase}</span>
-                    <span className="rank-pill-radius">
+                    <span className="rank-pill-radius mono">
                       {k.defaultRadiusKm} km
                     </span>
                   </button>
@@ -512,188 +632,103 @@ export function RankPositionsSection({
                 </div>
               );
             })}
-            {keywords.length > 0 ? (
-              !adding ? (
+            {renderAddControls(false)}
+          </div>
+
+          {isRunning ? (
+            <div className="rank-running">
+              <div className="rank-running-grid" aria-hidden>
+                {Array.from({ length: queryTotal }, (_, i) => (
+                  <span
+                    key={i}
+                    className={`rank-running-dot${
+                      i < queryDone ? " is-on" : ""
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="rank-running-title">Skan w toku…</p>
+              <p className="rank-running-desc">
+                Trwa pobieranie pozycji w siatce…{" "}
+                <span className="mono">
+                  {queryDone} / {queryTotal}
+                </span>
+              </p>
               <button
                 type="button"
-                className="rank-add-phrase-btn"
-                disabled={pending || keywords.length >= RANK_MAX_KEYWORDS}
-                onClick={() => setAdding(true)}
+                className="ui-btn ui-btn-primary ui-btn-sm"
+                disabled
               >
-                <Plus aria-hidden />
-                Fraza
+                Skan w toku…
               </button>
-            ) : (
-              <div className="rank-add-row">
-                <input
-                  className="ui-field rank-add-input"
-                  value={phrase}
-                  onChange={(e) => setPhrase(e.target.value)}
-                  placeholder="np. dentysta Warszawa"
-                  maxLength={120}
-                  autoFocus
-                  disabled={pending}
-                  style={{ width: `${phraseInputWidthCh}ch` }}
-                />
-                <div className="rank-radius-seg" role="group" aria-label="Zasięg">
-                  {RANK_RADIUS_OPTIONS_KM.map((km) => (
-                    <button
-                      key={km}
-                      type="button"
-                      className={
-                        addRadius === km
-                          ? "rank-radius-opt is-active"
-                          : "rank-radius-opt"
-                      }
-                      onClick={() => setAddRadius(km)}
-                      disabled={pending}
-                    >
-                      {km} km
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className="rank-add-confirm"
-                  aria-label="Dodaj frazę"
-                  disabled={pending || !phrase.trim()}
-                  onClick={onConfirmAdd}
-                >
-                  <Check aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="rank-add-cancel"
-                  aria-label="Anuluj"
-                  disabled={pending}
-                  onClick={() => {
-                    setAdding(false);
-                    setPhrase("");
-                  }}
-                >
-                  <X aria-hidden />
-                </button>
-              </div>
-            )
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      <div className="rank-main-grid">
-        <div className="rank-main-left">
-          {hasMapData ? (
+            </div>
+          ) : hasMapData ? (
             <RankMap points={scan!.results} />
           ) : (
             <div className="rank-empty">
               <MapIcon aria-hidden className="rank-empty-icon" />
               <p className="rank-empty-title">Brak danych skanowania</p>
               <p className="rank-empty-desc">
-                Dodaj frazy kluczowe, a następnie kliknij „Skanuj teraz” aby
+                Dodaj frazy kluczowe, a następnie kliknij „Skanuj teraz”, aby
                 rozpocząć monitorowanie pozycji.
               </p>
-              {keywords.length === 0 ? (
-                adding ? (
-                  <div className="rank-add-row rank-empty-add">
-                    <input
-                      className="ui-field rank-add-input"
-                      value={phrase}
-                      onChange={(e) => setPhrase(e.target.value)}
-                      placeholder="np. dentysta Warszawa"
-                      maxLength={120}
-                      autoFocus
-                      disabled={pending}
-                      style={{ width: `${phraseInputWidthCh}ch` }}
-                    />
-                    <div
-                      className="rank-radius-seg"
-                      role="group"
-                      aria-label="Zasięg"
-                    >
-                      {RANK_RADIUS_OPTIONS_KM.map((km) => (
-                        <button
-                          key={km}
-                          type="button"
-                          className={
-                            addRadius === km
-                              ? "rank-radius-opt is-active"
-                              : "rank-radius-opt"
-                          }
-                          onClick={() => setAddRadius(km)}
-                          disabled={pending}
-                        >
-                          {km} km
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="rank-add-confirm"
-                      aria-label="Dodaj frazę"
-                      disabled={pending || !phrase.trim()}
-                      onClick={onConfirmAdd}
-                    >
-                      <Check aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      className="rank-add-cancel"
-                      aria-label="Anuluj"
-                      disabled={pending}
-                      onClick={() => {
-                        setAdding(false);
-                        setPhrase("");
-                      }}
-                    >
-                      <X aria-hidden />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="ui-btn ui-btn-primary"
-                    disabled={
-                      pending ||
-                      !hasPlaceId ||
-                      keywords.length >= RANK_MAX_KEYWORDS
-                    }
-                    onClick={() => setAdding(true)}
-                  >
-                    <Plus aria-hidden />
-                    Dodaj frazę
-                  </button>
-                )
-              ) : null}
-              {selectedKeyword ? (
+              {keywords.length === 0 ? renderAddControls(true) : null}
+              {selectedKeyword && !selectedKeyword.scannedToday ? (
                 <button
                   type="button"
-                  className="ui-btn ui-btn-primary"
+                  className="ui-btn ui-btn-primary ui-btn-sm"
                   disabled={!canScan}
                   onClick={onScan}
                 >
-                  {scan?.status === "running" ? "Skan w toku…" : "Skanuj teraz"}
+                  Skanuj teraz
                 </button>
               ) : null}
-              {blockReason ? (
-                <p className="locked-note rank-empty-note">{blockReason}</p>
+              {selectedKeyword?.scannedToday ? (
+                <div className="rank-limit-note">
+                  <p>
+                    Limit dzienny - dziś już wykonano skan tej frazy. Kolejny
+                    będzie dostępny jutro.
+                  </p>
+                  <button
+                    type="button"
+                    className="ui-btn ui-btn-primary ui-btn-sm"
+                    disabled
+                  >
+                    Skanuj teraz
+                  </button>
+                </div>
               ) : null}
             </div>
           )}
 
-          {hasMapData && canScan ? (
+          {(hasMapData || isRunning) && selectedKeyword ? (
             <div className="rank-scan-bar">
+              <p className="rank-scan-meta mono">
+                {scanMeta ??
+                  (isRunning
+                    ? `Skan w toku · ${selectedKeyword.phrase}`
+                    : null)}
+              </p>
               <button
                 type="button"
-                className="ui-btn ui-btn-primary"
+                className="ui-btn ui-btn-primary ui-btn-sm"
                 disabled={!canScan}
+                title={
+                  selectedKeyword.scannedToday
+                    ? "Dziś już wykonano skan tej frazy"
+                    : undefined
+                }
                 onClick={onScan}
               >
-                Skanuj teraz
+                {isRunning ? "Skan w toku…" : "Skanuj teraz"}
               </button>
-              {blockReason ? (
-                <p className="text-sm text-muted-foreground">{blockReason}</p>
-              ) : null}
             </div>
+          ) : null}
+
+          {selectedKeyword?.scannedToday && hasMapData ? (
+            <p className="locked-note rank-daily-hint">
+              Dziś już wykonano skan tej frazy - kolejny będzie dostępny jutro.
+            </p>
           ) : null}
 
           {hasMapData ? (
@@ -706,15 +741,37 @@ export function RankPositionsSection({
           ) : null}
         </div>
 
-        <RankScanCalendar
-          scanDays={scanDays}
-          selectedDay={selectedDay}
-          onSelectDay={(day) => {
-            setSelectedDay(day);
-            const found = scansByKeywordDay[selectedKeywordId]?.[day];
-            if (found) setScan(found);
-          }}
-        />
+        <div className="rank-main-right">
+          <RankScanCalendar
+            scanDays={scanDays}
+            selectedDay={selectedDay}
+            onSelectDay={(day) => {
+              setSelectedDay(day);
+              const found = scansByKeywordDay[selectedKeywordId]?.[day];
+              if (found) setScan(found);
+            }}
+          />
+          <div className="rank-scan-summary">
+            <div className="rank-scan-summary-row">
+              <span>Punkty siatki</span>
+              <span className="mono">
+                {(scan?.gridSize ?? RANK_GRID_SIZE) *
+                  (scan?.gridSize ?? RANK_GRID_SIZE)}{" "}
+                + 1
+              </span>
+            </div>
+            <div className="rank-scan-summary-row">
+              <span>Zasięg</span>
+              <span className="mono">
+                {scan?.radiusKm ?? selectedKeyword?.defaultRadiusKm ?? "-"} km
+              </span>
+            </div>
+            <div className="rank-scan-summary-row">
+              <span>Poza top 20</span>
+              <span className="mono">{hasMapData ? outsideTop20 : "-"}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {businessName ? (

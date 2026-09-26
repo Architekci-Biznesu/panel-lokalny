@@ -24,8 +24,8 @@ export function RankLocalPackTable({
       <header className="ui-section-header">
         <h3 className="ui-section-title">Ranking w wyszukiwarce Google</h3>
         {ownPosition != null ? (
-          <span className="ui-pill ui-pill-success">
-            Twoja pozycja: {ownPosition}
+          <span className="ui-pill ui-pill-info">
+            Twoja pozycja: <span className="mono">{ownPosition}</span>
           </span>
         ) : null}
       </header>
