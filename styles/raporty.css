@@ -268,22 +268,39 @@
     border-radius: calc(var(--radius) + 2px);
   }
 
-  .rank-empty-icon {
-    width: 3rem;
-    height: 3rem;
+  /* Pusty stan (bez skanów / z propozycjami AI): ikona w kółku, tytuł, opis, akcje */
+  .rank-empty-badge {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: var(--space-1);
+    border-radius: var(--radius-pill);
+    background: var(--muted);
     color: var(--muted-foreground);
-    opacity: 0.55;
+  }
+
+  .rank-empty-badge.is-ai {
+    background: var(--brand-50);
+    color: var(--brand);
+  }
+
+  .rank-empty-badge svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 1.75;
   }
 
   .rank-empty-title {
     margin: 0;
-    font-size: var(--type-md);
-    font-weight: 700;
+    font-size: var(--type-lg);
+    font-weight: 500;
+    color: var(--foreground);
   }
 
   .rank-empty-desc {
-    margin: 0;
-    max-width: 28rem;
+    margin: 0 0 var(--space-2);
+    max-width: 34rem;
     font-size: var(--type-sm);
     color: var(--muted-foreground);
     line-height: 1.45;
@@ -295,54 +312,98 @@
     flex-wrap: wrap;
   }
 
+  /* Sugerowane frazy: ten sam wiersz co ręczne dodawanie (pole + zasięg + ✓/✕), fraza już wpisana */
   .rank-suggested {
-    width: 100%;
-    max-width: 28rem;
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
-    text-align: left;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    margin-top: var(--space-2);
   }
 
-  .rank-suggested-title {
-    margin: 0;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+  /* Pusty stan z propozycjami AI: ten sam kafel, różdżka marki i lista fraz */
+  .rank-empty.is-suggested {
+    justify-content: flex-start;
+  }
+
+  .rank-suggested-or {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: min(100%, 52rem);
+    margin: var(--space-2) 0 0;
+    font-size: var(--type-xs);
     color: var(--muted-foreground);
   }
 
+  .rank-suggested-or::before,
+  .rank-suggested-or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Wszystkie wiersze równej szerokości: pole rośnie, zasięg i przyciski trzymają się prawej */
   .rank-suggested-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--space-2);
+    width: min(100%, 52rem);
   }
 
-  .rank-suggested-item {
+  .rank-suggested-row {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.55rem 0.75rem;
-    border-radius: var(--radius-block);
-    background: var(--canvas);
+    flex-wrap: nowrap;
+    width: 100%;
+    margin-top: 0;
   }
 
-  .rank-suggested-phrase {
+  .rank-suggested-row .rank-add-input {
+    flex: 1 1 auto;
     min-width: 0;
-    font-size: var(--type-sm);
-    font-weight: 600;
-    color: var(--foreground);
+    max-width: none;
   }
 
-  .rank-suggested-actions {
-    display: flex;
-    flex-shrink: 0;
-    gap: 0.25rem;
+  .rank-suggested-input {
+    height: auto;
+    padding: 8px 14px;
+    border-radius: 18px;
+    line-height: 1.35;
+    resize: none;
+    field-sizing: content;
+    overflow: hidden;
+  }
+
+  /* Wspólny zasięg - tylko na telefonie */
+  .rank-suggested-radius {
+    display: none;
+  }
+
+  @media (max-width: 639px) {
+    .rank-suggested-radius {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      width: 100%;
+      font-size: var(--type-xs);
+      color: var(--muted-foreground);
+    }
+
+    /* Wiersz na telefonie: pole + ✓ + ✕ w jednej linii, bez powtarzanego zasięgu */
+    .rank-suggested-row > .rank-radius-seg {
+      display: none;
+    }
+
+    .rank-suggested-input {
+      font-size: var(--type-sm);
+    }
+
+    .rank-suggested-row {
+      align-items: flex-start;
+    }
   }
 
   /* Mapa siatki: biały kafel z mapą w środku i paskiem skanu na dole (jak stopki kafli). */
@@ -484,20 +545,6 @@
     width: 10px;
     height: 10px;
     border-radius: var(--radius-pill);
-    flex-shrink: 0;
-  }
-
-  .rank-calendar-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-
-  .rank-calendar-header-icon {
-    width: 16px;
-    height: 16px;
-    color: var(--brand-deep);
     flex-shrink: 0;
   }
 
@@ -1169,13 +1216,6 @@
     box-shadow: var(--shadow-card);
   }
 
-  .rank-calendar-title {
-    margin: 0;
-    color: var(--foreground);
-    font-size: 16px;
-    font-weight: 500;
-  }
-
   .rank-calendar-nav-btn,
   .wiz-range-nav .ui-btn {
     width: 32px;
@@ -1541,8 +1581,9 @@
 
   .rank-running-title {
     margin: 0;
-    font-size: 16px;
+    font-size: var(--type-lg);
     font-weight: 500;
+    color: var(--foreground);
   }
 
   .rank-running-desc {

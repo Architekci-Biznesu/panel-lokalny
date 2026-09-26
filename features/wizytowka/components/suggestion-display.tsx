@@ -2,6 +2,7 @@
 
 import type { GbpSuggestion } from "@/lib/db/schema";
 import { CategorySearchPicker } from "@/features/wizytowka/components/category-search-picker";
+import { stripReviewFluffFromDescription } from "@/features/wizytowka/description-sanitize";
 
 export type ServiceDraft = {
   kind?: string;
@@ -147,7 +148,12 @@ export function SuggestionValuePreview({
     );
   }
 
-  return <p className={`${wrapClass} wiz-preview-plain`}>{value || "-"}</p>;
+  const text =
+    field === "description" && !struck
+      ? stripReviewFluffFromDescription(value)
+      : value;
+
+  return <p className={`${wrapClass} wiz-preview-plain`}>{text || "-"}</p>;
 }
 
 export function SuggestionValueEditor({

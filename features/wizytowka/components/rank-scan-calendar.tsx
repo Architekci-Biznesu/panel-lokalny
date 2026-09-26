@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { RANK_TIMEZONE } from "@/lib/config/rank-limits";
 
@@ -111,11 +111,6 @@ export function RankScanCalendar({
 
   return (
     <aside className="rank-calendar">
-      <div className="rank-calendar-header">
-        <Calendar aria-hidden className="rank-calendar-header-icon" />
-        <h3 className="rank-calendar-title">Historia skanów</h3>
-      </div>
-
       <div className="rank-calendar-nav">
         <button
           type="button"

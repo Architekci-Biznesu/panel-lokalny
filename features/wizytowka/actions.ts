@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { startGbpAudit } from "@/features/wizytowka/audit";
 import { buildAttributeUpdateBody } from "@/features/wizytowka/attributes";
+import { stripReviewFluffFromDescription } from "@/features/wizytowka/description-sanitize";
 import {
   draftsToServiceItems,
   parseTime,
@@ -581,9 +582,11 @@ export async function acceptGbpSuggestion(
 
     const value =
       suggestion.field === "description"
-        ? clampTextToLimit(
-            parsed.data.editedValue?.trim() || suggestion.suggestedValue,
-            GBP_DESCRIPTION_MAX,
+        ? stripReviewFluffFromDescription(
+            clampTextToLimit(
+              parsed.data.editedValue?.trim() || suggestion.suggestedValue,
+              GBP_DESCRIPTION_MAX,
+            ),
           )
         : parsed.data.editedValue?.trim() || suggestion.suggestedValue;
     const token = await getGbpAccessTokenForProfile(profile);

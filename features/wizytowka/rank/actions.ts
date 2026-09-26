@@ -365,10 +365,14 @@ const suggestedPhraseSchema = z.object({
   phrase: z.string().trim().min(2).max(120),
 });
 
+/** Akceptacja propozycji: phrase = oryginał z analizy, finalPhrase = tekst po edycji, radiusKm = zasięg. */
+const acceptSuggestedSchema = suggestedPhraseSchema.extend({
+  finalPhrase: z.string().trim().min(2).max(120).optional(),
+  radiusKm: phraseSchema.shape.radiusKm.optional(),
+});
+
 /** Accept a suggested rank phrase from audit (adds keyword, removes from suggestions). */
-export async function acceptSuggestedRankPhrase(
-  input: unknown,
-): Promise<
+export async function acceptSuggestedRankPhrase(input: unknown): Promise<
   | {
       ok: true;
       keyword: {
@@ -380,24 +384,21 @@ export async function acceptSuggestedRankPhrase(
     }
   | ActionFail
 > {
-  const parsed = suggestedPhraseSchema.safeParse(input);
+  const parsed = acceptSuggestedSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "Nieprawidłowa fraza" };
   }
 
   try {
     const profile = await getActiveGbpProfile();
-    const {
-      loadLatestAuditInsights,
-      updateAuditSuggestedRankPhrases,
-    } = await import("@/features/wizytowka/competitor-insights");
+    const { loadLatestAuditInsights, updateAuditSuggestedRankPhrases } =
+      await import("@/features/wizytowka/competitor-insights");
 
     const loaded = await loadLatestAuditInsights(profile.id);
     const phrase = parsed.data.phrase;
+    const finalPhrase = parsed.data.finalPhrase ?? phrase;
     const suggested = loaded?.insights.suggestedRankPhrases ?? [];
-    if (
-      !suggested.some((p) => p.toLowerCase() === phrase.toLowerCase())
-    ) {
+    if (!suggested.some((p) => p.toLowerCase() === phrase.toLowerCase())) {
       return { ok: false, error: "Ta propozycja już nie istnieje" };
     }
 
@@ -418,7 +419,9 @@ export async function acceptSuggestedRankPhrase(
       .from(rankKeywords)
       .where(eq(rankKeywords.profileId, profile.id));
     if (
-      duplicate.some((row) => row.phrase.toLowerCase() === phrase.toLowerCase())
+      duplicate.some(
+        (row) => row.phrase.toLowerCase() === finalPhrase.toLowerCase(),
+      )
     ) {
       await updateAuditSuggestedRankPhrases(
         profile.id,
@@ -431,8 +434,8 @@ export async function acceptSuggestedRankPhrase(
       .insert(rankKeywords)
       .values({
         profileId: profile.id,
-        phrase,
-        defaultRadiusKm: "10",
+        phrase: finalPhrase,
+        defaultRadiusKm: String(parsed.data.radiusKm ?? 10),
       })
       .returning();
 
@@ -467,10 +470,8 @@ export async function dismissSuggestedRankPhrase(
 
   try {
     const profile = await getActiveGbpProfile();
-    const {
-      loadLatestAuditInsights,
-      updateAuditSuggestedRankPhrases,
-    } = await import("@/features/wizytowka/competitor-insights");
+    const { loadLatestAuditInsights, updateAuditSuggestedRankPhrases } =
+      await import("@/features/wizytowka/competitor-insights");
 
     const loaded = await loadLatestAuditInsights(profile.id);
     if (!loaded) return { ok: true };
@@ -486,4 +487,3 @@ export async function dismissSuggestedRankPhrase(
     return fail(error);
   }
 }
-

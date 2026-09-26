@@ -15,10 +15,15 @@ import {
   ArrowRight,
   Award,
   BriefcaseBusiness,
+  Check,
   Clock,
+  Folder,
+  FolderPlus,
+  Link2,
   Loader2,
   MessageCircle,
   Search,
+  Store,
   Users,
   WandSparkles,
   type LucideIcon,
@@ -130,7 +135,9 @@ export function OnboardingWizard({
   const [regenerating, setRegenerating] = useState(false);
   const autoConfirmed = useRef(false);
 
-  useEffect(() => {
+  // Wybrana opcja powiązania przestała być dostępna (np. odznaczono lokalizację) - wracamy do "osobno".
+  // Korekta w renderze zamiast setState w efekcie.
+  {
     const multi = selected.length > 1;
     const singleAdd = mode === "add" && selected.length === 1;
     const allowed =
@@ -141,13 +148,7 @@ export function OnboardingWizard({
         ungroupedProfiles.length > 0) ||
       (groupMode === "existing" && groups.length > 0);
     if (!allowed) setGroupMode("none");
-  }, [
-    selected.length,
-    mode,
-    groupMode,
-    ungroupedProfiles.length,
-    groups.length,
-  ]);
+  }
 
   const regenPortal = useSyncExternalStore(
     () => () => {},
@@ -704,210 +705,253 @@ export function OnboardingWizard({
         </div>
       ) : (
         <>
-          <div className="ui-search">
-            <Search aria-hidden className="ui-search-icon" />
-            <input
-              type="search"
-              className="ui-field ui-search-input"
-              value={locationQuery}
-              onChange={(e) => setLocationQuery(e.target.value)}
-              placeholder="Szukaj profilu po nazwie lub adresie"
-              aria-label="Szukaj profilu"
-            />
-          </div>
+          <div className="location-picker">
+            <label className="location-picker-search">
+              <Search aria-hidden />
+              <input
+                type="search"
+                value={locationQuery}
+                onChange={(e) => setLocationQuery(e.target.value)}
+                placeholder="Szukaj po nazwie lub adresie"
+                aria-label="Szukaj profilu"
+              />
+            </label>
 
-          {selected.length === 0 ? (
-            <p className="location-pick-hint">
-              Zaznacz lokalizacje, które chcesz podłączyć do panelu.
+            <p className="location-picker-head">
+              <span>Lokalizacje w Google</span>
+              <span className="mono">
+                {selected.length > 0
+                  ? `${selected.length}/${initialDraft.pendingLocations.length}`
+                  : initialDraft.pendingLocations.length}
+              </span>
             </p>
-          ) : null}
 
-          <div className="location-list">
-            {filteredLocations.length === 0 ? (
-              <p className="auth-hint">Brak wyników dla podanego hasła.</p>
-            ) : (
-              filteredLocations.map((loc, index) => {
-                const inputId = `loc-${index}-${loc.name.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
-                const checked = selected.includes(loc.name);
-                return (
-                  <div
-                    key={loc.name}
-                    className={`location-item${checked ? " is-selected" : ""}`}
-                  >
-                    <input
-                      id={inputId}
-                      type="checkbox"
-                      className="ui-check"
-                      checked={checked}
-                      onChange={() => {
-                        setSelected((prev) =>
-                          checked
-                            ? prev.filter((n) => n !== loc.name)
-                            : [...prev, loc.name],
-                        );
-                      }}
-                    />
-                    <label htmlFor={inputId} className="location-item-body">
-                      <strong>{loc.title}</strong>
-                      {loc.storefrontAddress ? (
-                        <span className="location-item-meta">
-                          {loc.storefrontAddress}
-                        </span>
-                      ) : null}
+            <div className="location-list">
+              {filteredLocations.length === 0 ? (
+                <p className="location-empty">
+                  Brak wyników dla podanego hasła.
+                </p>
+              ) : (
+                filteredLocations.map((loc, index) => {
+                  const inputId = `loc-${index}-${loc.name.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+                  const checked = selected.includes(loc.name);
+                  return (
+                    <label
+                      key={loc.name}
+                      htmlFor={inputId}
+                      className={`location-item${checked ? " is-selected" : ""}`}
+                    >
+                      <input
+                        id={inputId}
+                        type="checkbox"
+                        className="location-item-input"
+                        checked={checked}
+                        onChange={() => {
+                          setSelected((prev) =>
+                            checked
+                              ? prev.filter((n) => n !== loc.name)
+                              : [...prev, loc.name],
+                          );
+                        }}
+                      />
+                      <span className="location-item-avatar" aria-hidden>
+                        {loc.title.trim().slice(0, 2).toUpperCase()}
+                      </span>
+                      <span className="location-item-body">
+                        <strong>{loc.title}</strong>
+                        {loc.storefrontAddress ? (
+                          <span className="location-item-meta">
+                            {loc.storefrontAddress}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="location-item-check" aria-hidden>
+                        <Check />
+                      </span>
                     </label>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
 
-          {selected.length > 1 ||
-          (mode === "add" &&
-            selected.length === 1 &&
-            (ungroupedProfiles.length > 0 || groups.length > 0)) ? (
-            <div className="auth-field">
-              <label>
-                {selected.length > 1
-                  ? "Jak połączyć te lokalizacje?"
-                  : "Jak powiązać ten profil?"}
-              </label>
-              <p className="auth-hint">
-                {selected.length > 1
-                  ? "Zaznaczyłeś kilka miejsc. Możesz trzymać je osobno albo wrzucić do jednej grupy - wtedy łatwiej publikujesz te same treści na wszystkich naraz."
-                  : "Domyślnie zostaje osobno. Połączenie w grupę ułatwia publikację tych samych treści na kilku profilach naraz."}
-              </p>
-              <div className="location-link-list" role="radiogroup" aria-label="Sposób powiązania">
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={groupMode === "none"}
-                  className={`location-link-item${groupMode === "none" ? " is-active" : ""}`}
-                  onClick={() => setGroupMode("none")}
+          {(() => {
+            const canLinkSingle =
+              mode === "add" &&
+              (ungroupedProfiles.length > 0 || groups.length > 0);
+            const showLink =
+              selected.length > 1 || canLinkSingle;
+            if (!showLink) return null;
+
+            const linkDisabled = selected.length === 0;
+            const multi = selected.length > 1;
+
+            return (
+              <fieldset
+                className={`location-link${linkDisabled ? " is-disabled" : ""}`}
+                disabled={linkDisabled}
+                aria-disabled={linkDisabled}
+              >
+                <legend className="location-link-title">
+                  {multi
+                    ? "Jak połączyć te lokalizacje?"
+                    : "Jak powiązać ten profil?"}
+                </legend>
+                <p className="location-link-lead">
+                  {linkDisabled
+                    ? "Najpierw zaznacz lokalizację powyżej - wtedy wybierzesz, czy zostaje osobno, czy w grupie."
+                    : multi
+                      ? "Możesz trzymać je osobno albo wrzucić do jednej grupy - wtedy te same treści publikujesz na wszystkich naraz."
+                      : "Domyślnie zostaje osobno. Grupa ułatwia publikację tych samych treści na kilku profilach naraz."}
+                </p>
+
+                <div
+                  className="location-link-list"
+                  role="radiogroup"
+                  aria-label="Sposób powiązania"
+                  aria-disabled={linkDisabled}
                 >
-                  <span className="location-link-item-copy">
-                    <strong>
-                      {selected.length > 1
+                  <LinkOption
+                    active={groupMode === "none"}
+                    onSelect={() => setGroupMode("none")}
+                    disabled={linkDisabled}
+                    icon={Store}
+                    title={
+                      multi
                         ? "Osobno - każde miejsce to osobny profil"
-                        : "Osobno - bez grupy publikacji"}
-                    </strong>
-                    <span>Najprostszy wybór, jeśli nie publikujesz wspólnie.</span>
-                  </span>
-                </button>
-                {selected.length > 1 ? (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={groupMode === "new"}
-                    className={`location-link-item${groupMode === "new" ? " is-active" : ""}`}
-                    onClick={() => setGroupMode("new")}
-                  >
-                    <span className="location-link-item-copy">
-                      <strong>Razem - utwórz nową grupę publikacji</strong>
-                      <span>Wszystkie zaznaczone lokalizacje w jednej grupie.</span>
-                    </span>
-                  </button>
-                ) : null}
-                {mode === "add" &&
-                selected.length === 1 &&
-                ungroupedProfiles.length > 0 ? (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={groupMode === "with_profile"}
-                    className={`location-link-item${groupMode === "with_profile" ? " is-active" : ""}`}
-                    onClick={() => setGroupMode("with_profile")}
-                  >
-                    <span className="location-link-item-copy">
-                      <strong>Połącz z istniejącym profilem</strong>
-                      <span>
-                        Utwórz grupę z firmą, którą już masz w panelu.
-                      </span>
-                    </span>
-                  </button>
-                ) : null}
-                {groups.length > 0 ? (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={groupMode === "existing"}
-                    className={`location-link-item${groupMode === "existing" ? " is-active" : ""}`}
-                    onClick={() => setGroupMode("existing")}
-                  >
-                    <span className="location-link-item-copy">
-                      <strong>
-                        {selected.length > 1
+                        : "Osobno - bez grupy publikacji"
+                    }
+                    desc="Najprostszy wybór, jeśli nie publikujesz wspólnie."
+                  />
+
+                  {multi ? (
+                    <LinkOption
+                      active={groupMode === "new"}
+                      onSelect={() => setGroupMode("new")}
+                      disabled={linkDisabled}
+                      icon={FolderPlus}
+                      title="Razem - utwórz nową grupę publikacji"
+                      desc="Wszystkie zaznaczone lokalizacje w jednej grupie."
+                    >
+                      <div className="auth-field">
+                        <label htmlFor="groupNameNew">
+                          Nazwa grupy publikacji
+                        </label>
+                        <input
+                          id="groupNameNew"
+                          className="ui-field"
+                          placeholder="np. Salony Warszawa"
+                          value={groupName}
+                          onChange={(e) => setGroupName(e.target.value)}
+                        />
+                      </div>
+                    </LinkOption>
+                  ) : null}
+
+                  {!multi &&
+                  mode === "add" &&
+                  ungroupedProfiles.length > 0 ? (
+                    <LinkOption
+                      active={groupMode === "with_profile"}
+                      onSelect={() => setGroupMode("with_profile")}
+                      disabled={linkDisabled}
+                      icon={Link2}
+                      title="Połącz z istniejącym profilem"
+                      desc="Utwórz grupę z firmą, którą już masz w panelu."
+                    >
+                      <div className="auth-field">
+                        <label htmlFor="anchorProfile">
+                          Z którym profilem w panelu?
+                        </label>
+                        <UiSelect
+                          id="anchorProfile"
+                          value={anchorProfileId}
+                          onChange={setAnchorProfileId}
+                          disabled={linkDisabled}
+                          options={ungroupedProfiles.map((p) => ({
+                            value: p.id,
+                            label: p.name,
+                          }))}
+                        />
+                      </div>
+                      <div className="auth-field">
+                        <label htmlFor="groupNameWithProfile">
+                          Nazwa grupy publikacji
+                        </label>
+                        <input
+                          id="groupNameWithProfile"
+                          className="ui-field"
+                          placeholder="np. Salony Warszawa"
+                          value={groupName}
+                          onChange={(e) => setGroupName(e.target.value)}
+                          disabled={linkDisabled}
+                        />
+                      </div>
+                    </LinkOption>
+                  ) : null}
+
+                  {groups.length > 0 ? (
+                    <LinkOption
+                      active={groupMode === "existing"}
+                      onSelect={() => setGroupMode("existing")}
+                      disabled={linkDisabled}
+                      icon={Folder}
+                      title={
+                        multi
                           ? "Razem - dodaj do istniejącej grupy"
-                          : "Dodaj do istniejącej grupy"}
-                      </strong>
-                      <span>Dołącz do grupy, którą już masz w panelu.</span>
-                    </span>
-                  </button>
-                ) : null}
-              </div>
+                          : "Dodaj do istniejącej grupy"
+                      }
+                      desc="Dołącz do grupy, którą już masz w panelu."
+                    >
+                      <div className="auth-field">
+                        <label htmlFor="existingGroup">Która grupa?</label>
+                        <UiSelect
+                          id="existingGroup"
+                          value={existingGroupId}
+                          onChange={setExistingGroupId}
+                          disabled={linkDisabled}
+                          options={groups.map((g) => ({
+                            value: g.id,
+                            label: g.name,
+                          }))}
+                        />
+                      </div>
+                    </LinkOption>
+                  ) : null}
+                </div>
+              </fieldset>
+            );
+          })()}
 
-              {groupMode === "with_profile" ? (
-                <div className="location-link-extra">
-                  <div className="auth-field">
-                    <label htmlFor="anchorProfile">Z którym profilem w panelu?</label>
-                    <UiSelect
-                      id="anchorProfile"
-                      value={anchorProfileId}
-                      onChange={setAnchorProfileId}
-                      options={ungroupedProfiles.map((p) => ({
-                        value: p.id,
-                        label: p.name,
-                      }))}
-                    />
-                  </div>
-                  <div className="auth-field">
-                    <label htmlFor="groupNameWithProfile">Nazwa grupy publikacji</label>
-                    <input
-                      id="groupNameWithProfile"
-                      className="ui-field"
-                      placeholder="np. Salony Warszawa"
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                    />
-                  </div>
-                </div>
-              ) : null}
-              {groupMode === "new" ? (
-                <div className="location-link-extra">
-                  <div className="auth-field">
-                    <label htmlFor="groupNameNew">Nazwa grupy publikacji</label>
-                    <input
-                      id="groupNameNew"
-                      className="ui-field"
-                      placeholder="np. Salony Warszawa"
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                    />
-                  </div>
-                </div>
-              ) : null}
-              {groupMode === "existing" ? (
-                <div className="location-link-extra">
-                  <div className="auth-field">
-                    <label htmlFor="existingGroup">Która grupa?</label>
-                    <UiSelect
-                      id="existingGroup"
-                      value={existingGroupId}
-                      onChange={setExistingGroupId}
-                      options={groups.map((g) => ({
-                        value: g.id,
-                        label: g.name,
-                      }))}
-                    />
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className="gbp-connect-block">
+          <div className="onboarding-actions location-actions">
             <button
               type="button"
-              className="google-connect-btn"
+              className="ui-btn ui-btn-outline"
+              disabled={pending}
+              onClick={() => {
+                startTransition(async () => {
+                  const result = await disconnectGbpAction(mode);
+                  if (!result.ok) {
+                    toast.error({
+                      title: "Nie udało się",
+                      description: result.error,
+                    });
+                    return;
+                  }
+                  toast.success({
+                    title: "Rozłączono Google",
+                    description: "Możesz połączyć wizytówkę ponownie.",
+                  });
+                  setSelected([]);
+                  refresh();
+                });
+              }}
+            >
+              <ArrowLeft aria-hidden /> Wstecz
+            </button>
+            <button
+              type="button"
+              className="ui-btn ui-btn-primary onboarding-actions-next"
               disabled={pending || selected.length === 0}
               onClick={() => {
                 startTransition(async () => {
@@ -938,43 +982,66 @@ export function OnboardingWizard({
                 </>
               ) : (
                 <>
-                  <GoogleGlyph />
                   {selected.length > 1
                     ? `Podłącz profile (${selected.length})`
                     : "Podłącz profil"}
+                  <ArrowRight aria-hidden />
                 </>
               )}
-            </button>
-
-            <button
-              type="button"
-              className="ui-btn ui-btn-outline"
-              disabled={pending}
-              onClick={() => {
-                startTransition(async () => {
-                  const result = await disconnectGbpAction(mode);
-                  if (!result.ok) {
-                    toast.error({
-                      title: "Nie udało się",
-                      description: result.error,
-                    });
-                    return;
-                  }
-                  toast.success({
-                    title: "Rozłączono Google",
-                    description: "Możesz połączyć wizytówkę ponownie.",
-                  });
-                  setSelected([]);
-                  refresh();
-                });
-              }}
-            >
-              <ArrowLeft aria-hidden /> Wstecz
             </button>
           </div>
         </>
       )}
     </>
+  );
+}
+
+/** Opcja powiązania: kafel-radio, a pod nim (gdy wybrana) dodatkowe pola. */
+function LinkOption({
+  active,
+  onSelect,
+  disabled = false,
+  icon: Icon,
+  title,
+  desc,
+  children,
+}: {
+  active: boolean;
+  onSelect: () => void;
+  disabled?: boolean;
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`location-link-option${active ? " is-active" : ""}${disabled ? " is-disabled" : ""}`}
+    >
+      <button
+        type="button"
+        role="radio"
+        aria-checked={active}
+        aria-disabled={disabled}
+        className="location-link-item"
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) onSelect();
+        }}
+      >
+        <span className="location-link-icon" aria-hidden>
+          <Icon />
+        </span>
+        <span className="location-link-item-copy">
+          <strong>{title}</strong>
+          <span>{desc}</span>
+        </span>
+        <span className="location-link-radio" aria-hidden />
+      </button>
+      {active && children && !disabled ? (
+        <div className="location-link-extra">{children}</div>
+      ) : null}
+    </div>
   );
 }
 

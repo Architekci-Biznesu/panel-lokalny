@@ -1,37 +1,11 @@
 ﻿import { GodzinyView } from "@/features/wizytowka/components/godziny-view";
 import { InformacjeEditor } from "@/features/wizytowka/components/informacje-editor";
-import { OutsideGaps } from "@/features/wizytowka/components/outside-gaps";
-import { computeCompleteness } from "@/features/wizytowka/completeness";
 import { tryLoadActiveGbpBundle } from "@/features/wizytowka/load-location";
-import {
-  countGbpOwnerPhotos,
-  listGbpCategories,
-  listGbpLocationMedia,
-} from "@/lib/integrations/gbp/client";
+import { listGbpCategories } from "@/lib/integrations/gbp/client";
 
 export default async function InformacjePage() {
   const bundle = await tryLoadActiveGbpBundle();
   if (!bundle) return null;
-
-  let photoCount = 0;
-  try {
-    const media = await listGbpLocationMedia(
-      bundle.accessToken,
-      bundle.locationName,
-    );
-    photoCount = countGbpOwnerPhotos(media.owner);
-  } catch {
-    photoCount = 0;
-  }
-
-  const summary = computeCompleteness({
-    location: bundle.location,
-    attributes: bundle.attributes,
-    attributeMetadata: bundle.attributeMetadata,
-    pendingSuggestions: bundle.pendingSuggestions,
-    photoCount,
-    lastAnalyzedAt: bundle.latestAuditRun?.finishedAt ?? null,
-  });
 
   const categoryOptions = await listGbpCategories(bundle.accessToken).catch(
     () =>
@@ -52,11 +26,6 @@ export default async function InformacjePage() {
           </p>
         </div>
       </div>
-
-      <OutsideGaps
-        gaps={summary.outsidePanelGaps}
-        mapsUri={bundle.location.metadata?.mapsUri ?? null}
-      />
 
       <InformacjeEditor
         location={bundle.location}

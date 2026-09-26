@@ -366,16 +366,6 @@
   .gbp-connect-block > .ui-btn {
     width: 100%;
   }
-
-  .location-item-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    min-width: 0;
-    flex: 1 1 auto;
-    cursor: pointer;
-    font-weight: inherit;
-  }
 }
 
 @layer components {
@@ -1164,61 +1154,230 @@
     color: var(--muted-foreground);
   }
 
+  /* Krok 3: wybór lokalizacji - jedna karta z wyszukiwarką i listą (jak przełącznik profilu) */
+  .location-picker {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--card);
+  }
+
+  .location-picker-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 40px;
+    margin: 12px 12px 4px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+    color: var(--muted-foreground);
+    transition:
+      box-shadow 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .location-picker-search:focus-within {
+    background: var(--card);
+    box-shadow: 0 0 0 2px var(--foreground);
+  }
+
+  .location-picker-search svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+    flex-shrink: 0;
+  }
+
+  .location-picker-search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: var(--type-base);
+    color: var(--foreground);
+  }
+
+  .location-picker-search input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .location-picker-head {
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+    padding: 8px 20px 4px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ring);
+  }
+
+  .location-picker-head .mono {
+    letter-spacing: 0;
+  }
+
   .location-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-height: min(280px, 38vh);
+    gap: 2px;
+    max-height: min(264px, 36vh);
+    padding: 4px 8px 8px;
     overflow-x: hidden;
     overflow-y: auto;
-    border: 0;
-    background: transparent;
-    padding: 0;
     overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+  }
+
+  .location-empty {
+    margin: 0;
+    padding: 16px 8px;
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
+    text-align: center;
   }
 
   .location-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-block);
-    background: var(--card);
-    box-shadow: none;
+    padding: 10px 12px;
+    border-radius: 14px;
     cursor: pointer;
+    transition: background-color 0.12s ease;
   }
 
-  .location-item:last-child {
-    border-bottom-color: var(--border);
+  .location-item:hover {
+    background: var(--neutral-50);
   }
 
   .location-item.is-selected {
-    border-color: var(--foreground);
-    box-shadow: none;
+    background: var(--muted);
   }
 
-  .location-item .ui-check {
-    margin-top: 0;
+  /* Prawdziwy checkbox zostaje (klawiatura, czytniki), ale jest niewidoczny */
+  .location-item-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .location-item:has(.location-item-input:focus-visible) {
+    box-shadow: inset 0 0 0 2px var(--foreground);
+  }
+
+  .location-item-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--muted);
+    box-shadow: inset 0 0 0 1px var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .location-item.is-selected .location-item-avatar {
+    background: var(--card);
+    box-shadow: inset 0 0 0 1px var(--border);
+    color: var(--foreground);
+  }
+
+  .location-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
   }
 
   .location-item-body strong {
-    line-height: 1.3;
-    font-size: 13px;
+    font-size: var(--type-base);
     font-weight: 500;
+    line-height: 1.3;
   }
 
   .location-item-meta {
+    overflow: hidden;
+    font-size: var(--type-xs);
+    line-height: 1.3;
     color: var(--muted-foreground);
-    line-height: 1.35;
-    font-family: var(--font-mono), ui-monospace, monospace;
-    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .location-pick-hint {
+  .location-item-check {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1.5px var(--neutral-300);
+    color: transparent;
+    transition:
+      background-color 0.12s ease,
+      box-shadow 0.12s ease;
+  }
+
+  .location-item-check svg {
+    width: 13px;
+    height: 13px;
+    stroke-width: 2.5;
+  }
+
+  .location-item.is-selected .location-item-check {
+    background: var(--primary);
+    box-shadow: none;
+    color: var(--primary-foreground);
+  }
+
+  /* Powiązanie: kafle-radio z ikoną; wybrany kafel rozwija dodatkowe pola */
+  .location-link {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
     margin: 0;
-    font-size: 13px;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
+  }
+
+  .location-link.is-disabled {
+    opacity: 0.48;
+    filter: grayscale(0.15);
+  }
+
+  .location-link.is-disabled .location-link-option.is-active {
+    border-color: var(--border);
+  }
+
+  .location-link.is-disabled .location-link-option.is-active .location-link-radio {
+    box-shadow: inset 0 0 0 1.5px var(--neutral-300);
+  }
+
+  .location-link-title {
+    padding: 0;
+    font-size: var(--type-base);
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .location-link-lead {
+    margin: 0 0 6px;
+    font-size: var(--type-sm);
+    line-height: 1.45;
     color: var(--muted-foreground);
   }
 
@@ -1226,71 +1385,137 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-top: 4px;
+  }
+
+  .location-link-option {
+    overflow: visible;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-block);
+    background: var(--card);
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .location-link-option:hover {
+    border-color: var(--neutral-300);
+  }
+
+  .location-link-option.is-active {
+    border-color: var(--neutral-300);
+    box-shadow: none;
+  }
+
+  .location-link-option .ui-select-root {
+    position: relative;
+    z-index: 2;
+  }
+
+  .location-link-option .ui-select-menu {
+    z-index: 50;
   }
 
   .location-link-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
     width: 100%;
     margin: 0;
     padding: 12px 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-block);
-    background: var(--card);
+    border: 0;
+    background: transparent;
     text-align: left;
-    cursor: pointer;
     font: inherit;
     color: inherit;
+    cursor: pointer;
   }
 
-  .location-link-item::before {
-    content: "";
-    box-sizing: border-box;
-    width: 1.125rem;
-    height: 1.125rem;
-    margin-top: 1px;
+  .location-link-item:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--ring);
+  }
+
+  .location-link-icon {
+    display: grid;
+    place-items: center;
     flex-shrink: 0;
-    border: 1px solid var(--neutral-300);
-    border-radius: 999px;
-    background: var(--card);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
   }
 
-  .location-link-item.is-active {
-    border-color: var(--foreground);
+  .location-link-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
   }
 
-  .location-link-item.is-active::before {
-    border-color: var(--primary);
-    background: var(--primary);
-    box-shadow: inset 0 0 0 3px var(--card);
+  .location-link-option.is-active .location-link-icon {
+    background: var(--brand-50);
+    color: var(--brand);
   }
 
   .location-link-item-copy {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1;
     min-width: 0;
   }
 
   .location-link-item-copy strong {
-    font-size: 13px;
+    font-size: var(--type-sm);
     font-weight: 500;
     line-height: 1.3;
   }
 
   .location-link-item-copy span {
-    font-size: 12px;
-    color: var(--muted-foreground);
+    font-size: var(--type-xs);
     line-height: 1.35;
+    color: var(--muted-foreground);
+  }
+
+  .location-link-radio {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1.5px var(--neutral-300);
+    transition: box-shadow 0.15s ease;
+  }
+
+  .location-link-option.is-active .location-link-radio {
+    box-shadow: inset 0 0 0 5px var(--primary);
   }
 
   .location-link-extra {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 12px;
+    padding: 14px;
+    border-top: 1px solid var(--muted);
+    border-radius: 0 0 var(--radius-block) var(--radius-block);
+    background: var(--neutral-50);
+    animation: location-link-open 0.18s ease-out;
+  }
+
+  .location-actions {
+    margin-top: var(--space-2);
+  }
+
+  .location-actions .onboarding-actions-next {
+    flex: 1 1 auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .location-link-extra {
+      animation: none;
+    }
   }
 }
 
@@ -1459,5 +1684,12 @@
 @keyframes split-decor-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes location-link-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 }

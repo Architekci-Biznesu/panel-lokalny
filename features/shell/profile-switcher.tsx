@@ -27,7 +27,77 @@ import {
   switchActiveProfile,
 } from "@/features/onboarding/actions";
 
-type ProfileOption = { id: string; name: string; location?: string | null };
+type ProfileOption = {
+  id: string;
+  name: string;
+  location?: string | null;
+  groupId?: string | null;
+  groupName?: string | null;
+};
+
+type ProfileListSection = {
+  key: string;
+  label: string | null;
+  profiles: ProfileOption[];
+};
+
+function buildProfileSections(
+  profiles: ProfileOption[],
+  activeProfileId: string | null,
+  query: string,
+): ProfileListSection[] {
+  const ordered = [...profiles].sort((a, b) => {
+    if (a.id === activeProfileId) return -1;
+    if (b.id === activeProfileId) return 1;
+    return a.name.localeCompare(b.name, "pl");
+  });
+  const q = query.trim().toLowerCase();
+  const filtered = !q
+    ? ordered
+    : ordered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.location ?? "").toLowerCase().includes(q) ||
+          (p.groupName ?? "").toLowerCase().includes(q),
+      );
+
+  const hasAnyGroup = filtered.some((p) => Boolean(p.groupName?.trim()));
+  if (!hasAnyGroup) {
+    return [{ key: "all", label: null, profiles: filtered }];
+  }
+
+  const byGroup = new Map<string, ProfileOption[]>();
+  const ungrouped: ProfileOption[] = [];
+  for (const profile of filtered) {
+    const name = profile.groupName?.trim();
+    if (!name) {
+      ungrouped.push(profile);
+      continue;
+    }
+    const key = profile.groupId ?? name;
+    const list = byGroup.get(key) ?? [];
+    list.push(profile);
+    byGroup.set(key, list);
+  }
+
+  const sections: ProfileListSection[] = [...byGroup.entries()]
+    .map(([key, list]) => ({
+      key,
+      label: list[0]?.groupName?.trim() || "Grupa",
+      profiles: list,
+    }))
+    .sort((a, b) => (a.label ?? "").localeCompare(b.label ?? "", "pl"));
+
+  if (ungrouped.length > 0) {
+    sections.push({
+      key: "ungrouped",
+      label: "Bez grupy",
+      profiles: ungrouped,
+    });
+  }
+
+  return sections;
+}
 
 function initials(name: string | null | undefined) {
   return (name ?? "?").trim().slice(0, 2).toUpperCase();
@@ -95,21 +165,14 @@ export function ProfileSwitcher({
   const active =
     profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
 
-  const filtered = useMemo(() => {
-    // Aktywny profil pierwszy, reszta alfabetycznie.
-    const ordered = [...profiles].sort((a, b) => {
-      if (a.id === activeProfileId) return -1;
-      if (b.id === activeProfileId) return 1;
-      return a.name.localeCompare(b.name, "pl");
-    });
-    const q = query.trim().toLowerCase();
-    if (!q) return ordered;
-    return ordered.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        (p.location ?? "").toLowerCase().includes(q),
-    );
-  }, [profiles, query, activeProfileId]);
+  const filteredSections = useMemo(
+    () => buildProfileSections(profiles, activeProfileId, query),
+    [profiles, query, activeProfileId],
+  );
+  const filteredCount = useMemo(
+    () => filteredSections.reduce((sum, s) => sum + s.profiles.length, 0),
+    [filteredSections],
+  );
 
   useEffect(() => {
     function onDocClick(event: MouseEvent) {
@@ -152,13 +215,14 @@ export function ProfileSwitcher({
       return;
     }
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+      const firstHit = filteredSections[0]?.profiles[0];
       if (
         event.key === "Enter" &&
         event.target === searchRef.current &&
-        filtered[0]
+        firstHit
       ) {
         event.preventDefault();
-        selectProfile(filtered[0].id);
+        selectProfile(firstHit.id);
       }
       return;
     }
@@ -313,24 +377,24 @@ export function ProfileSwitcher({
                 />
                 {query.trim() ? (
                   <span className="profile-menu-search-count mono">
-                    {filtered.length}/{profiles.length}
+                    {filteredCount}/{profiles.length}
                   </span>
                 ) : null}
               </label>
             </div>
           )}
 
-          {filtered.length > 0 || !query.trim() ? (
+          {filteredCount > 0 || !query.trim() ? (
             <p className="profile-menu-section">
               <span>
                 {adminImpersonating ? "Profile klienta" : "Twoje profile"}
               </span>
-              <span className="mono">{filtered.length}</span>
+              <span className="mono">{filteredCount}</span>
             </p>
           ) : null}
 
           <div className="profile-menu-list" ref={listRef}>
-            {filtered.length === 0 ? (
+            {filteredCount === 0 ? (
               query.trim() ? (
                 <div className="profile-menu-empty">
                   <span className="profile-menu-empty-icon" aria-hidden>
@@ -349,44 +413,51 @@ export function ProfileSwitcher({
                 <p className="profile-menu-empty">Brak wyników</p>
               )
             ) : (
-              filtered.map((profile) => {
-                // Na onboarding/add nie zaznaczamy „skąd przyszedłeś” - to wybór, nie bieżący kontekst.
-                const isActive = !compact && profile.id === activeProfileId;
-                return (
-                  <button
-                    key={profile.id}
-                    type="button"
-                    className={
-                      isActive
-                        ? "profile-menu-option active"
-                        : "profile-menu-option"
-                    }
-                    role="menuitemradio"
-                    aria-checked={isActive}
-                    disabled={busy}
-                    onClick={() => selectProfile(profile.id)}
-                  >
-                    <span className="profile-menu-avatar" aria-hidden>
-                      {initials(profile.name)}
-                    </span>
-                    <span className="profile-menu-copy">
-                      <span className="profile-menu-name">
-                        {highlight(profile.name, query)}
-                      </span>
-                      {profile.location ? (
-                        <span className="profile-menu-loc">
-                          {highlight(profile.location, query)}
+              filteredSections.map((section) => (
+                <div key={section.key} className="profile-menu-group">
+                  {section.label ? (
+                    <p className="profile-menu-group-label">{section.label}</p>
+                  ) : null}
+                  {section.profiles.map((profile) => {
+                    // Na onboarding/add nie zaznaczamy „skąd przyszedłeś” - to wybór, nie bieżący kontekst.
+                    const isActive = !compact && profile.id === activeProfileId;
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        className={
+                          isActive
+                            ? "profile-menu-option active"
+                            : "profile-menu-option"
+                        }
+                        role="menuitemradio"
+                        aria-checked={isActive}
+                        disabled={busy}
+                        onClick={() => selectProfile(profile.id)}
+                      >
+                        <span className="profile-menu-avatar" aria-hidden>
+                          {initials(profile.name)}
                         </span>
-                      ) : null}
-                    </span>
-                    {isActive ? (
-                      <span className="profile-menu-check" aria-hidden>
-                        <Check />
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })
+                        <span className="profile-menu-copy">
+                          <span className="profile-menu-name">
+                            {highlight(profile.name, query)}
+                          </span>
+                          {profile.location ? (
+                            <span className="profile-menu-loc">
+                              {highlight(profile.location, query)}
+                            </span>
+                          ) : null}
+                        </span>
+                        {isActive ? (
+                          <span className="profile-menu-check" aria-hidden>
+                            <Check />
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
             )}
           </div>
 

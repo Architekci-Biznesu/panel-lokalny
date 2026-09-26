@@ -4,7 +4,9 @@ import { db } from "@/lib/db";
 import {
   companyContext,
   onboardingDrafts,
+  profileGroups,
   profiles,
+  publishGroups,
   users,
   type Profile,
 } from "@/lib/db/schema";
@@ -164,6 +166,8 @@ export type AccountProfileOption = {
   id: string;
   name: string;
   location: string | null;
+  groupId: string | null;
+  groupName: string | null;
 };
 
 function locationLabel(raw: unknown): string | null {
@@ -225,11 +229,42 @@ export async function listAccountProfileOptions(): Promise<
     if (label) labels.set(ctx.profileId, label);
   }
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    location: labels.get(row.id) ?? null,
-  }));
+  const groupRows = await db
+    .select({
+      profileId: profileGroups.profileId,
+      groupId: publishGroups.id,
+      groupName: publishGroups.name,
+    })
+    .from(profileGroups)
+    .innerJoin(publishGroups, eq(publishGroups.id, profileGroups.groupId))
+    .where(
+      inArray(
+        profileGroups.profileId,
+        rows.map((row) => row.id),
+      ),
+    );
+
+  const groups = new Map<
+    string,
+    { groupId: string; groupName: string }
+  >();
+  for (const row of groupRows) {
+    groups.set(row.profileId, {
+      groupId: row.groupId,
+      groupName: row.groupName,
+    });
+  }
+
+  return rows.map((row) => {
+    const group = groups.get(row.id);
+    return {
+      id: row.id,
+      name: row.name,
+      location: labels.get(row.id) ?? null,
+      groupId: group?.groupId ?? null,
+      groupName: group?.groupName ?? null,
+    };
+  });
 }
 
 /** Session profile when it is finished; otherwise the newest profile that still has Google connected. */

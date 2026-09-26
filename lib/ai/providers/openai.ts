@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { GBP_AUDIT_SYSTEM_PROMPT } from "@/lib/ai/gbp-audit-guidelines";
 import { GBP_DESCRIPTION_MAX, clampTextToLimit } from "@/lib/ai/gbp-limits";
+import { stripReviewFluffFromDescription } from "@/features/wizytowka/description-sanitize";
 import type {
   BriefFields,
   GbpAuditSuggestion,
@@ -222,17 +223,22 @@ Bez markdownu, bez dodatkowych kluczy.`;
       })
       .parse(JSON.parse(raw));
 
-    return parsed.suggestions.map((s) => {
-      const trimmed = s.suggestedValue.trim();
-      return {
-        field: s.field,
-        suggestedValue:
+    return parsed.suggestions
+      .map((s) => {
+        const trimmed = s.suggestedValue.trim();
+        const suggestedValue =
           s.field === "description"
-            ? clampTextToLimit(trimmed, GBP_DESCRIPTION_MAX)
-            : trimmed,
-        rationale: s.rationale.trim(),
-      };
-    });
+            ? stripReviewFluffFromDescription(
+                clampTextToLimit(trimmed, GBP_DESCRIPTION_MAX),
+              )
+            : trimmed;
+        return {
+          field: s.field,
+          suggestedValue,
+          rationale: s.rationale.trim(),
+        };
+      })
+      .filter((s) => Boolean(s.suggestedValue));
   },
 };
 

@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Search,
   TrendingUp,
+  WandSparkles,
   X,
 } from "lucide-react";
 import { RankLocalPackTable } from "@/features/wizytowka/components/rank-local-pack-table";
@@ -113,6 +114,11 @@ export function RankPositionsSection({
 }) {
   const [keywords, setKeywords] = useState(initialKeywords);
   const [suggestedPhrases, setSuggestedPhrases] = useState(initialSuggested);
+  // Zasięg propozycji: wspólny (na telefonie jeden przełącznik nad listą) + nadpisania per wiersz (desktop).
+  const [suggestAllRadius, setSuggestAllRadius] = useState<RankRadiusKm>(10);
+  const [suggestRadii, setSuggestRadii] = useState<
+    Record<string, RankRadiusKm>
+  >({});
   const [latestByKeyword, setLatestByKeyword] = useState(initialLatest);
   const [scansByKeywordDay, setScansByKeywordDay] = useState(initialByDay);
   const [selectedKeywordId, setSelectedKeywordId] = useState(
@@ -334,9 +340,22 @@ export function RankPositionsSection({
     });
   }
 
-  function onAcceptSuggested(phraseValue: string) {
+  function onAcceptSuggested(
+    phraseValue: string,
+    finalValue: string,
+    radiusKm: RankRadiusKm,
+  ) {
+    const finalPhrase = finalValue.trim();
+    if (!finalPhrase) {
+      toast.error({ title: "Podaj frazę" });
+      return;
+    }
     startTransition(async () => {
-      const res = await acceptSuggestedRankPhrase({ phrase: phraseValue });
+      const res = await acceptSuggestedRankPhrase({
+        phrase: phraseValue,
+        finalPhrase,
+        radiusKm,
+      });
       if (!res.ok) {
         toast.error({ title: "Nie dodano frazy", description: res.error });
         return;
@@ -503,6 +522,7 @@ export function RankPositionsSection({
   }, [scan]);
 
   const phrasesAtLimit = keywords.length >= RANK_MAX_KEYWORDS;
+  const showSuggested = keywords.length === 0 && suggestedPhrases.length > 0;
 
   function renderAddControls(emptyContext = false) {
     if (adding) {
@@ -775,47 +795,69 @@ export function RankPositionsSection({
               ) : null}
             </section>
           ) : (
-            <div className="rank-empty">
-              <MapIcon aria-hidden className="rank-empty-icon" />
-              <p className="rank-empty-title">Brak danych skanowania</p>
-              <p className="rank-empty-desc">
-                Dodaj frazy kluczowe, a następnie kliknij „Skanuj teraz”, aby
-                rozpocząć monitorowanie pozycji.
-              </p>
-              {keywords.length === 0 && suggestedPhrases.length > 0 ? (
-                <div className="rank-suggested">
-                  <p className="rank-suggested-title">
-                    Sugerowane frazy z analizy
+            <div
+              className={`rank-empty${showSuggested ? " is-suggested" : ""}`}
+            >
+              {showSuggested ? (
+                <>
+                  <span className="rank-empty-badge is-ai" aria-hidden>
+                    <WandSparkles />
+                  </span>
+                  <p className="rank-empty-title">Zacznij od fraz z analizy</p>
+                  <p className="rank-empty-desc">
+                    AI wybrało frazy, po których klienci szukają firm takich jak
+                    Twoja. Popraw je, jeśli trzeba, ustaw zasięg i dodaj - potem
+                    kliknij „Skanuj teraz”.
                   </p>
-                  <ul className="rank-suggested-list">
+                </>
+              ) : (
+                <>
+                  <span className="rank-empty-badge" aria-hidden>
+                    <MapIcon />
+                  </span>
+                  <p className="rank-empty-title">Brak danych skanowania</p>
+                  <p className="rank-empty-desc">
+                    Dodaj frazy kluczowe, a następnie kliknij „Skanuj teraz”,
+                    aby rozpocząć monitorowanie pozycji.
+                  </p>
+                </>
+              )}
+              {showSuggested ? (
+                <div className="rank-suggested">
+                  <div className="rank-suggested-radius">
+                    <span>Zasięg dla wszystkich</span>
+                    <RadiusSeg
+                      value={suggestAllRadius}
+                      disabled={pending}
+                      onChange={(km) => {
+                        setSuggestAllRadius(km);
+                        setSuggestRadii({});
+                      }}
+                    />
+                  </div>
+                  <div className="rank-suggested-list">
                     {suggestedPhrases.map((phraseValue) => (
-                      <li key={phraseValue} className="rank-suggested-item">
-                        <span className="rank-suggested-phrase">
-                          {phraseValue}
-                        </span>
-                        <div className="rank-suggested-actions">
-                          <button
-                            type="button"
-                            className="ui-btn ui-btn-primary ui-btn-sm"
-                            disabled={pending}
-                            aria-label={`Dodaj frazę ${phraseValue}`}
-                            onClick={() => onAcceptSuggested(phraseValue)}
-                          >
-                            <Check aria-hidden />
-                          </button>
-                          <button
-                            type="button"
-                            className="ui-btn ui-btn-ghost ui-btn-sm"
-                            disabled={pending}
-                            aria-label={`Odrzuć frazę ${phraseValue}`}
-                            onClick={() => onDismissSuggested(phraseValue)}
-                          >
-                            <X aria-hidden />
-                          </button>
-                        </div>
-                      </li>
+                      <SuggestedPhraseRow
+                        key={phraseValue}
+                        phrase={phraseValue}
+                        pending={pending}
+                        radius={suggestRadii[phraseValue] ?? suggestAllRadius}
+                        onRadiusChange={(km) =>
+                          setSuggestRadii((prev) => ({
+                            ...prev,
+                            [phraseValue]: km,
+                          }))
+                        }
+                        onAccept={(finalValue, radiusKm) =>
+                          onAcceptSuggested(phraseValue, finalValue, radiusKm)
+                        }
+                        onDismiss={() => onDismissSuggested(phraseValue)}
+                      />
                     ))}
-                  </ul>
+                  </div>
+                  <p className="rank-suggested-or">
+                    <span>albo własna fraza</span>
+                  </p>
                 </div>
               ) : null}
               {keywords.length === 0 ? renderAddControls(true) : null}
@@ -917,5 +959,98 @@ export function RankPositionsSection({
 
       {businessName ? <p className="sr-only">Profil: {businessName}</p> : null}
     </section>
+  );
+}
+
+function RadiusSeg({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: RankRadiusKm;
+  disabled: boolean;
+  onChange: (km: RankRadiusKm) => void;
+}) {
+  return (
+    <div className="rank-radius-seg" role="group" aria-label="Zasięg">
+      {RANK_RADIUS_OPTIONS_KM.map((km) => (
+        <button
+          key={km}
+          type="button"
+          className={
+            value === km ? "rank-radius-opt is-active" : "rank-radius-opt"
+          }
+          aria-pressed={value === km}
+          onClick={() => onChange(km)}
+          disabled={disabled}
+        >
+          {km} km
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Propozycja frazy z analizy w tym samym układzie co ręczne dodawanie:
+ * pole z wpisaną już frazą (można poprawić), zasięg, ✓ dodaje, ✕ odrzuca propozycję.
+ * Na telefonie zasięg wybiera się raz nad listą, a wiersz to pole + ✓ + ✕.
+ */
+function SuggestedPhraseRow({
+  phrase,
+  pending,
+  radius,
+  onRadiusChange,
+  onAccept,
+  onDismiss,
+}: {
+  phrase: string;
+  pending: boolean;
+  radius: RankRadiusKm;
+  onRadiusChange: (km: RankRadiusKm) => void;
+  onAccept: (finalValue: string, radiusKm: RankRadiusKm) => void;
+  onDismiss: () => void;
+}) {
+  const [value, setValue] = useState(phrase);
+
+  return (
+    <div className="rank-add-row rank-empty-add rank-suggested-row">
+      {/* textarea z 1 wierszem: długa fraza zawija się zamiast ucinać (ważne na telefonie) */}
+      <textarea
+        className="ui-field rank-add-input rank-suggested-input"
+        rows={1}
+        value={value}
+        onChange={(e) => setValue(e.target.value.replace(/\n/g, " "))}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && value.trim() && !pending) {
+            e.preventDefault();
+            onAccept(value, radius);
+          }
+        }}
+        maxLength={120}
+        disabled={pending}
+        aria-label="Sugerowana fraza"
+      />
+      <RadiusSeg value={radius} disabled={pending} onChange={onRadiusChange} />
+      <button
+        type="button"
+        className="rank-add-confirm"
+        aria-label={`Dodaj frazę ${value}`}
+        disabled={pending || !value.trim()}
+        onClick={() => onAccept(value, radius)}
+      >
+        <Check aria-hidden />
+      </button>
+      <button
+        type="button"
+        className="rank-add-cancel"
+        aria-label={`Odrzuć propozycję ${phrase}`}
+        title="Odrzuć propozycję"
+        disabled={pending}
+        onClick={onDismiss}
+      >
+        <X aria-hidden />
+      </button>
+    </div>
   );
 }

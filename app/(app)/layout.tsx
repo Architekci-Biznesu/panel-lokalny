@@ -16,7 +16,13 @@ export default async function AppLayout({
   const userEmail = session?.user?.email ?? null;
   const adminChrome = await getAdminSwitcherProps();
 
-  let profiles: { id: string; name: string; location: string | null }[] = [];
+  let profiles: {
+    id: string;
+    name: string;
+    location: string | null;
+    groupId: string | null;
+    groupName: string | null;
+  }[] = [];
   let activeProfileId: string | null = null;
   try {
     profiles = await listAccountProfileOptions();

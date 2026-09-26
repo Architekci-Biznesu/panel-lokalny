@@ -15,7 +15,13 @@ import { ProfileSwitcher } from "@/features/shell/profile-switcher";
 
 type ShellProps = {
   children: React.ReactNode;
-  profiles: { id: string; name: string; location: string | null }[];
+  profiles: {
+    id: string;
+    name: string;
+    location: string | null;
+    groupId?: string | null;
+    groupName?: string | null;
+  }[];
   activeProfileId: string | null;
   userName: string;
   userEmail: string | null;

@@ -37,6 +37,10 @@ import {
   serviceItemsToDrafts,
 } from "@/features/wizytowka/types";
 import { reconcileAdditionalCategories } from "@/features/wizytowka/reconcile-additional-categories";
+import {
+  descriptionMentionsReviews,
+  stripReviewFluffFromDescription,
+} from "@/features/wizytowka/description-sanitize";
 
 function normalizeSuggestionValue(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -456,7 +460,12 @@ async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
   for (const suggestion of suggestions) {
     let suggestedValue = suggestion.suggestedValue;
     if (suggestion.field === "description") {
-      suggestedValue = clampTextToLimit(suggestedValue, GBP_DESCRIPTION_MAX);
+      suggestedValue = stripReviewFluffFromDescription(
+        clampTextToLimit(suggestedValue, GBP_DESCRIPTION_MAX),
+      );
+      if (!suggestedValue || descriptionMentionsReviews(suggestedValue)) {
+        continue;
+      }
     }
 
     const key = `${suggestion.field}::${normalizeSuggestionValue(suggestedValue)}`;

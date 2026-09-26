@@ -14,17 +14,18 @@ const STEPS = [
 /**
  * Rotated while on the last main step. ~100 s audits need a fresh line every
  * SUBSTEP_MS after the early STEPS finish (~7.5 s) → ~10 labels.
+ * Alternating „Analiza …” / „Sprawdzanie …”.
  */
 const FINAL_SUBSTEPS = [
-  "Układanie propozycji nazwy",
-  "Doszlifowanie opisu wizytówki",
-  "Dopasowanie kategorii głównej",
-  "Przegląd kategorii dodatkowych",
-  "Porównywanie z konkurencją w okolicy",
-  "Sprawdzanie zdjęć i kompletności galerii",
+  "Analiza nazwy wizytówki",
+  "Sprawdzanie opisu wizytówki",
+  "Analiza kategorii głównej",
+  "Sprawdzanie kategorii dodatkowych",
+  "Analiza konkurencji w okolicy",
+  "Sprawdzanie zdjęć i galerii",
   "Analiza godzin otwarcia",
-  "Szukanie luk w Local Pack",
-  "Dobieranie fraz rankingowych",
+  "Sprawdzanie luk w Local Pack",
+  "Analiza fraz rankingowych",
   "Finalizacja listy do decyzji",
 ] as const;
 

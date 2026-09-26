@@ -43,7 +43,7 @@ Zasady opisu (description):
 - **Miasto musi wystąpić co najmniej raz** w całym opisie (z adresu wizytówki / locality, albo z obszaru w briefie). Bez miasta w tekście - dopisz je naturalnie (np. w pierwszym zdaniu albo przy adresie). Nie powtarzaj miasta w każdym zdaniu.
 - Dalej zakres, który pokrywa się z nazwą i kategoriami. Gdy dostaniesz competitorInsights.descriptionSamples - uwzględnij typowy zakres usług konkurencji, ale fakty tylko z briefu/strony/wizytówki.
 - Na końcu dowód tylko z danych wejściowych: staż, adres, marki, NFZ albo prywatnie, obszar dojazdu. Bez takiego faktu w wejściu - pomiń go.
-- **Nie dopisuj ocen, gwiazdek ani „opinii Google”** (np. „ocena 4.8”, „pozytywne opinie”) - nawet gdy widzisz je w snapshotcie. To nie wzmacnia opisu w sensowny sposób i wygląda jak wypełniacz.
+- **ABSOLUTNY ZAKAZ w opisie - nic o opiniach:** zakaz słów i wątków: opinie, recenzje, oceny, gwiazdki, liczba opinii, „pozytywne opinie”, „zadowoleni klienci według Google”, cytaty z review, „ocena 4.8”. Nawet gdy snapshot / GBP / brief / konkurencja to ma - **NIE wstawiaj**. Jeśli obecny opis to zawiera - w propozycji **usuń te zdania**, nie przepisuj ich.
 - Restauracja albo lokal, którego oferta jest kartą dań, może mieć to menu w opisie zamiast listy usług.
 - Jeśli obecny opis ma już 600-750 znaków, zaczyna się od marki/zakresu, **zawiera miasto** i nie ma oczywistych braków faktów - **POMIŃ pole description** (nie generuj kosmetycznego skrócenia ani „lepszego SEO”). Brak miasta w obecnym opisie = powód do propozycji.
 
