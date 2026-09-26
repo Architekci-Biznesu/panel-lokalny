@@ -373,8 +373,22 @@ function TitleEditor({
         maxLength={100}
         onChange={(e) => setValue(e.target.value)}
       />
+      <CharCount length={value.length} max={100} />
       <SaveButton pending={pending} />
     </form>
+  );
+}
+
+/** Licznik znaków pod polem - koral od 95% limitu. */
+function CharCount({ length, max }: { length: number; max: number }) {
+  return (
+    <span
+      className="mono wiz-char-count"
+      data-warn={length / max >= 0.95 ? "true" : undefined}
+      aria-live="polite"
+    >
+      {length} / {max}
+    </span>
   );
 }
 
@@ -418,6 +432,7 @@ function DescriptionEditor({
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
+      <CharCount length={value.length} max={750} />
       <SaveButton pending={pending} />
     </form>
   );
