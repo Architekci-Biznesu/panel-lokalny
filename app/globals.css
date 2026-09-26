@@ -7172,3 +7172,326 @@
     }
   }
 }
+
+
+/* ============ Styl 4 - Wizytówka Google ============ */
+@layer components {
+  /* Kafle: białe, bez obrysu, r24, cień */
+  .wiz-profile-header,
+  .wiz-preview-card,
+  .wiz-tab-panel,
+  .wiz-hours-panel,
+  .rank-calendar,
+  .rank-empty {
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .wiz-tab-panel {
+    padding: 8px 32px;
+  }
+
+  .wiz-profile-complete {
+    border-top-color: var(--muted);
+    background: transparent;
+  }
+
+  /* Propozycje AI: kafle z pigułką-CTA */
+  .wiz-proposal-card {
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 20px;
+  }
+
+  .wiz-proposals-badge,
+  .wiz-subnav-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    justify-content: center;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  /* Podmenu zakładek = podkreślenie jak navbar */
+  .wiz-subnav {
+    gap: 28px;
+    padding: 0 4px;
+  }
+
+  .wiz-subnav-link {
+    padding: 10px 0;
+    margin-bottom: -1px;
+    font-weight: 400;
+    border-bottom-width: 1.5px;
+  }
+
+  .wiz-subnav-link:hover {
+    color: var(--foreground);
+  }
+
+  .wiz-subnav-link.active {
+    color: var(--foreground);
+    font-weight: 500;
+    border-bottom-color: var(--foreground);
+  }
+
+  /* Wiersze pól */
+  .wiz-field-row {
+    padding: 16px 0;
+    border-bottom-color: var(--muted);
+  }
+
+  .wiz-field-row:last-child {
+    border-bottom: 0;
+  }
+
+  .wiz-field-label {
+    color: var(--muted-foreground);
+    font-size: var(--type-sm);
+    font-weight: 400;
+  }
+
+  .wiz-field-edit {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+  }
+
+  .wiz-field-edit:hover {
+    background: var(--canvas-strong);
+  }
+
+  /* Propozycja AI przy polu */
+  .wiz-ai-pill {
+    height: 22px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--brand-50);
+    color: var(--brand-deep);
+    font-weight: 500;
+  }
+
+  .wiz-inline-suggestion .wiz-compare-cols,
+  .wiz-proposal-compare {
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .wiz-compare-col-next .wiz-compare-col-head {
+    color: var(--brand-deep);
+  }
+
+  .wiz-inline-rationale {
+    border-top-color: var(--border);
+    background: var(--brand-50);
+  }
+
+  .wiz-compare-meter-ok .wiz-compare-meter-fill {
+    background: var(--brand);
+  }
+
+  .wiz-compare-meter-warn .wiz-compare-meter-fill {
+    background: var(--warning);
+  }
+
+  .wiz-chip-added {
+    background: var(--success-soft);
+    color: #15803d;
+    border-color: transparent;
+  }
+
+  .wiz-chip-removed {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: transparent;
+  }
+
+  /* Kategorie: główna ciemna z gwiazdką, dodatkowe szare */
+  .wiz-cat-chip-primary,
+  .wiz-cat-chip-extra {
+    height: 28px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+  }
+
+  .wiz-cat-chip-primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .wiz-cat-chip-extra {
+    background: var(--muted);
+  }
+
+  /* Braki na górze: koral soft */
+  .wiz-gap-banner {
+    border: 0;
+    border-radius: var(--radius-block);
+    background: var(--warning-soft);
+    overflow: hidden;
+  }
+
+  .wiz-gap-item {
+    border-bottom-color: rgba(229, 88, 43, 0.12);
+  }
+
+  .wiz-gap-icon {
+    color: var(--warning-foreground);
+  }
+
+  /* Godziny i dni specjalne */
+  .wiz-special-item {
+    border-color: #f0f0f0;
+    border-radius: var(--radius-block);
+    padding: 0 12px 0 0;
+  }
+
+  .wiz-special-datebox {
+    border-radius: 12px;
+    background: var(--muted);
+  }
+
+  .wiz-special-datebox-day {
+    font-family: var(--font-mono);
+  }
+
+  .wiz-hours-day-time,
+  .wiz-hours-time-range {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Atrybuty: segment Tak / Nie */
+  .wiz-attr-choice {
+    height: 32px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    font-weight: 500;
+  }
+
+  .wiz-attr-toggle {
+    padding: 3px;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+  }
+
+  .wiz-attr-group {
+    border-top-color: var(--muted);
+  }
+
+  /* Usługi - edycja */
+  .wiz-services-sticky {
+    background: #fafafa;
+    border-top-color: #f0f0f0;
+  }
+
+  /* Raporty: popover dat */
+  .wiz-range-popover {
+    border-radius: var(--radius-card);
+    box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+  }
+
+  .wiz-report-kpi-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+    font-weight: 400;
+  }
+
+  /* Mapa siatki */
+  .rank-pill {
+    height: 36px;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .rank-pill.is-active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .rank-pill-radius {
+    font-family: var(--font-mono);
+    opacity: 0.6;
+  }
+
+  .rank-add-phrase-btn {
+    height: 36px;
+    padding: 0 16px;
+    border: 1px dashed var(--brand-soft);
+    border-radius: var(--radius-pill);
+    background: var(--brand-50);
+    color: var(--brand-deep);
+    font-weight: 500;
+  }
+
+  .rank-radius-seg {
+    height: 32px;
+    padding: 3px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+  }
+
+  .rank-radius-opt {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+  }
+
+  .rank-radius-opt.is-active {
+    background: var(--card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .rank-map-frame {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .rank-map-legend {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+  }
+
+  .rank-local-pack tr.is-own {
+    background: var(--brand-50);
+  }
+
+  .rank-kpi-icon-brand {
+    color: var(--brand);
+  }
+
+  .rank-kpi-icon-info {
+    color: var(--foreground);
+  }
+}
+
+@layer components {
+  .wiz-attr-choice.is-active.is-yes {
+    background: var(--primary);
+    border-color: transparent;
+    color: var(--primary-foreground);
+  }
+
+  .wiz-attr-choice.is-active.is-no {
+    background: var(--card);
+    border-color: transparent;
+    color: var(--foreground);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
