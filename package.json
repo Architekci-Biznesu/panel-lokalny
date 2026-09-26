@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "lint:css": "node scripts/check-styles.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -52,6 +54,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "postcss": "^8.5.28",
+    "prettier": "^3.9.9",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

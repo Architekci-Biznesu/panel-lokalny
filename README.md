@@ -32,6 +32,12 @@ openssl rand -base64 32
 - `styles/<moduł>.css` - po jednym pliku na moduł (`wizytowka`, `raporty`, `pulpit`...)
 - `npm run lint:css` - pilnuje porządku (kolory tylko w tokenach, każdy plik zaimportowany, klasy w pliku swojego modułu)
 
+## Formatowanie i kontrola jakości
+
+- `npm run format` - Prettier dla całego repo (w Cursorze/VS Code formatuje się przy zapisie; zainstaluj rekomendowane rozszerzenie Prettier)
+- `npm run format:check` - sprawdzenie bez zmian
+- `npm run lint` - ESLint, `npm run lint:css` - porządek w stylach, `npx tsc --noEmit` - typy
+
 ## Stack (skrót)
 
 Next.js 16 + TypeScript + Tailwind 4 + shadcn/ui + Drizzle + PostgreSQL (Neon) + Auth.js v5.

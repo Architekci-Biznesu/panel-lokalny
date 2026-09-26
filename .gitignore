@@ -25,7 +25,9 @@
 Thumbs.db
 *.pem
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
 # debug
 npm-debug.log*

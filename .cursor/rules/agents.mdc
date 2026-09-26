@@ -79,6 +79,8 @@ Ponieważ na start istnieje tylko jedna implementacja, łatwo przypadkiem przepu
 - Zod na granicy każdego Server Action / Route Handler, zawsze, niezależnie od walidacji frontendowej
 - Jeden interfejs adaptera na kanał publikacji (`publish()`, `fetchReviews()`, `replyToReview()`) - implementacje per kanał (Meta, GBP) w `lib/integrations/{meta,gbp}/`, nie rozgałęziaj logiki biznesowej po kanałach
 - Angielski w kodzie (zmienne, tabele, funkcje), polski w treściach user-facing
+- Formatowanie: Prettier (`.prettierrc.json`) - nie formatuj ręcznie i nie zmieniaj ustawień. W edytorze formatuje się przy zapisie (`.vscode/settings.json`, rozszerzenie Prettier). Przed commitem: `npm run format` (albo sprawdzenie: `npm run format:check`). Commit z logiką nie może zawierać przeformatowania niezwiązanych plików.
+- Przed zakończeniem zadania: `npm run lint`, `npx tsc --noEmit`, `npm run lint:css`, `npm run format:check` - bez nowych błędów
 
 ## Feedback UI - gooey-toast
 
