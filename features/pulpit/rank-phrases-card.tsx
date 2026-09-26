@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, MapPinned } from "lucide-react";
+import { ArrowRight, MapPinned } from "lucide-react";
 import type { PulpitRankPhrase } from "@/features/pulpit/load-pulpit-rank";
 
 function formatAgr(value: number | null): string {
@@ -144,21 +144,9 @@ export function RankPhrasesCard({ phrases }: { phrases: PulpitRankPhrase[] }) {
             </p>
           </div>
         </div>
-        <Link href="/wizytowka/raporty" className="pulpit-card-cta">
-          Pełny raport
-          <ArrowUpRight aria-hidden />
-        </Link>
       </header>
 
-      {withScans.length === 0 ? (
-        <p className="pulpit-empty">
-          Brak skanów pozycji. Uruchom skan w{" "}
-          <Link href="/wizytowka/raporty" className="wiz-inline-link">
-            Raportach
-          </Link>
-          .
-        </p>
-      ) : (
+      {withScans.length === 0 ? null : (
         <>
           <div className="pulpit-phrase-head" aria-hidden>
             <span>Fraza</span>
@@ -192,6 +180,17 @@ export function RankPhrasesCard({ phrases }: { phrases: PulpitRankPhrase[] }) {
           </ul>
         </>
       )}
+
+      <Link href="/wizytowka/raporty" className="wiz-proposal-cta">
+        <span>
+          {withScans.length === 0
+            ? "Brak skanów pozycji - uruchom skan w Raportach"
+            : "Pełny raport"}
+        </span>
+        <span className="wiz-proposal-cta-arrow" aria-hidden>
+          <ArrowRight />
+        </span>
+      </Link>
     </section>
   );
 }

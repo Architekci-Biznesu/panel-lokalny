@@ -102,10 +102,13 @@ export function AppShell({
             href="/pulpit"
             onClick={closeAll}
             className="topnav-brand"
-            aria-label="Panel Lokalny - Pulpit"
+            aria-label="Panel Lokalny by Architekci Biznesu - Pulpit"
           >
             <BrandLogo />
-            <span className="topnav-brand-name">Panel Lokalny</span>
+            <span className="topnav-brand-copy">
+              <span className="topnav-brand-name">Panel Lokalny</span>
+              <span className="topnav-brand-sub">by Architekci Biznesu</span>
+            </span>
           </Link>
 
           <nav className="topnav-links" aria-label="Główna nawigacja">

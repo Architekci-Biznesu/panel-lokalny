@@ -61,6 +61,11 @@
     flex-direction: column;
     gap: var(--space-4);
   }
+
+  /* Te same odstępy co w siatce poniżej (KPI miało ciaśniej: 0.75rem). */
+  .pulpit-page .wiz-report-summary {
+    gap: var(--space-5);
+  }
 }
 
 @layer components {
@@ -121,31 +126,6 @@
     font-size: var(--type-sm);
     color: var(--muted-foreground);
     line-height: 1.45;
-  }
-
-  .pulpit-card-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-    height: var(--btn-height-sm);
-    padding: 0 12px;
-    border-radius: var(--radius-pill);
-    font-size: var(--type-sm);
-    font-weight: 500;
-    color: var(--foreground);
-    text-decoration: none;
-    transition: background-color 0.15s ease;
-  }
-
-  .pulpit-card-cta:hover {
-    background: var(--muted);
-  }
-
-  .pulpit-card-cta svg {
-    width: 16px;
-    height: 16px;
-    stroke-width: 2;
   }
 
   /* Stopka karty jak pasek "Dlaczego ta zmiana": szary, przyklejony do dołu */
@@ -266,10 +246,6 @@
       gap: var(--space-3);
     }
 
-    .pulpit-card-head > .pulpit-card-cta {
-      margin-left: 42px;
-    }
-
     .pulpit-month-summary {
       align-items: flex-start;
       text-align: left;
@@ -288,7 +264,7 @@
   }
 
   .pulpit-phrase-head {
-    margin: var(--space-5) calc(var(--space-5) * -1) 0;
+    margin: 0 calc(var(--space-5) * -1) 0;
     padding: 0 calc(var(--space-5) + var(--space-3)) var(--space-2);
     border-bottom: 1px solid var(--border);
     font-size: var(--type-badge);
@@ -320,6 +296,16 @@
 
   .pulpit-phrase-row:hover {
     background: var(--neutral-50);
+  }
+
+  .pulpit-phrases .wiz-proposal-cta {
+    margin-top: auto;
+    text-decoration: none;
+  }
+
+  /* Jak „Co do poprawy”: stały odstęp między nagłówkiem a treścią / CTA. */
+  .pulpit-card.pulpit-phrases {
+    gap: var(--space-5);
   }
 
   .pulpit-phrase-name {
@@ -493,6 +479,11 @@
   .pulpit-action-icon.is-ai {
     background: var(--brand-50);
     color: var(--brand);
+  }
+
+  .pulpit-action-icon.is-check {
+    background: var(--warning-soft);
+    color: var(--warning-foreground);
   }
 
   .pulpit-action-icon.is-gap {

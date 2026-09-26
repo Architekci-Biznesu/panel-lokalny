@@ -2117,11 +2117,11 @@
   }
 
   .wiz-complete-tick.is-on {
-    background: var(--primary);
+    background: var(--brand);
   }
 
   .wiz-complete-tick.is-next {
-    background: var(--warning);
+    background: var(--border);
   }
 
   .wiz-complete-checks {
