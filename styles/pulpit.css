@@ -278,7 +278,7 @@
   .pulpit-phrase-head,
   .pulpit-phrase-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 64px 84px 112px;
+    grid-template-columns: minmax(0, 1fr) 64px 84px 88px;
     gap: var(--space-3);
     align-items: center;
   }
@@ -367,11 +367,6 @@
     color: var(--brand);
   }
 
-  .pulpit-spark-area {
-    fill: currentColor;
-    opacity: 0.1;
-  }
-
   .pulpit-spark.is-down {
     color: var(--danger-600);
   }
@@ -381,8 +376,8 @@
   }
 
   .pulpit-spark.is-empty {
-    width: 112px;
-    height: 32px;
+    width: 88px;
+    height: 28px;
   }
 }
 
