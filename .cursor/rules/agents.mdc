@@ -34,7 +34,7 @@ Zasady:
 - Wspólne elementy (przycisk, pole, pill, karta) tylko przez `.ui-*` z `styles/ui.css`. Nie kopiuj ich stylów do pliku modułu; wariant potrzebny w wielu modułach dodaj do `ui.css`.
 - Plik modułu styluje tylko klasy swojego prefiksu (wyjątek: dopasowanie `.ui-*` w kontekście modułu, np. `.wiz-page .ui-btn`). Nie nadpisuj klas innego modułu.
 - Każdy selektor definiuj raz w pliku; wariant responsywny w `@media` zaraz pod nim. Breakpointy: `639px` / `899px` / `1099px` / `1279px` (max-width).
-- Po zmianie stylów: `npm run lint:css`.
+- Po zmianie stylów: `npm run lint:css` (wyłapuje też martwe style - klasy, których nie używa żaden komponent; usuwając komponent, usuń jego reguły).
 
 Najważniejsze tokeny:
 

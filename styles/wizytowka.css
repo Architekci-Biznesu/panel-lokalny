@@ -79,76 +79,9 @@
     line-height: 1.35;
   }
 
-  .wiz-profile-header {
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 0;
-    padding: 0;
-    overflow: hidden;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) + 2px);
-  }
-
   /* Szkielet ładowania na szarym kaflu NAP */
   .wiz-nap-cta .ui-skel {
     background: var(--card);
-  }
-}
-
-@layer components {
-  @media (max-width: 639px) {
-    .wiz-profile-header {
-      flex-direction: column;
-    }
-  }
-}
-
-@layer components {
-  .wiz-profile-left {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-5);
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
-  .wiz-profile-tiles {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: var(--space-3);
-    padding-top: var(--space-3);
-  }
-
-  .wiz-profile-complete {
-    width: 100%;
-    flex: 0 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-3);
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--border);
-  }
-}
-
-@layer components {
-  @media (min-width: 900px) {
-    .wiz-profile-complete {
-      width: 20rem;
-      align-self: stretch;
-      justify-content: flex-start;
-      margin-block: calc(var(--space-5) * -1);
-      margin-right: calc(var(--space-5) * -1);
-      border-top: 0;
-      border-left: 1px solid var(--border);
-      padding: var(--space-5);
-      border-radius: 0 calc(var(--radius) + 2px) calc(var(--radius) + 2px) 0;
-    }
   }
 }
 
@@ -900,7 +833,6 @@
   }
 
   .wiz-attr-list,
-  .wiz-hours-list,
   .wiz-uslugi,
   .wiz-uslugi-list {
     display: flex;
@@ -1559,28 +1491,6 @@
   .wiz-attr-repeated .wiz-attr-row:last-child {
     border-bottom: none;
   }
-
-  .wiz-kpi-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-}
-
-@layer components {
-  @media (min-width: 640px) {
-    .wiz-kpi-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-}
-
-@layer components {
-  @media (min-width: 900px) {
-    .wiz-kpi-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
 }
 
 @layer components {
@@ -1619,11 +1529,6 @@
     width: 0.75rem;
     height: 0.75rem;
     stroke-width: 2;
-  }
-
-  .wiz-nap-status {
-    padding: 0 0 0.75rem;
-    border-bottom: 1px solid var(--border);
   }
 
   .wiz-nap-grid {
@@ -2151,28 +2056,6 @@
     width: 11px;
     height: 11px;
     stroke-width: 3;
-  }
-
-  .wiz-profile-header,
-  .wiz-tab-panel {
-    border: 0;
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-  }
-
-  .wiz-tab-panel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) + 2px);
-    padding: 8px 32px;
-  }
-
-  .wiz-profile-complete {
-    border-top-color: var(--muted);
-    background: transparent;
   }
 
   .wiz-proposals {

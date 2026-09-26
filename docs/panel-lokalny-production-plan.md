@@ -171,9 +171,9 @@ Limit generowań AI w planie podstawowym - punkt wyjścia: 4 blogi/miesiąc per 
 
 Makieta: https://claude.ai/artifact/Wn2ZrSXrAJ64WWwh28aFTY
 
-**Przełącznik profilu** (góra sidebara) - pokazuje aktywny profil, w rozwinięciu: pozostałe profile z tej samej grupy publikacji (z odznaczeniem "grupa publikacji (N)") oraz osobną sekcję "Pozostałe profile" (niepowiązane marki klienta) + akcję "Dodaj profil".
+**Przełącznik profilu** (prawa strona górnego paska nawigacji) - pokazuje aktywny profil, w rozwinięciu: pozostałe profile z tej samej grupy publikacji (z odznaczeniem "grupa publikacji (N)") oraz osobną sekcję "Pozostałe profile" (niepowiązane marki klienta) + akcję "Dodaj profil".
 
-**Nawigacja główna (sidebar), pogrupowana:**
+**Nawigacja główna (górny pasek; mniej używane pozycje w menu "Więcej", na mobile szuflada), pogrupowana:**
 
 *Ogólne*
 - **Pulpit** - dashboard: statystyki strony WWW, statystyki wizytówki Google, ruch na stronie (14 dni), wykorzystanie limitów AI, ostatnia aktywność, "do zrobienia dziś"
@@ -190,13 +190,13 @@ Makieta: https://claude.ai/artifact/Wn2ZrSXrAJ64WWwh28aFTY
 
 *Rozwój*
 - **Sklep i dodatki** - produkty fizyczne + moduły dokupywane (Ads, heio.ai, konsultacje)
-- **Ustawienia i plan** - plan i rozliczenia (widoczny też w stopce sidebara: nazwa planu + wykorzystanie limitu, np. "3 z 4 blogów wykorzystane w tym miesiącu")
+- **Ustawienia i plan** - plan i rozliczenia (widoczny też w menu konta: nazwa planu + wykorzystanie limitu, np. "3 z 4 blogów wykorzystane w tym miesiącu")
 
 **Wzorzec interakcji powtarzający się w całym UI** (pętla akceptacji z sekcji 2): karta z propozycją AI → `Akceptuj` / `Edytuj przez czat` / `Odrzuć`. Ten sam wzorzec ma się przenieść 1:1 z makiety na realną implementację - to centralny element UX całego produktu, nie tylko sekcji Publikacje.
 
 ### 7.1 Struktura URL (routing, Next.js App Router)
 
-Aktywny profil trzymany w sesji/cookie (przełącznik w sidebarze go zmienia), nie w URL - upraszcza to routing i unika przenoszenia `profileId` w każdym linku. Wyjątek: `/[profileId]/ustawienia` tam, gdzie link ma trafić do konkretnego profilu niezależnie od tego, który jest aktualnie aktywny w sesji (np. link z e-maila powiadomienia).
+Aktywny profil trzymany w sesji/cookie (przełącznik w górnym pasku go zmienia), nie w URL - upraszcza to routing i unika przenoszenia `profileId` w każdym linku. Wyjątek: `/[profileId]/ustawienia` tam, gdzie link ma trafić do konkretnego profilu niezależnie od tego, który jest aktualnie aktywny w sesji (np. link z e-maila powiadomienia).
 
 ```
 /                              → redirect do /logowanie lub /pulpit (zależnie od sesji)

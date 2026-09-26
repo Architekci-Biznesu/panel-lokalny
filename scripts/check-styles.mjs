@@ -6,6 +6,7 @@
 //   - plik styles/*.css niezaimportowany w app/globals.css
 //   - reguły komponentów bezpośrednio w app/globals.css (ma zawierać tylko importy i @theme)
 // Ostrzeżenia:
+//   - klasa w CSS, której nie używa żaden komponent (martwy styl - usuń regułę)
 //   - klasa spoza prefiksów modułu (np. .rank-* w wizytowka.css) - styl trafił do złego pliku
 //   - ten sam selektor zdefiniowany w dwóch plikach (w tym samym @media)
 import fs from "node:fs";
@@ -69,6 +70,33 @@ gAst.walkRules((r) => {
   );
 });
 
+// Klasy używane w kodzie (tokeny z plików .ts/.tsx + dynamiczne prefiksy typu `is-${...}`)
+function walk(dir, out = []) {
+  if (!fs.existsSync(dir)) return out;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if ([".next", "node_modules"].includes(e.name)) continue;
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) walk(p, out);
+    else if (/\.(tsx?|jsx?)$/.test(e.name)) out.push(p);
+  }
+  return out;
+}
+const code = ["app", "features", "components", "lib"]
+  .flatMap((d) => walk(path.join(ROOT, d)))
+  .map((f) => fs.readFileSync(f, "utf8"))
+  .join("\n");
+const tokens = new Set(code.match(/[A-Za-z0-9_-]+/g) || []);
+const dynamicPrefixes = [...code.matchAll(/([a-z][a-z0-9-]*-)\$\{/g)].map(
+  (m) => m[1],
+);
+// .ui-* to design system (mogą czekać na użycie), is-* to modyfikatory stanu, reszta to klasy bibliotek
+const ALWAYS_USED = ["ui-", "is-", "leaflet-", "recharts-", "gooey"];
+const isUsed = (c) =>
+  tokens.has(c) ||
+  ALWAYS_USED.some((p) => c.startsWith(p)) ||
+  dynamicPrefixes.some((p) => c.startsWith(p));
+const reportedDead = new Set();
+
 const seen = new Map();
 for (const f of files) {
   const mod = f.replace(/\.css$/, "");
@@ -92,6 +120,14 @@ for (const f of files) {
       p = p.parent;
     }
     for (const sel of r.selectors) {
+      for (const m of sel.matchAll(/\.([A-Za-z0-9_-]+)/g)) {
+        if (!isUsed(m[1]) && !reportedDead.has(m[1])) {
+          reportedDead.add(m[1]);
+          warnings.push(
+            `styles/${f}:${r.source.start.line} .${m[1]} - nieużywana w kodzie (martwy styl)`,
+          );
+        }
+      }
       const first = (sel.match(/\.([A-Za-z0-9_-]+)/) || [])[1];
       const allowed = PREFIXES[mod];
       if (
