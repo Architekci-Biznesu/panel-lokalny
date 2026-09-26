@@ -8041,3 +8041,118 @@
     background: var(--muted);
   }
 }
+
+/* ============ Styl 4 - Usługi (edycja): bez ramek kart, mały kosz, czarny pasek zapisu jak w Atrybutach ============ */
+@layer components {
+  /* Kontener edycji przezroczysty - białym kaflem jest sama lista, pasek pływa pod nią */
+  .wiz-uslugi.is-editing {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-form {
+    margin: 0;
+    gap: 16px;
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-scroll {
+    padding: 24px;
+    background: var(--card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .wiz-services-form .wiz-services-edit {
+    gap: 28px 32px;
+  }
+
+  /* Karta usługi bez obramowania */
+  .wiz-service-card {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    gap: 8px;
+  }
+
+  /* Kosz: mała ikona, bez tła, czerwony dopiero na hover */
+  .wiz-service-card-remove {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-service-card-remove svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2;
+  }
+
+  .wiz-service-card-remove:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--destructive) 8%, var(--card));
+    color: var(--destructive);
+  }
+
+  /* Pasek zapisu: czarna pigułka przyklejona do dołu (jak Atrybuty) */
+  .wiz-uslugi.is-editing .wiz-services-sticky {
+    position: sticky;
+    bottom: 24px;
+    z-index: 5;
+    padding: 8px 8px 8px 8px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.35);
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-select {
+    height: 36px;
+    background: #2e2e2e;
+    border-color: transparent;
+    color: var(--primary-foreground);
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-select-value {
+    color: #d4d4d4;
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-select-chevron {
+    color: #a3a3a3;
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-select-menu {
+    color: var(--foreground);
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-secondary,
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-outline {
+    background: #2e2e2e;
+    border-color: transparent;
+    color: var(--primary-foreground);
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-secondary:hover:not(:disabled),
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-outline:hover:not(:disabled) {
+    background: #404040;
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-secondary svg,
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-outline svg {
+    color: currentColor;
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-primary {
+    background: var(--card);
+    color: var(--foreground);
+  }
+
+  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-primary:disabled {
+    background: #404040;
+    color: #a3a3a3;
+    opacity: 1;
+  }
+}
