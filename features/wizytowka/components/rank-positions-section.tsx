@@ -251,10 +251,7 @@ export function RankPositionsSection({
     "higher",
   );
 
-  const hasMapData =
-    scan &&
-    scan.status === "done" &&
-    scan.results.length > 0;
+  const hasMapData = scan && scan.status === "done" && scan.results.length > 0;
 
   function onConfirmAdd() {
     const value = phrase.trim();
@@ -318,7 +315,7 @@ export function RankPositionsSection({
       if (selectedKeywordId === keywordId) {
         const nextId = remaining[0]?.id ?? "";
         setSelectedKeywordId(nextId);
-        setScan(nextId ? latestByKeyword[nextId] ?? null : null);
+        setScan(nextId ? (latestByKeyword[nextId] ?? null) : null);
         setSelectedDay(remaining[0]?.scanDays[0] ?? warsawTodayKey());
       }
       toast.success({ title: "Usunięto frazę" });
@@ -343,9 +340,7 @@ export function RankPositionsSection({
       });
       setKeywords((prev) =>
         prev.map((k) =>
-          k.id === selectedKeyword.id
-            ? { ...k, runningScanId: res.scanId }
-            : k,
+          k.id === selectedKeyword.id ? { ...k, runningScanId: res.scanId } : k,
         ),
       );
       setScan({
@@ -395,8 +390,8 @@ export function RankPositionsSection({
     ? Math.min(scan?.results.length ?? 0, queryTotal)
     : 0;
   const outsideTop20 =
-    scan?.results.filter((p) => p.position == null || p.position > 20)
-      .length ?? 0;
+    scan?.results.filter((p) => p.position == null || p.position > 20).length ??
+    0;
   const packDelta = formatDeltaNum(
     scan?.deltaLocalPack != null ? Number(scan.deltaLocalPack) : null,
     "lower",
@@ -426,9 +421,7 @@ export function RankPositionsSection({
   function renderAddControls(emptyContext = false) {
     if (adding) {
       return (
-        <div
-          className={`rank-add-row${emptyContext ? " rank-empty-add" : ""}`}
-        >
+        <div className={`rank-add-row${emptyContext ? " rank-empty-add" : ""}`}>
           <input
             className="ui-field rank-add-input"
             value={phrase}
@@ -751,41 +744,49 @@ export function RankPositionsSection({
               if (found) setScan(found);
             }}
           >
-            <div className="rank-scan-summary">
-              {selectedDay ? (
+            {scan ? (
+              <div className="rank-scan-summary">
                 <p className="rank-scan-summary-label">
                   Skan z{" "}
                   <span className="mono">
-                    {selectedDay.split("-").reverse().join(".")}
+                    {(selectedDay &&
+                    scansByKeywordDay[selectedKeywordId]?.[selectedDay]
+                      ? selectedDay
+                      : scan.startedAt.slice(0, 10)
+                    )
+                      .split("-")
+                      .reverse()
+                      .join(".")}
                   </span>
                 </p>
-              ) : null}
-              <div className="rank-scan-summary-row">
-                <span>Punkty siatki</span>
-                <span className="mono">
-                  {(scan?.gridSize ?? RANK_GRID_SIZE) *
-                    (scan?.gridSize ?? RANK_GRID_SIZE)}{" "}
-                  + 1
-                </span>
+                <div className="rank-scan-summary-row">
+                  <span>Punkty siatki</span>
+                  <span className="mono">
+                    {(scan?.gridSize ?? RANK_GRID_SIZE) *
+                      (scan?.gridSize ?? RANK_GRID_SIZE)}{" "}
+                    + 1
+                  </span>
+                </div>
+                <div className="rank-scan-summary-row">
+                  <span>Zasięg</span>
+                  <span className="mono">
+                    {scan?.radiusKm ?? selectedKeyword?.defaultRadiusKm ?? "-"}{" "}
+                    km
+                  </span>
+                </div>
+                <div className="rank-scan-summary-row">
+                  <span>Poza top 20</span>
+                  <span className="mono">
+                    {hasMapData ? outsideTop20 : "-"}
+                  </span>
+                </div>
               </div>
-              <div className="rank-scan-summary-row">
-                <span>Zasięg</span>
-                <span className="mono">
-                  {scan?.radiusKm ?? selectedKeyword?.defaultRadiusKm ?? "-"} km
-                </span>
-              </div>
-              <div className="rank-scan-summary-row">
-                <span>Poza top 20</span>
-                <span className="mono">{hasMapData ? outsideTop20 : "-"}</span>
-              </div>
-            </div>
+            ) : null}
           </RankScanCalendar>
         </div>
       </div>
 
-      {businessName ? (
-        <p className="sr-only">Profil: {businessName}</p>
-      ) : null}
+      {businessName ? <p className="sr-only">Profil: {businessName}</p> : null}
     </section>
   );
 }
