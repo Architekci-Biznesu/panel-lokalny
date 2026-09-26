@@ -8989,3 +8989,62 @@
     background: var(--muted);
   }
 }
+
+/* ============ Styl 4 - poprawki po Z8-Z9 (logowanie, rejestracja, onboarding) ============ */
+@layer components {
+  /* Karty na zdjęciu: nie rozciągaj na dużych ekranach */
+  .split-decor-login-cols {
+    max-width: 680px;
+  }
+
+  .split-decor-onb1,
+  .split-decor-onb2,
+  .split-decor-onb3 {
+    max-width: 380px;
+  }
+
+  /* Niskie okno: chowamy karty o mniejszym priorytecie, żeby nie wchodziły na nagłówek */
+  @media (max-height: 900px) {
+    .split-decor-login .split-decor-col:first-child .split-decor-card:nth-child(3),
+    .split-decor-login .split-decor-review {
+      display: none;
+    }
+  }
+
+  @media (max-height: 780px) {
+    .split-decor-login .split-decor-col:first-child .split-decor-card:nth-child(2),
+    .split-decor-register .split-decor-step:nth-child(3) {
+      display: none;
+    }
+  }
+
+  @media (max-height: 680px) {
+    .split-decor {
+      display: none;
+    }
+  }
+
+  /* Wąsko (900-1100px): druga kolumna kart znika zamiast układać się pod spodem */
+  @media (max-width: 1100px) {
+    .split-decor-login .split-decor-col.is-end {
+      display: none;
+    }
+  }
+
+  /* Szukajka w kroku 3: ikona nie wchodzi na placeholder */
+  .split-right .ui-search-icon {
+    left: 16px;
+  }
+
+  .split-right .ui-search-input,
+  .split-right-inner .ui-search-input {
+    padding-left: 40px;
+  }
+
+  /* Logo w górnym pasku formularza nie łamie się na wąskich ekranach */
+  .split-brand,
+  .split-brand-name,
+  .split-brand-sub {
+    white-space: nowrap;
+  }
+}
