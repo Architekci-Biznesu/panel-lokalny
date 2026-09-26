@@ -9,11 +9,14 @@ export default async function KontaktPage() {
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div>
-          <h2 className="text-lg font-semibold">Kontakt</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2>Kontakt</h2>
+          <p>
             Witryna i profile społecznościowe. Kliknij ołówek, aby edytować.
           </p>
         </div>
+        <p className="wiz-tab-head-note">
+          Główna witryna jest w zakładce Informacje
+        </p>
       </div>
       <KontaktEditor
         location={bundle.location}

@@ -2,11 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Loader2, Pencil, X } from "lucide-react";
+import { Loader2, Pencil, SquareArrowOutUpRight, X } from "lucide-react";
 import { toast } from "gooey-toast";
-import {
-  updateGbpAttribute,
-} from "@/features/wizytowka/actions";
+import { updateGbpAttribute } from "@/features/wizytowka/actions";
 import {
   attributeId,
   parseAttributeValues,
@@ -14,6 +12,10 @@ import {
 } from "@/features/wizytowka/attributes";
 import type { GbpLocation } from "@/features/wizytowka/types";
 import type { GbpAttributeMetadata } from "@/lib/integrations/gbp/client";
+
+function displayUrl(url: string) {
+  return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
 
 export function KontaktEditor({
   location: _location,
@@ -38,24 +40,28 @@ export function KontaktEditor({
           <Editable
             key={meta.parent}
             label={label}
-            display={uri || "-"}
+            uri={uri}
             editor={({ close }) => (
               <UrlAttrForm meta={meta} initial={uri ?? ""} onDone={close} />
             )}
           />
         );
       })}
+      <p className="wiz-kontakt-foot">
+        Pola to atrybuty URL z Google - lista zależy od kategorii wizytówki.
+        Puste pole i „Zapisz w Google” usuwa link.
+      </p>
     </div>
   );
 }
 
 function Editable({
   label,
-  display,
+  uri,
   editor,
 }: {
   label: string;
-  display: string;
+  uri: string | null;
   editor: (args: { close: () => void }) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -63,32 +69,35 @@ function Editable({
     <div className="wiz-field-row">
       <div className="wiz-field-label">{label}</div>
       <div className="wiz-field-content">
-        {display.startsWith("http") ? (
+        {open ? (
+          <div className="wiz-edit-block">
+            {editor({ close: () => setOpen(false) })}
+          </div>
+        ) : uri ? (
           <a
-            href={display}
+            href={uri}
             target="_blank"
             rel="noreferrer"
-            className="wiz-inline-link"
+            className="wiz-inline-link mono"
           >
-            {display}
+            {displayUrl(uri)}
+            <SquareArrowOutUpRight
+              aria-hidden
+              className="wiz-ext-link-icon"
+            />
           </a>
         ) : (
-          display
+          <span className="mono text-muted-foreground">-</span>
         )}
       </div>
       <button
         type="button"
-        className="ui-btn ui-btn-ghost ui-btn-sm wiz-field-edit"
-        aria-label={`Edytuj: ${label}`}
+        className={`wiz-field-edit${open ? " is-open" : ""}`}
+        aria-label={open ? `Zamknij: ${label}` : `Edytuj: ${label}`}
         onClick={() => setOpen((v) => !v)}
       >
         {open ? <X aria-hidden /> : <Pencil aria-hidden />}
       </button>
-      {open ? (
-        <div className="wiz-field-editor">
-          {editor({ close: () => setOpen(false) })}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -144,7 +153,7 @@ function UrlAttrForm({
       }}
     >
       <input
-        className="ui-field"
+        className="ui-field mono"
         type="url"
         inputMode="url"
         placeholder="https://"
@@ -152,14 +161,6 @@ function UrlAttrForm({
         onChange={(e) => setValue(e.target.value)}
       />
       <div className="wiz-edit-actions">
-        <button
-          type="submit"
-          className="ui-btn ui-btn-primary ui-btn-sm"
-          disabled={pending}
-        >
-          {pending ? <Loader2 aria-hidden className="ui-btn-spinner" /> : null}
-          Zapisz w Google
-        </button>
         {initial ? (
           <button
             type="button"
@@ -189,6 +190,14 @@ function UrlAttrForm({
             Wyczyść
           </button>
         ) : null}
+        <button
+          type="submit"
+          className="ui-btn ui-btn-primary ui-btn-sm"
+          disabled={pending}
+        >
+          {pending ? <Loader2 aria-hidden className="ui-btn-spinner" /> : null}
+          Zapisz w Google
+        </button>
       </div>
     </form>
   );

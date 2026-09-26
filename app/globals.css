@@ -7607,3 +7607,19 @@
   color: var(--muted-foreground);
 }
 
+.wiz-tab-head-note {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--muted-foreground);
+  max-width: 16rem;
+  text-align: right;
+}
+
+.wiz-kontakt-foot {
+  margin: 0;
+  padding: 12px 24px 20px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  line-height: 1.4;
+}
+
