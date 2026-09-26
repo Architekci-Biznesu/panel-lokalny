@@ -7551,6 +7551,31 @@
     font-weight: 500;
   }
 
+  .wiz-attr-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .wiz-attr-dirty-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--warning);
+    flex-shrink: 0;
+  }
+
+  .wiz-attr-sticky-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: var(--type-sm);
+    font-weight: 500;
+  }
+
   /* Pasek zapisu atrybutów/usług: czarna pigułka przyklejona do dołu */
   .wiz-fields:has(.wiz-attr-group) .wiz-services-sticky {
     position: sticky;

@@ -36,7 +36,6 @@ export function AtrybutyView({
   const values = parseAttributeValues(attributes, attributeMetadata);
   const groups = groupFactsByGroup(attributeMetadata);
   const dirtyCount = Object.keys(drafts).length;
-  const dirty = dirtyCount > 0;
 
   const draftList = useMemo(() => Object.entries(drafts), [drafts]);
 
@@ -111,10 +110,8 @@ export function AtrybutyView({
       <div className="wiz-stack">
         <div className="wiz-tab-head">
           <div className="wiz-tab-head-text">
-            <h2 className="text-lg font-semibold">Atrybuty</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Potwierdź fakty o firmie Tak / Nie.
-            </p>
+            <h2>Atrybuty</h2>
+            <p>Potwierdź fakty o firmie Tak / Nie.</p>
           </div>
         </div>
         <div className="wiz-fields">
@@ -130,8 +127,8 @@ export function AtrybutyView({
     <div className="wiz-stack">
       <div className="wiz-tab-head">
         <div className="wiz-tab-head-text">
-          <h2 className="text-lg font-semibold">Atrybuty</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2>Atrybuty</h2>
+          <p>
             {open
               ? "Edycja - po zmianach zapisz zbiorczo na dole"
               : "Potwierdź fakty o firmie. Ołówek otwiera edycję - zapis zbiorczy na dole."}
@@ -140,7 +137,7 @@ export function AtrybutyView({
         {open ? (
           <button
             type="button"
-            className="ui-btn ui-btn-ghost ui-btn-sm wiz-tab-head-edit"
+            className="wiz-field-edit is-open"
             aria-label="Anuluj edycję atrybutów"
             onClick={closeEdit}
           >
@@ -149,7 +146,7 @@ export function AtrybutyView({
         ) : (
           <button
             type="button"
-            className="ui-btn ui-btn-ghost ui-btn-sm wiz-tab-head-edit"
+            className="wiz-field-edit"
             aria-label="Edytuj atrybuty"
             onClick={() => setOpen(true)}
           >
@@ -185,6 +182,7 @@ export function AtrybutyView({
                         meta={meta}
                         value={value}
                         editing={open}
+                        dirty={Boolean(draft)}
                         onChange={(next) => {
                           if (next === (base ?? null)) {
                             setDraft(meta.parent, null);
@@ -231,6 +229,7 @@ export function AtrybutyView({
                         setValues={setValues}
                         unsetValues={unsetValues}
                         editing={open}
+                        dirty={Boolean(draft)}
                         onChange={(nextSet, nextUnset) => {
                           const same =
                             sameStringSet(nextSet, baseSet) &&
@@ -259,6 +258,7 @@ export function AtrybutyView({
                       meta={meta}
                       value={value}
                       editing={open}
+                      dirty={Boolean(draft)}
                       onChange={(boolValue) => {
                         if (boolValue === base) {
                           setDraft(meta.parent, null);
@@ -277,14 +277,13 @@ export function AtrybutyView({
           ))}
         </div>
 
-        {open ? (
+        {open && dirtyCount > 0 ? (
           <div className="wiz-services-sticky">
             <p className="wiz-attr-sticky-hint">
-              {dirtyCount === 0
-                ? "Wybierz opcje, potem zapisz"
-                : dirtyCount === 1
-                  ? "1 niezapisana zmiana"
-                  : `${dirtyCount} niezapisanych zmian`}
+              <span className="wiz-attr-dirty-dot" aria-hidden />
+              {dirtyCount === 1
+                ? "1 niezapisana zmiana"
+                : `${dirtyCount} niezapisane zmiany`}
             </p>
             <div className="wiz-services-sticky-actions">
               <button
@@ -298,7 +297,7 @@ export function AtrybutyView({
               <button
                 type="button"
                 className="ui-btn ui-btn-primary ui-btn-sm"
-                disabled={pending || !dirty}
+                disabled={pending}
                 onClick={saveDrafts}
               >
                 {pending ? (
@@ -330,24 +329,29 @@ function BoolAttrRow({
   meta,
   value,
   editing,
+  dirty,
   onChange,
 }: {
   meta: GbpAttributeMetadata;
   value: boolean | null;
   editing: boolean;
+  dirty?: boolean;
   onChange: (value: boolean) => void;
 }) {
   const label = meta.displayName ?? attributeId(meta.parent);
 
   return (
-    <li className="wiz-attr-row">
+    <li className={`wiz-attr-row${dirty ? " is-dirty" : ""}`}>
       <span className="wiz-field-content">{label}</span>
       {editing ? (
-        <YesNoToggle
-          value={value}
-          onYes={() => onChange(true)}
-          onNo={() => onChange(false)}
-        />
+        <span className="wiz-attr-control">
+          {dirty ? <span className="wiz-attr-dirty-dot" aria-hidden /> : null}
+          <YesNoToggle
+            value={value}
+            onYes={() => onChange(true)}
+            onNo={() => onChange(false)}
+          />
+        </span>
       ) : (
         <span className="wiz-field-content wiz-attr-value">
           {displayBool(value)}
@@ -361,11 +365,13 @@ function EnumAttrRow({
   meta,
   value,
   editing,
+  dirty,
   onChange,
 }: {
   meta: GbpAttributeMetadata;
   value: string | null;
   editing: boolean;
+  dirty?: boolean;
   onChange: (value: string | null) => void;
 }) {
   const label = meta.displayName ?? attributeId(meta.parent);
@@ -384,17 +390,18 @@ function EnumAttrRow({
     "Brak";
 
   return (
-    <li className="wiz-attr-row">
+    <li className={`wiz-attr-row${dirty ? " is-dirty" : ""}`}>
       <span className="wiz-field-content">{label}</span>
       {editing ? (
-        <div className="wiz-attr-control">
+        <span className="wiz-attr-control">
+          {dirty ? <span className="wiz-attr-dirty-dot" aria-hidden /> : null}
           <UiSelect
             aria-label={label}
             value={value ?? ""}
             options={options}
             onChange={(next) => onChange(next || null)}
           />
-        </div>
+        </span>
       ) : (
         <span className="wiz-field-content wiz-attr-value">
           {value ? display : "Brak"}
@@ -409,12 +416,14 @@ function RepeatedEnumAttrBlock({
   setValues,
   unsetValues,
   editing,
+  dirty,
   onChange,
 }: {
   meta: GbpAttributeMetadata;
   setValues: string[];
   unsetValues: string[];
   editing: boolean;
+  dirty?: boolean;
   onChange: (setValues: string[], unsetValues: string[]) => void;
 }) {
   const set = new Set(setValues);
@@ -436,30 +445,38 @@ function RepeatedEnumAttrBlock({
               ? false
               : null;
           return (
-            <li key={optId} className="wiz-attr-row">
+            <li
+              key={optId}
+              className={`wiz-attr-row${dirty ? " is-dirty" : ""}`}
+            >
               <span className="wiz-field-content">
                 {opt.displayName ?? optId}
               </span>
               {editing ? (
-                <YesNoToggle
-                  value={state}
-                  onYes={() => {
-                    const nextSet = new Set(setValues);
-                    const nextUnset = new Set(unsetValues);
-                    nextSet.delete(optId);
-                    nextUnset.delete(optId);
-                    nextSet.add(optId);
-                    onChange([...nextSet], [...nextUnset]);
-                  }}
-                  onNo={() => {
-                    const nextSet = new Set(setValues);
-                    const nextUnset = new Set(unsetValues);
-                    nextSet.delete(optId);
-                    nextUnset.delete(optId);
-                    nextUnset.add(optId);
-                    onChange([...nextSet], [...nextUnset]);
-                  }}
-                />
+                <span className="wiz-attr-control">
+                  {dirty ? (
+                    <span className="wiz-attr-dirty-dot" aria-hidden />
+                  ) : null}
+                  <YesNoToggle
+                    value={state}
+                    onYes={() => {
+                      const nextSet = new Set(setValues);
+                      const nextUnset = new Set(unsetValues);
+                      nextSet.delete(optId);
+                      nextUnset.delete(optId);
+                      nextSet.add(optId);
+                      onChange([...nextSet], [...nextUnset]);
+                    }}
+                    onNo={() => {
+                      const nextSet = new Set(setValues);
+                      const nextUnset = new Set(unsetValues);
+                      nextSet.delete(optId);
+                      nextUnset.delete(optId);
+                      nextUnset.add(optId);
+                      onChange([...nextSet], [...nextUnset]);
+                    }}
+                  />
+                </span>
               ) : (
                 <span className="wiz-field-content wiz-attr-value">
                   {displayBool(state)}
