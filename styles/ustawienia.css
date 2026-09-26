@@ -1,0 +1,14 @@
+/* Ustawienia: kontekst firmy. */
+
+@layer components {
+  .kontekst-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .kontekst-field {
+    display: flex;
+    flex-direction: column;
+  }
+}

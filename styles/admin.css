@@ -1,0 +1,226 @@
+/* Panel administratora. */
+
+@layer components {
+  .admin-shell {
+    height: 100%;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--background);
+    font-family: var(--font-sans);
+  }
+
+  .admin-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    height: 56px;
+    min-height: 56px;
+    padding: 0 var(--space-4);
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+}
+
+@layer components {
+  @media (min-width: 900px) {
+    .admin-topbar {
+      padding: 0 var(--space-6);
+    }
+  }
+}
+
+@layer components {
+  .admin-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--foreground);
+    min-width: 0;
+  }
+
+  .admin-topbar-user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .admin-topbar-email {
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 18rem;
+  }
+
+  .admin-main {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-7) var(--space-7);
+  }
+}
+
+@layer components {
+  @media (max-width: 899px) {
+    .admin-main {
+      padding: var(--space-4);
+    }
+
+    .admin-topbar-email {
+      display: none;
+    }
+  }
+}
+
+@layer components {
+  .admin-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .admin-section-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .admin-table-body {
+    padding: 0;
+    gap: 0;
+  }
+
+  .admin-accounts-search {
+    width: min(100%, 20rem);
+  }
+
+  .admin-accounts-search .ui-search-input {
+    border-radius: 999px;
+  }
+
+  .admin-table-wrap {
+    overflow-x: auto;
+  }
+
+  .admin-table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-base);
+    font-family: var(--font-sans);
+  }
+
+  .admin-table-wrap th,
+  .admin-table-wrap td {
+    padding: var(--space-3) var(--space-5);
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .admin-table-wrap th {
+    font-size: var(--type-xs);
+    font-weight: 600;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: transparent;
+  }
+
+  .admin-table-wrap tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .admin-col-toggle {
+    width: 2.5rem;
+    padding-right: 0;
+  }
+
+  .admin-expand-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 0;
+    border-radius: calc(var(--radius) - 2px);
+    background: transparent;
+    color: var(--muted-foreground);
+    cursor: pointer;
+  }
+
+  .admin-expand-btn:hover {
+    background: var(--secondary);
+    color: var(--foreground);
+  }
+
+  .admin-expand-btn svg {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 2;
+    transition: transform 0.15s ease;
+  }
+
+  .admin-expand-btn svg.is-open {
+    transform: rotate(180deg);
+  }
+
+  .admin-email-btn {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    font-size: var(--type-base);
+    font-weight: 600;
+    color: var(--foreground);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .admin-email-btn:hover {
+    color: var(--brand-deep);
+  }
+
+  .admin-account-row:hover {
+    background: color-mix(in srgb, var(--secondary) 55%, transparent);
+  }
+
+  .admin-profile-row td {
+    background: color-mix(in srgb, var(--secondary) 35%, var(--card));
+  }
+
+  .admin-profile-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding-left: var(--space-4);
+    border-left: 2px solid var(--brand-soft);
+  }
+
+  .admin-profile-name {
+    font-size: var(--type-base);
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .admin-profile-meta {
+    font-size: var(--type-xs);
+    color: var(--muted-foreground);
+  }
+
+  .admin-empty {
+    color: var(--muted-foreground);
+    text-align: center;
+    font-size: var(--type-sm);
+  }
+}

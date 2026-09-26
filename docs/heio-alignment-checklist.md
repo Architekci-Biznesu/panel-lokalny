@@ -90,9 +90,9 @@ PL: `@layer components`.
 - [ ] Nowe klasy `ui-*` pisać w tym samym stylu co reszta PL **albo** stopniowo przechodzić na `@utility` jak Heio (jeden PR architekturalny)
 
 ### 11. Rozbicie plików (opcjonalne, później)
-- [ ] `app/styles/ui.css` - same `ui-*`
-- [ ] Domena zostaje: `wiz-*.css` / sekcje w globals
-- Cel: `globals.css` = tokeny + importy, nie 5k+ linii wszystkiego
+- [x] `styles/ui.css` - same `ui-*`, `styles/tokens.css` - tokeny
+- [x] Domena: po jednym pliku na moduł w `styles/` (`wizytowka.css`, `raporty.css`, `pulpit.css`...)
+- [x] `globals.css` = importy + `@theme`; pilnuje tego `npm run lint:css`
 
 ---
 

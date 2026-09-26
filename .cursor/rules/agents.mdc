@@ -17,7 +17,26 @@ Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 + shadcn/ui + Zod + React 
 
 **Obowiązuje Styl 4** - pełna specyfikacja, makiety PNG i lista zadań: `docs/design/styl-4/README.md` (reguła `.cursor/rules/styl-4.mdc`).
 
-Wszystkie tokeny (kolory, radius, cienie, fonty) w jednym pliku `app/globals.css` (`:root`), jako CSS custom properties - nie definiuj kolorów/promieni inline w komponentach. Najważniejsze:
+**Gdzie są style (nie dopisuj reguł do `app/globals.css` - to tylko importy + `@theme`):**
+
+| Plik | Zawartość |
+|---|---|
+| `styles/tokens.css` | wszystkie tokeny (`:root`) - jedyne miejsce z wartościami kolorów/promieni/cieni/fontów |
+| `styles/base.css` | reset, `html` / `body` |
+| `styles/ui.css` | design system `.ui-*`, `.banner`, `.locked-note`, `.page-header`, toasty |
+| `styles/shell.css` | navbar, szuflada, przełącznik profilu (`.app-*`, `.topnav*`, `.profile-*`) |
+| `styles/auth.css` | logowanie, rejestracja, onboarding (`.split-*`, `.auth-*`, `.brief-*`...) |
+| `styles/<moduł>.css` | po jednym pliku na moduł: `wizytowka` (`.wiz-*`), `raporty` (`.rank-*`, `.wiz-report*`, `.wiz-range*`), `pulpit` (`.pulpit-*`), `admin`, `ustawienia` |
+
+Zasady:
+- Kolor, promień, cień = tylko `var(--token)`. Brakuje wartości - dodaj token w `styles/tokens.css`. Hex poza tokenami blokuje `npm run lint:css`.
+- **Nowy moduł** (np. Publikacje): klasy z własnym prefiksem (`.pub-*`), nowy plik `styles/publikacje.css` z `@layer components { ... }`, import w `app/globals.css` w miejscu oznaczonym komentarzem, prefiks dopisany do `PREFIXES` w `scripts/check-styles.mjs`.
+- Wspólne elementy (przycisk, pole, pill, karta) tylko przez `.ui-*` z `styles/ui.css`. Nie kopiuj ich stylów do pliku modułu; wariant potrzebny w wielu modułach dodaj do `ui.css`.
+- Plik modułu styluje tylko klasy swojego prefiksu (wyjątek: dopasowanie `.ui-*` w kontekście modułu, np. `.wiz-page .ui-btn`). Nie nadpisuj klas innego modułu.
+- Każdy selektor definiuj raz w pliku; wariant responsywny w `@media` zaraz pod nim. Breakpointy: `639px` / `899px` / `1099px` / `1279px` (max-width).
+- Po zmianie stylów: `npm run lint:css`.
+
+Najważniejsze tokeny:
 
 - Marka indygo `--brand:#4f46e5` (`--brand-deep`, `--brand-soft`, `--brand-50`, `--brand-100`), akcent koral `--warning:#f26b3a` (`--warning-foreground`, `--warning-soft`).
 - Płótno `--canvas:#f5f5f5`, kafle `--card:#fff`, tekst `--foreground:#0a0a0a`, główne CTA `--primary:#171717`, opisy `--muted-foreground:#737373`, separatory `--border:#e5e5e5`.
@@ -28,7 +47,7 @@ Ikony: obrys, `stroke-width:2`, zaokrąglone końce - `lucide-react`. Font 14px 
 
 Przyciski: zawsze klasy globalne `.ui-btn` (+ `-primary` / `-secondary` / `-white` / `-outline` / `-ghost` / `-danger`, opcjonalnie `-sm`) - pigułki 36 px (`--btn-height`) i 32 px (`--btn-height-sm`). **Primary CTA jest czarny**, nie fiolet - indygo (`--brand`) to marka i accent. Na szarym płótnie drugorzędny przycisk to `.ui-btn-white`. Nie nadpisuj lokalnie `padding` / `height` / `font-size` na przyciskach.
 
-Globalne klasy komponentowe w `@layer components` - nie powtarzaj tego samego zestawu klas Tailwind w każdym miejscu z kartą/przyciskiem/statusem. Minimalny zestaw: `.ui-card`, `.ui-section`, `.ui-btn` (+ `-primary`/`-secondary`/`-white`/`-outline`/`-ghost`/`-danger`, + `-sm`), `.ui-field`/`.ui-select`/`.ui-textarea`, `.ui-check`, `.ui-search`, `.ui-pill` (+ `-success`/`-danger`/`-warn`/`-info`/`-neutral`), `.ui-kpi`, `.ui-table-shell`, `.banner`, `.locked-note`.
+Globalne klasy komponentowe (`styles/ui.css`, `@layer components`) - nie powtarzaj tego samego zestawu klas Tailwind w każdym miejscu z kartą/przyciskiem/statusem. Minimalny zestaw: `.ui-card`, `.ui-section`, `.ui-btn` (+ `-primary`/`-secondary`/`-white`/`-outline`/`-ghost`/`-danger`, + `-sm`), `.ui-field`/`.ui-select`/`.ui-textarea`, `.ui-check`, `.ui-search`, `.ui-pill` (+ `-success`/`-danger`/`-warn`/`-info`/`-neutral`), `.ui-kpi`, `.ui-table-shell`, `.banner`, `.locked-note`.
 
 Dropdowny: komponent `UiSelect` + klasy `.ui-select` / `.ui-select-menu` / `.ui-select-option` (nie natywny `<select>` - lista opcji też w design systemie, hover/selected w kolorach brand). Checkboxy: zawsze `.ui-check`. Szukajka: `.ui-search` + `.ui-search-input` (ikona lupki).
 

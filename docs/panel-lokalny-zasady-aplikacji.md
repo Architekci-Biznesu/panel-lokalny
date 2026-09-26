@@ -8,7 +8,7 @@ Dokument referencyjny dla kodu (do wklejenia jako kontekst dla Cursor/Claude Cod
 
 Wygląd aplikacji ma odpowiadać makiecie (https://claude.ai/artifact/Wn2ZrSXrAJ64WWwh28aFTY) - poniższe tokeny są wyciągnięte wprost z jej kodu, nie do wymyślania na nowo.
 
-**Design tokeny (`globals.css`, `:root`)**
+**Design tokeny (`styles/tokens.css`, `:root`)**
 
 ```css
 :root{
@@ -53,7 +53,7 @@ Ikony: obrys (nie wypełnienie), `stroke-width:2`, zaokrąglone końce (`stroke-
 
 **Biblioteka globalnych klas komponentowych** (nazewnictwo z makiety, do przeniesienia 1:1 jako `@layer components`): `.ui-card`, `.ui-section` (kontener sekcji - pojedyncza ramka + tło, patrz zasada niżej), `.ui-btn` + warianty `-primary` / `-outline` / `-ghost` / `-danger` + rozmiar `-sm`, `.ui-field` / `.ui-select` / `.ui-textarea` (focus: `box-shadow:0 0 0 3px` w kolorze `--ring`), `.ui-pill` + warianty `-heio` / `-heio-soft` / `-info` / `-success` / `-danger` / `-neutral` / `-warn` (statusy i etykiety), `.ui-kpi` (kafelki liczbowe na dashboardzie), `.ui-table-shell`, `.banner` / `.category-note` (komunikaty informacyjne w kolorze marki), `.locked-note` (funkcja zablokowana/do dokupienia).
 
-**Jeden globalny plik stylów.** Wszystkie tokeny (kolory, spacing, promienie zaokrągleń, cienie, typografia) definiowane jako CSS custom properties w jednym pliku (`globals.css`), nie rozrzucone po komponentach. Tailwind config czyta te tokeny, nie definiuje własnych równoległych wartości.
+**Jeden plik tokenów.** Wszystkie tokeny (kolory, spacing, promienie zaokrągleń, cienie, typografia) definiowane jako CSS custom properties w jednym pliku (`styles/tokens.css`), nie rozrzucone po komponentach. Style komponentów: `styles/ui.css` (design system) + po jednym pliku na moduł w `styles/`, wszystkie importowane w `app/globals.css`. Tailwind config czyta te tokeny, nie definiuje własnych równoległych wartości.
 
 **Globalne klasy, nie powtarzany inline-soup.** Powtarzalne wzorce (karta, przycisk, pigułka statusu, input) definiowane raz jako klasa w warstwie `@layer components` (np. `.ui-card`, `.ui-btn`, `.ui-pill`) - tak jak w makiece. Nie kopiuj tego samego zestawu 15 klas Tailwind w każdym miejscu, gdzie występuje karta - to źle się skaluje i przy zmianie designu trzeba poprawiać w dziesiątkach miejsc zamiast w jednym.
 

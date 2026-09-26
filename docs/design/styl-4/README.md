@@ -8,7 +8,7 @@ Style (tokeny, klasy `.ui-*`, nadpisania Wizytówki) są JUŻ w repo - etapy 1-5
 
 1. **Obraz = cel.** `screens/*.png` to docelowy wygląd 1:1 (szerokość 1440 px). Zawsze otwórz PNG ekranu, nad którym pracujesz.
 2. **HTML = wymiary.** `html/*.html` to wyrenderowany DOM makiety z inline stylami - stąd bierz dokładne px, gapy, rozmiary fontów i kolory.
-   **Nie kopiuj inline stylów do komponentów.** Zamień je na tokeny z `app/globals.css` i klasy (`.ui-*`, `.wiz-*`, `.split-*`, ...). Brakujące klasy dopisz w `@layer components` w `app/globals.css` (sekcja "Styl 4").
+   **Nie kopiuj inline stylów do komponentów.** Zamień je na tokeny z `styles/tokens.css` i klasy (`.ui-*`, `.wiz-*`, `.split-*`, ...). Brakujące klasy dopisz w pliku modułu w `styles/` (np. `styles/wizytowka.css`), w `@layer components`.
 3. **Treści w nawiasach** (`[Nazwa firmy]`, `[data]`, `[n]`) to placeholdery - podstaw prawdziwe dane z istniejących propsów/loaderów. Stałe teksty (nagłówki, etykiety, przyciski, empty states) przepisz dosłownie.
 4. **Nie zmieniaj logiki.** Server actions, loadery, typy, walidacja, API Google, BullMQ - bez zmian. Zmieniasz JSX, klasy i CSS. Jeśli makieta pokazuje daną, której nie ma w propsach - zostaw TODO w komentarzu i zgłoś, nie wymyślaj zapytań.
 5. **Jedno zadanie = jeden commit** z prefiksem `Styl 4 - Zx:` (np. `Styl 4 - Z3: Wizytówka - Informacje`). Dzięki temu weryfikacja idzie zadanie po zadaniu.
@@ -38,7 +38,7 @@ Style (tokeny, klasy `.ui-*`, nadpisania Wizytówki) są JUŻ w repo - etapy 1-5
 
 ## 1. Fundamenty
 
-Plik: `screens/01-fundamenty.png`. Wszystko już jest w `:root` w `app/globals.css` - używaj zmiennych, nie hexów.
+Plik: `screens/01-fundamenty.png`. Wszystko jest w `styles/tokens.css` - używaj zmiennych, nie hexów.
 
 **Kolory**
 
