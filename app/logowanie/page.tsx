@@ -1,18 +1,31 @@
 import { LoginForm } from "@/features/auth/auth-forms";
-import { SplitScreenLayout } from "@/features/shell/split-screen";
+import {
+  AuthAltTop,
+  SplitScreenLayout,
+} from "@/features/shell/split-screen";
 
 export default function LoginPage() {
   return (
     <SplitScreenLayout
       hero={{
-        headline: "Panel dla lokalnych firm",
-        description: "Wszystko, czego potrzebujesz, w jednym miejscu.",
+        topic: "Panel dla lokalnych firm",
+        headline: "Wszystko, czego potrzebujesz, w jednym miejscu.",
+        description:
+          "Strona WWW, wizytówka Google, publikacje, opinie i kampanie SMS/e-mail - AI przygotowuje, Ty akceptujesz.",
+        decor: "login",
         showTrustBar: true,
       }}
+      topRight={
+        <AuthAltTop
+          href="/rejestracja"
+          prompt="Nie masz konta?"
+          action="Zarejestruj się"
+        />
+      }
     >
       <h1>Logowanie</h1>
       <p className="split-right-lead">
-        Zaloguj się, żeby zarządzać wizytówką, publikacjami i opiniami.
+        Zaloguj się, żeby zarządzać stroną, wizytówką, publikacjami i kampaniami.
       </p>
       <LoginForm />
     </SplitScreenLayout>

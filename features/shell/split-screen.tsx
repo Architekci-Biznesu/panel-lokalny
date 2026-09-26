@@ -1,36 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, Users } from "lucide-react";
+import { LogOut, Sparkles } from "lucide-react";
 import { logoutAction } from "@/features/auth/actions";
 import { BrandLogo } from "@/features/shell/brand-logo";
 import {
-  SplitLeftCarousel,
-  type CarouselSlide,
-} from "@/features/shell/split-left-carousel";
+  SplitHeroDecor,
+  type SplitDecorVariant,
+} from "@/features/shell/split-hero-decor";
 
-export const AUTH_CAROUSEL_SLIDES: CarouselSlide[] = [
-  {
-    src: "/images/auth/carousel-1.png",
-    alt: "Lokalny biznes - właścicielka salonu",
-  },
-  {
-    src: "/images/auth/carousel-2.png",
-    alt: "Lokalny biznes - właściciel piekarni",
-  },
-  {
-    src: "/images/auth/carousel-3.png",
-    alt: "Lokalny biznes - właścicielka kawiarni",
-  },
-];
+const HERO_IMAGE = {
+  src: "/images/auth/lokalny-przedsiebiorca.jpg",
+  alt: "Lokalny przedsiębiorca",
+};
 
 export type SplitHero = {
-  /** @deprecated Prefer images / AUTH_CAROUSEL_SLIDES */
-  imageSrc?: string;
-  imageAlt?: string;
-  images?: CarouselSlide[];
+  topic?: string;
   headline: string;
   description: string;
-  step?: { current: number; total: number };
+  decor?: SplitDecorVariant;
   showTrustBar?: boolean;
   user?: { name: string; email: string } | null;
 };
@@ -53,93 +40,118 @@ function BrandMark() {
   );
 }
 
+function userInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+}
+
+function FormUserChip({
+  user,
+}: {
+  user: { name: string; email: string };
+}) {
+  return (
+    <div className="split-form-user">
+      <div className="split-form-user-text">
+        <p className="split-form-user-name">{user.name}</p>
+        <p className="split-form-user-email mono">{user.email}</p>
+      </div>
+      <span className="split-form-user-avatar" aria-hidden>
+        {userInitials(user.name)}
+      </span>
+      <form action={logoutAction}>
+        <button type="submit" className="split-logout" aria-label="Wyloguj">
+          <LogOut aria-hidden />
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function TrustBar() {
+  return (
+    <div className="trust-bar">
+      <span className="trust-avatars" aria-hidden>
+        <span className="trust-avatar" />
+        <span className="trust-avatar" />
+        <span className="trust-avatar" />
+      </span>
+      <span className="trust-item">
+        <span className="mono">+300</span> klientów
+      </span>
+      <span className="trust-sep" aria-hidden />
+      <span className="trust-item">
+        <span className="mono">4.9/5</span> · <span className="mono">209</span>{" "}
+        opinii Google
+      </span>
+    </div>
+  );
+}
+
 export function SplitScreenLayout({
   hero,
   children,
   topRight,
 }: SplitScreenProps) {
-  const slides: CarouselSlide[] =
-    hero.images && hero.images.length > 0
-      ? hero.images
-      : hero.imageSrc
-        ? [{ src: hero.imageSrc, alt: hero.imageAlt ?? "" }]
-        : AUTH_CAROUSEL_SLIDES;
+  const headerRight =
+    topRight || hero.user ? (
+      <div className="split-top-right-stack">
+        {topRight}
+        {hero.user ? <FormUserChip user={hero.user} /> : null}
+      </div>
+    ) : null;
 
   return (
     <div className="split-screen">
-      {/* Styl 4: lewy biały kafel z formularzem, prawy kafel ze zdjęciem na indygo */}
       <section className="split-right" id="split-right">
         <header className="split-form-top">
           <BrandMark />
-          {topRight ? <div className="split-top-right">{topRight}</div> : null}
+          {headerRight ? (
+            <div className="split-top-right">{headerRight}</div>
+          ) : null}
         </header>
         <div className="split-form-body">
           <div className="split-right-inner">{children}</div>
         </div>
         <footer className="split-form-foot">
           <span>© {new Date().getFullYear()} Architekci Biznesu</span>
+          <span className="split-form-foot-links">
+            <a href="#">Regulamin</a>
+            <a href="#">Polityka prywatności</a>
+          </span>
         </footer>
       </section>
 
       <aside className="split-left">
-        <SplitLeftCarousel slides={slides} />
+        <div className="split-left-media">
+          <Image
+            src={HERO_IMAGE.src}
+            alt={HERO_IMAGE.alt}
+            fill
+            priority
+            className="split-left-image"
+            sizes="(max-width: 900px) 100vw, 50vw"
+          />
+        </div>
         <div className="split-hero-tint" aria-hidden />
         <div className="split-left-overlay">
           <div className="split-left-copy">
+            {hero.topic ? (
+              <span className="split-topic-pill">
+                <Sparkles aria-hidden />
+                {hero.topic}
+              </span>
+            ) : null}
             <h2 className="split-headline">{hero.headline}</h2>
             <p className="split-desc">{hero.description}</p>
           </div>
 
-          <div className="split-left-bottom">
-            {hero.showTrustBar ? (
-              <div className="trust-bar">
-                <span className="trust-item">
-                  <Users aria-hidden className="trust-users-icon" />
-                  <span className="mono">+300</span> klientów
-                </span>
-                <span className="trust-sep" aria-hidden />
-                <span className="trust-item">
-                  <span className="mono">4.9/5</span> · <span className="mono">209</span> opinii
-                </span>
-                <span className="trust-logos">
-                  <Image
-                    src="/images/brand/google.png"
-                    alt="Google"
-                    width={46}
-                    height={15}
-                    className="trust-logo-google"
-                  />
-                  <span className="trust-trustindex">
-                    <Image
-                      src="/images/brand/trustindex.svg"
-                      alt=""
-                      width={14}
-                      height={14}
-                      className="trust-logo-trustindex"
-                    />
-                    Trustindex
-                  </span>
-                </span>
-              </div>
-            ) : null}
+          {hero.decor ? <SplitHeroDecor variant={hero.decor} /> : null}
 
-            {hero.user ? (
-              <div className="split-user-bar">
-                <div>
-                  <p className="split-user-name">{hero.user.name}</p>
-                  <p className="split-user-email">{hero.user.email}</p>
-                </div>
-                <form action={logoutAction}>
-                  <button
-                    type="submit"
-                    className="split-logout"
-                    aria-label="Wyloguj"
-                  >
-                    <LogOut aria-hidden />
-                  </button>
-                </form>
-              </div>
-            ) : null}
+          <div className="split-left-bottom">
+            {hero.showTrustBar ? <TrustBar /> : null}
           </div>
         </div>
       </aside>
@@ -159,6 +171,25 @@ export function AuthAltLink({
   return (
     <p className="auth-alt">
       {prompt} <Link href={href}>{action}</Link>
+    </p>
+  );
+}
+
+export function AuthAltTop({
+  href,
+  prompt,
+  action,
+}: {
+  href: string;
+  prompt: string;
+  action: string;
+}) {
+  return (
+    <p className="auth-alt auth-alt-top">
+      <span>{prompt}</span>
+      <Link href={href} className="ui-btn ui-btn-secondary ui-btn-sm">
+        {action}
+      </Link>
     </p>
   );
 }
