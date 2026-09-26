@@ -1,0 +1,18 @@
+---
+description: Styl 4 (redesign UI) - przy każdej zmianie wyglądu ekranów, komponentów, CSS lub przy zadaniach "Styl 4 - Zx".
+globs: app/**/*.tsx,features/**/*.tsx,app/globals.css
+alwaysApply: false
+---
+
+# Styl 4 - redesign UI
+
+Specyfikacja i makiety: `docs/design/styl-4/README.md` (przeczytaj w całości przed zadaniem Zx).
+- `docs/design/styl-4/screens/*.png` - cel wizualny 1440 px (warianty stanów: `*--*.png`).
+- `docs/design/styl-4/html/*.html` - DOM makiety z inline stylami - źródło dokładnych wymiarów. Nie kopiuj inline stylów: mapuj na tokeny i klasy z `app/globals.css`.
+
+Zasady skrócone:
+- Szare płótno `--canvas`, białe kafle r24 (`--radius-card`) z `--shadow-card`, bez obramowań. Pigułki (r999) dla przycisków, pól, pilli, segmentów.
+- Główne CTA czarne (`.ui-btn-primary`); na płótnie drugorzędne `.ui-btn-white`. Indygo `--brand` = marka; koral `--warning` = akcent (kroki, niezapisane zmiany, luki).
+- JetBrains Mono (`.mono`) dla liczb, dat, godzin, telefonów, URL-i, liczników znaków; Geist dla reszty.
+- Zmieniasz JSX/klasy/CSS - nie logikę, server actions ani typy.
+- Jeden commit na zadanie: `Styl 4 - Zx: ...`.
