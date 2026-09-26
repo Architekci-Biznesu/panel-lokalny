@@ -78,11 +78,11 @@ export const METRIC_SHORT_LABELS: Record<DailyMetric, string> = {
 };
 
 export const REPORT_COLORS = {
-  maps: "#6d4de8",
-  search: "#14b8a6",
-  directions: "#f59e0b",
-  calls: "#6d4de8",
-  website: "#14b8a6",
+  maps: "#4f46e5",
+  search: "#a5b4fc",
+  directions: "#f26b3a",
+  calls: "#4f46e5",
+  website: "#a5b4fc",
 } as const;
 
 export const MAX_RANGE_MONTHS = 18;

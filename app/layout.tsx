@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Montserrat } from "next/font/google";
+import { Geist, JetBrains_Mono } from "next/font/google";
 import { GooeyToaster } from "@/features/shell/gooey-toaster";
 import "./globals.css";
 
-const montserrat = Montserrat({
+const geist = Geist({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-montserrat",
+  variable: "--font-geist",
   display: "swap",
 });
 
@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="pl"
-      className={`${montserrat.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${geist.variable} ${jetbrainsMono.variable} h-full`}
       suppressHydrationWarning
     >
       <body className="h-full overflow-hidden" suppressHydrationWarning>

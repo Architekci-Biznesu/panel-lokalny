@@ -10,6 +10,18 @@
   --color-brand: var(--brand);
   --color-brand-deep: var(--brand-deep);
   --color-brand-soft: var(--brand-soft);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-canvas: var(--canvas);
+  --color-canvas-strong: var(--canvas-strong);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-heading: var(--font-sans);
@@ -56,28 +68,49 @@
 }
 
 :root {
-  --brand: #6d4de8;
-  --brand-deep: #4c2fd4;
-  --brand-soft: #c4b5fd;
-  --background: #fafafa;
-  --foreground: #171717;
+  /* Styl 4 - marka: indygo, akcent: koral (paleta P4) */
+  --brand: #4f46e5;
+  --brand-deep: #3730a3;
+  --brand-soft: #a5b4fc;
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  /* Styl 4 - szare płótno, białe kafle */
+  --background: #f5f5f5;
+  --canvas: #f5f5f5;
+  --canvas-strong: #ebebeb;
+  --foreground: #0a0a0a;
   --card: #ffffff;
   --primary: #171717;
   --primary-foreground: #fafafa;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #27272a;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f5f3ff;
-  --accent-foreground: #4c2fd4;
-  --destructive: #dc2626;
-  --border: #e4e4e7;
-  --input: #d4d4d8;
-  --ring: #6d4de8;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #eef2ff;
+  --accent-foreground: #3730a3;
+  --destructive: #e7000b;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #a1a1a1;
+  /* Statusy i wykresy */
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --warning: #f26b3a;
+  --warning-foreground: #e5582b;
+  --warning-soft: #fef0eb;
+  --info: #6366f1;
+  --chart-1: #4f46e5;
+  --chart-2: #f26b3a;
+  --chart-3: #a5b4fc;
+  /* Radiusy stylu 4 (komponenty przechodzą na nie w etapie 2) */
+  --radius-pill: 999px;
+  --radius-card: 24px;
+  --radius-block: 16px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -16px rgba(0, 0, 0, 0.1);
   --radius: 0.5rem;
   --btn-height: 32px;
   --btn-height-sm: 28px;
-  --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
+  --font-sans: var(--font-geist), "Geist", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
   /* Type scale: page 24 / section 15 / body 14 / meta 12 / badge 10 (+ lg/sm for legacy) */
   --type-xl: 24px;
@@ -96,10 +129,10 @@
   --space-6: 32px;
   --space-7: 40px;
   --sidebar: #ffffff;
-  --sidebar-foreground: #3f3f46;
-  --sidebar-accent: #f5f3ff;
-  --sidebar-accent-foreground: #4c2fd4;
-  --sidebar-border: #e4e4e7;
+  --sidebar-foreground: #404040;
+  --sidebar-accent: #eef2ff;
+  --sidebar-accent-foreground: #3730a3;
+  --sidebar-border: #e5e5e5;
 }
 
 @layer base {
@@ -560,8 +593,8 @@
   }
 
   .ui-pill-info {
-    background: #e0e7ff;
-    color: #3730a3;
+    background: var(--brand-100);
+    color: var(--brand-deep);
   }
 
   .ui-pill-neutral {
@@ -630,30 +663,16 @@
   .sidebar-brand-mark,
   .brand-logo {
     position: relative;
+    display: inline-flex;
     width: 2rem;
     height: 2rem;
     flex-shrink: 0;
   }
 
-  .brand-logo span {
-    position: absolute;
-    width: 1.35rem;
-    height: 1.35rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--brand) 85%, white);
-    opacity: 0.9;
-  }
-
-  .brand-logo span:first-child {
-    left: 0;
-    top: 0.2rem;
-  }
-
-  .brand-logo span:last-child {
-    right: 0;
-    bottom: 0.1rem;
-    background: var(--brand-deep);
-    opacity: 0.75;
+  .brand-logo svg {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 
   .sidebar-brand-text {
@@ -6432,4 +6451,39 @@
       width: 100%;
     }
   }
+}
+
+
+/* Styl 4 - gooey-toast w motywie panelu. Kolor tylko w ikonie, tytuł ciemny, przyciski neutralne. */
+:root {
+  --gooey-state-success: var(--success);
+  --gooey-state-error: var(--destructive);
+  --gooey-state-warning: var(--warning-foreground);
+  --gooey-state-info: var(--info);
+  --gooey-state-loading: var(--muted-foreground);
+  --gooey-state-action: var(--primary);
+}
+
+[data-gooey-viewport] {
+  font-family: var(--font-sans);
+}
+
+[data-gooey-title] {
+  color: var(--foreground) !important;
+  font-weight: 500;
+  text-transform: none;
+}
+
+[data-gooey-description] {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+[data-gooey-button] {
+  background: var(--secondary) !important;
+  color: var(--primary) !important;
+}
+
+[data-gooey-button]:hover {
+  background: var(--canvas-strong) !important;
 }
