@@ -2,26 +2,18 @@
 
 import { useEffect, useMemo } from "react";
 import L from "leaflet";
+import { maplibreGL } from "@maplibre/maplibre-gl-leaflet";
 import { Minus, Plus } from "lucide-react";
-import {
-  MapContainer,
-  Marker,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, Marker, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 /**
- * Podkład mapy - jedno miejsce do podmiany dostawcy.
- * OSM jest darmowy, ale jego serwery nie są przeznaczone do ruchu z aplikacji
- * komercyjnych; minimalistyczny wygląd daje filtr CSS na .rank-map-canvas
- * (styles/raporty.css). Przy przejściu na płatny podkład (np. Stadia
- * "alidade_smooth" albo MapTiler "dataviz") zmień URL i atrybucję, a filtr usuń.
+ * Podkład mapy: OpenFreeMap - otwarte kafelki wektorowe OSM, bez konta, kluczy
+ * i limitów, dozwolone komercyjnie. Atrybucję (OpenFreeMap, OpenMapTiles, OSM)
+ * dokłada sam styl. Inne style: /styles/bright, /styles/liberty.
  */
-const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
 
 export type RankMapPoint = {
   lat: number;
@@ -86,6 +78,18 @@ function centerIndex(points: RankMapPoint[]): number {
     }
   });
   return best;
+}
+
+/** Podkład wektorowy (MapLibre) jako warstwa Leafleta - piny i kontrolki bez zmian. */
+function VectorBasemap() {
+  const map = useMap();
+  useEffect(() => {
+    const layer = maplibreGL({ style: MAP_STYLE }).addTo(map);
+    return () => {
+      map.removeLayer(layer);
+    };
+  }, [map]);
+  return null;
 }
 
 /** Własne przyciski +/- (styl aplikacji) i atrybucja bez flagi Leafleta. */
@@ -185,7 +189,7 @@ export function RankMap({
           className="rank-map-canvas"
           style={canvasHeight ? { height: canvasHeight } : undefined}
         >
-          <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} />
+          <VectorBasemap />
           <FitBounds points={points} />
           <MapControls />
           {points.map((point, index) => {

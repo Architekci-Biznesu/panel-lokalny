@@ -319,6 +319,8 @@
     min-width: 0;
     border-radius: 20px;
     overflow: hidden;
+    /* własny kontekst warstw: z-indexy Leafleta i legendy nie wychodzą nad nakładki aplikacji */
+    isolation: isolate;
   }
 
   .rank-map-canvas {
@@ -327,11 +329,6 @@
     z-index: 0;
     background: var(--canvas);
     font-family: var(--font-sans);
-  }
-
-  /* Minimalistyczny podkład: wyszarzone kafelki OSM, kolorowe są tylko pinezki. */
-  .rank-map-canvas .leaflet-tile-pane {
-    filter: grayscale(1) brightness(1.06) contrast(0.88);
   }
 
   .rank-map-loading,
