@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useTransition } from "react";
-import { ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowRight, ExternalLink, Loader2, MapPinned } from "lucide-react";
 import { toast } from "gooey-toast";
 import { requestNapInterest } from "@/features/wizytowka/actions";
 
@@ -157,13 +157,19 @@ export function NapView({ requestsCount }: { requestsCount: number }) {
         </section>
 
         <aside className="wiz-nap-cta">
-          <span className="ui-pill ui-pill-neutral">Status</span>
-          <h3 className="wiz-nap-cta-title">Więcej wpisów = spójniejszy NAP</h3>
-          <p className="wiz-nap-cta-copy">
-            {requestsCount > 0
-              ? `Zgłoszono zainteresowanie (${requestsCount}). Skontaktujemy się w sprawie realizacji.`
-              : "Brak aktywnych zgłoszeń dodatkowych wpisów NAP."}
-          </p>
+          <span className="wiz-nap-cta-icon" aria-hidden>
+            <MapPinned />
+          </span>
+          <div className="wiz-nap-cta-body">
+            <h3 className="wiz-nap-cta-title">
+              Więcej wpisów = spójniejszy NAP
+            </h3>
+            <p className="wiz-nap-cta-copy">
+              {requestsCount > 0
+                ? `Zgłoszono zainteresowanie (${requestsCount}). Skontaktujemy się w sprawie realizacji.`
+                : "Brak aktywnych zgłoszeń dodatkowych wpisów NAP."}
+            </p>
+          </div>
 
           <button
             type="button"
@@ -194,12 +200,14 @@ export function NapView({ requestsCount }: { requestsCount: number }) {
               ) : null}
               Dokup dodatkowe wpisy NAP
             </span>
-            <ChevronRight aria-hidden />
+            <span className="wiz-nap-cta-btn-arrow" aria-hidden>
+              <ArrowRight />
+            </span>
           </button>
 
           <p className="wiz-nap-cta-note">
-            Po zgłoszeniu: „Zgłoszono zainteresowanie (1). Skontaktujemy się w
-            sprawie realizacji.”
+            Po zgłoszeniu zobaczysz tu potwierdzenie i damy znać w sprawie
+            realizacji.
           </p>
         </aside>
       </div>
