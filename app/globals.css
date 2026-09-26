@@ -3500,16 +3500,11 @@
 
   .wiz-uslugi {
     background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) + 2px);
+    border: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
     scroll-margin-top: 1rem;
-  }
-
-  .wiz-uslugi > .wiz-tab-note,
-  .wiz-uslugi > .locked-note {
-    margin: 0;
-    padding: var(--space-4) var(--space-5);
   }
 
   .wiz-uslugi-suggestion {
@@ -3526,50 +3521,85 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.5rem;
-    height: 1.35rem;
-    padding: 0 0.4rem;
-    border-radius: calc(var(--radius) - 2px);
-    background: var(--secondary);
-    color: var(--muted-foreground);
-    font-size: var(--type-base);
-    font-weight: 600;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 11px;
+    font-weight: 500;
     line-height: 1;
   }
 
   .wiz-uslugi.is-editing {
     display: flex;
     flex-direction: column;
-    max-height: min(70vh, 40rem);
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
   }
 
-  .wiz-services-form {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
+  .wiz-services-form .wiz-services-edit {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+    list-style: none;
     margin: 0;
+    padding: 0;
+  }
+
+  @media (max-width: 899px) {
+    .wiz-services-form .wiz-services-edit {
+      grid-template-columns: 1fr;
+    }
   }
 
   .wiz-services-scroll {
     position: relative;
     flex: 1 1 auto;
     min-height: 0;
-    overflow-y: auto;
-    padding: var(--space-4) var(--space-5) var(--space-2);
-  }
-
-  .wiz-services-form .wiz-services-edit {
-    margin-top: 0;
-    gap: var(--space-3);
+    overflow: visible;
+    padding: var(--space-5);
   }
 
   .wiz-service-card {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    padding: var(--space-1) 0 var(--space-4);
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--card);
+  }
+
+  .wiz-service-card-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+    color: var(--foreground);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .wiz-service-card-remove:hover {
+    background: var(--canvas-strong);
+  }
+
+  .wiz-services-sticky {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--canvas);
   }
 
   .wiz-service-card-name-row {

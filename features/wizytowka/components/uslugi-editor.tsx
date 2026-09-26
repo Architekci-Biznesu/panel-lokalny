@@ -58,13 +58,13 @@ export function UslugiEditor({
     <>
       <div className="wiz-tab-head">
         <div className="wiz-tab-head-text">
-          <h2 className="text-lg font-semibold wiz-uslugi-title">
+          <h2 className="wiz-uslugi-title">
             Usługi
             {open ? (
               <span className="mono wiz-uslugi-count-badge">{count}</span>
             ) : null}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p>
             {open
               ? "Edycja - zmiany trafią do Google po zapisaniu"
               : "Pełna lista usług z wizytówki Google. Edytuj i zapisz - zmiany idą od razu do Google."}
@@ -74,7 +74,7 @@ export function UslugiEditor({
           open ? (
             <button
               type="button"
-              className="ui-btn ui-btn-ghost ui-btn-sm wiz-tab-head-edit"
+              className="wiz-field-edit is-open"
               aria-label="Anuluj edycję usług"
               onClick={() => setOpen(false)}
             >
@@ -83,7 +83,7 @@ export function UslugiEditor({
           ) : (
             <button
               type="button"
-              className="ui-btn ui-btn-ghost ui-btn-sm wiz-tab-head-edit"
+              className="wiz-field-edit"
               aria-label="Edytuj usługi"
               onClick={() => {
                 setEditCount(drafts.length);
@@ -355,7 +355,7 @@ function ServicesEditor({
                   />
                   <button
                     type="button"
-                    className="ui-btn ui-btn-ghost ui-btn-sm wiz-service-card-remove"
+                    className="wiz-service-card-remove"
                     aria-label={`Usuń usługę: ${item.displayName || "bez nazwy"}`}
                     onClick={() =>
                       setItems(items.filter((_, i) => i !== index))
@@ -410,7 +410,7 @@ function ServicesEditor({
           />
           <button
             type="button"
-            className="ui-btn ui-btn-outline ui-btn-sm"
+            className="ui-btn ui-btn-secondary ui-btn-sm"
             onClick={addCustom}
           >
             <Plus aria-hidden />
