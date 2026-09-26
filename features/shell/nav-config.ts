@@ -14,6 +14,8 @@ import type { LucideIcon } from "lucide-react";
 export type NavItem = {
   href: string;
   label: string;
+  /** Krótsza etykieta w górnym navbarze (styl 4). */
+  shortLabel?: string;
   icon: LucideIcon;
 };
 
@@ -31,16 +33,16 @@ export const navGroups: NavGroup[] = [
     label: "Obecność online",
     items: [
       { href: "/strona", label: "Strona WWW", icon: Globe },
-      { href: "/wizytowka", label: "Wizytówka Google", icon: Building2 },
+      { href: "/wizytowka", label: "Wizytówka Google", shortLabel: "Wizytówka", icon: Building2 },
       { href: "/publikacje", label: "Publikacje", icon: FileText },
-      { href: "/opinie", label: "Opinie i komentarze", icon: MessageSquare },
+      { href: "/opinie", label: "Opinie i komentarze", shortLabel: "Opinie", icon: MessageSquare },
     ],
   },
   {
     label: "Sprzedaż",
     items: [
-      { href: "/crm", label: "Klienci (CRM)", icon: Users },
-      { href: "/kampanie-wysylkowe", label: "Kampanie wysyłkowe", icon: Send },
+      { href: "/crm", label: "Klienci (CRM)", shortLabel: "Klienci", icon: Users },
+      { href: "/kampanie-wysylkowe", label: "Kampanie wysyłkowe", shortLabel: "Kampanie", icon: Send },
     ],
   },
   {
@@ -51,6 +53,23 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+const allItems = navGroups.flatMap((group) => group.items);
+const byHref = (href: string) => allItems.find((item) => item.href === href)!;
+
+/** Górny navbar (styl 4): 8 pozycji w pasku + „Więcej”. */
+export const topNavPrimary: NavItem[] = [
+  "/pulpit",
+  "/wizytowka",
+  "/publikacje",
+  "/opinie",
+  "/crm",
+  "/kampanie-wysylkowe",
+  "/strona",
+  "/sklep",
+].map(byHref);
+
+export const topNavMore: NavItem[] = ["/ustawienia"].map(byHref);
 
 /** All leaf routes that need a placeholder page in phase 1 */
 export const placeholderRoutes: { href: string; title: string }[] = [

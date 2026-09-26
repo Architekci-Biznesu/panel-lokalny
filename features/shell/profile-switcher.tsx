@@ -30,10 +30,13 @@ export function ProfileSwitcher({
   compact = false,
   adminImpersonating = false,
   ownerEmail = null,
+  variant = "default",
 }: {
   profiles: ProfileOption[];
   activeProfileId: string | null;
   compact?: boolean;
+  /** "navbar" = pigułka w górnym pasku (styl 4). */
+  variant?: "default" | "navbar";
   adminImpersonating?: boolean;
   ownerEmail?: string | null;
 }) {
@@ -125,12 +128,22 @@ export function ProfileSwitcher({
 
   return (
     <div
-      className={compact ? "profile-menu profile-menu-end" : "profile-menu"}
+      className={
+        compact || variant === "navbar"
+          ? "profile-menu profile-menu-end"
+          : "profile-menu"
+      }
       ref={rootRef}
     >
       <button
         type="button"
-        className={compact ? "profile-menu-trigger" : "profile-switcher-btn"}
+        className={
+          compact
+            ? "profile-menu-trigger"
+            : variant === "navbar"
+              ? "profile-nav-trigger"
+              : "profile-switcher-btn"
+        }
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         disabled={pending}
@@ -138,6 +151,16 @@ export function ProfileSwitcher({
         {compact ? (
           <>
             Przełącz profil <ChevronDown aria-hidden width={14} height={14} />
+          </>
+        ) : variant === "navbar" ? (
+          <>
+            <span className="profile-nav-avatar" aria-hidden>
+              {(active?.name ?? "?").trim().slice(0, 2).toUpperCase()}
+            </span>
+            <span className="profile-nav-name">
+              {active?.name ?? "Brak profilu"}
+            </span>
+            <ChevronDown aria-hidden width={14} height={14} />
           </>
         ) : (
           <>

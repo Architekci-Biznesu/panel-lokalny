@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, LogOut, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, LogOut, Menu, Settings, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { logoutAction } from "@/features/auth/actions";
 import { BrandLogo } from "@/features/shell/brand-logo";
-import { navGroups } from "@/features/shell/nav-config";
+import { navGroups, topNavMore, topNavPrimary } from "@/features/shell/nav-config";
 import { ProfileSwitcher } from "@/features/shell/profile-switcher";
-import { ReanalyzeButton } from "@/features/wizytowka/components/reanalyze-button";
 
 type ShellProps = {
   children: React.ReactNode;
@@ -20,21 +19,36 @@ type ShellProps = {
   ownerEmail?: string | null;
 };
 
-function pageLabelFromPath(pathname: string): string {
-  for (const group of navGroups) {
-    for (const item of group.items) {
-      if (
-        pathname === item.href ||
-        pathname.startsWith(`${item.href}/`)
-      ) {
-        return item.label;
-      }
+function isActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+/** Zamyka menu po kliknięciu poza nim albo Escape. */
+function useDismiss(open: boolean, onClose: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     }
-  }
-  if (pathname.startsWith("/ustawienia")) return "Ustawienia";
-  if (pathname.startsWith("/wizytowka")) return "Wizytówka Google";
-  if (pathname.startsWith("/admin")) return "Admin";
-  return "Panel";
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+  return ref;
 }
 
 export function AppShell({
@@ -47,118 +61,161 @@ export function AppShell({
   ownerEmail = null,
 }: ShellProps) {
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const pageLabel = pageLabelFromPath(pathname);
-  const onWizytowka = pathname.startsWith("/wizytowka");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const moreRef = useDismiss(moreOpen, () => setMoreOpen(false));
+  const accountRef = useDismiss(accountOpen, () => setAccountOpen(false));
+  const moreActive = topNavMore.some((item) => isActive(pathname, item.href));
+
+  function closeAll() {
+    setDrawerOpen(false);
+    setMoreOpen(false);
+    setAccountOpen(false);
+  }
 
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="sidebar-brand">
-          <BrandLogo />
-          <div className="sidebar-brand-text">
-            <span className="sidebar-brand-name">Panel Lokalny</span>
-            <span className="sidebar-brand-sub">Panel klienta</span>
-          </div>
-        </div>
+      <header className="topnav">
+        <div className="topnav-left">
+          <button
+            type="button"
+            className="topnav-icon-btn topnav-burger"
+            aria-label={drawerOpen ? "Zamknij menu" : "Otwórz menu"}
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen((v) => !v)}
+          >
+            {drawerOpen ? <X aria-hidden /> : <Menu aria-hidden />}
+          </button>
+          <Link href="/pulpit" onClick={closeAll} className="topnav-brand" aria-label="Panel Lokalny - Pulpit">
+            <BrandLogo />
+            <span className="topnav-brand-name">Panel Lokalny</span>
+          </Link>
 
-        <div className="profile-switcher">
-          <ProfileSwitcher
-            profiles={profiles}
-            activeProfileId={activeProfileId}
-            adminImpersonating={adminImpersonating}
-            ownerEmail={ownerEmail}
-          />
-        </div>
-
-        <nav className="sidebar-nav" aria-label="Główna nawigacja">
-          {navGroups.map((group) => (
-            <div key={group.label} className="nav-group">
-              <p className="nav-group-label">{group.label}</p>
-              <ul className="nav-list">
-                {group.items.map((item) => {
-                  const active =
-                    pathname === item.href ||
-                    pathname.startsWith(`${item.href}/`);
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.href}>
+          <nav className="topnav-links" aria-label="Główna nawigacja">
+            {topNavPrimary.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={closeAll}
+                className={`topnav-link ${isActive(pathname, item.href) ? "active" : ""}`}
+                aria-current={isActive(pathname, item.href) ? "page" : undefined}
+              >
+                {item.shortLabel ?? item.label}
+              </Link>
+            ))}
+            <div className="topnav-more" ref={moreRef}>
+              <button
+                type="button"
+                className={`topnav-link ${moreActive ? "active" : ""}`}
+                aria-haspopup="menu"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((v) => !v)}
+              >
+                Więcej
+                <ChevronDown aria-hidden className="topnav-chevron" />
+              </button>
+              {moreOpen ? (
+                <div className="topnav-menu" role="menu">
+                  {topNavMore.map((item) => {
+                    const Icon = item.icon;
+                    return (
                       <Link
+                        key={item.href}
                         href={item.href}
-                        className={`nav-link ${active ? "active" : ""}`}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={closeAll}
+                        role="menuitem"
+                        className={`topnav-menu-item ${isActive(pathname, item.href) ? "active" : ""}`}
                       >
                         <Icon aria-hidden />
-                        <span>{item.label}</span>
+                        {item.label}
                       </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="sidebar-user-block">
-            <p className="sidebar-user-name">{userName}</p>
-            {userEmail ? (
-              <p className="sidebar-user-email">{userEmail}</p>
-            ) : null}
-          </div>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="ui-btn ui-btn-ghost ui-btn-sm sidebar-logout"
-              aria-label="Wyloguj"
-            >
-              <LogOut aria-hidden />
-            </button>
-          </form>
+          </nav>
         </div>
-      </aside>
 
-      {sidebarOpen ? (
-        <button
-          type="button"
-          className="sidebar-backdrop"
-          aria-label="Zamknij menu"
-          onClick={() => setSidebarOpen(false)}
-        />
-      ) : null}
-
-      <div className="app-main">
-        <header className="topbar">
-          <div className="topbar-left">
+        <div className="topnav-right">
+          <div className="topnav-profile">
+            <ProfileSwitcher
+              profiles={profiles}
+              activeProfileId={activeProfileId}
+              adminImpersonating={adminImpersonating}
+              ownerEmail={ownerEmail}
+              variant="navbar"
+            />
+          </div>
+          <div className="topnav-account" ref={accountRef}>
             <button
               type="button"
-              className="icon-btn mobile-only"
-              aria-label="Otwórz menu"
-              onClick={() => setSidebarOpen(true)}
+              className="topnav-avatar"
+              aria-label={`Konto: ${userName}`}
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              onClick={() => setAccountOpen((v) => !v)}
             >
-              {sidebarOpen ? <X aria-hidden /> : <Menu aria-hidden />}
+              {initials(userName)}
             </button>
-            <div className="topbar-crumbs">
-              <p className="topbar-title">Panel</p>
-              <p className="topbar-subtitle">{pageLabel}</p>
-            </div>
-          </div>
-          <div className="topbar-right">
-            {onWizytowka ? <div id="wiz-topbar-slot" /> : null}
-            {onWizytowka ? (
-              <Link
-                href="/ustawienia/kontekst"
-                className="ui-btn ui-btn-outline ui-btn-sm"
-              >
-                <ArrowUpRight aria-hidden />
-                <span>Zaktualizuj kontekst firmy</span>
-              </Link>
+            {accountOpen ? (
+              <div className="topnav-menu topnav-menu-end" role="menu">
+                <div className="topnav-menu-user">
+                  <span className="topnav-menu-user-name">{userName}</span>
+                  {userEmail ? (
+                    <span className="topnav-menu-user-email">{userEmail}</span>
+                  ) : null}
+                </div>
+                <Link href="/ustawienia" onClick={closeAll} role="menuitem" className="topnav-menu-item">
+                  <Settings aria-hidden />
+                  Ustawienia i plan
+                </Link>
+                <form action={logoutAction}>
+                  <button type="submit" role="menuitem" className="topnav-menu-item">
+                    <LogOut aria-hidden />
+                    Wyloguj
+                  </button>
+                </form>
+              </div>
             ) : null}
-            {onWizytowka ? <ReanalyzeButton /> : null}
           </div>
-        </header>
-        <main className="app-content app-canvas-dots">{children}</main>
-      </div>
+        </div>
+      </header>
+
+      {drawerOpen ? (
+        <>
+          <button
+            type="button"
+            className="topnav-backdrop"
+            aria-label="Zamknij menu"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <nav className="topnav-drawer" aria-label="Menu">
+            {navGroups.map((group) => (
+              <div key={group.label} className="topnav-drawer-group">
+                <p className="topnav-drawer-label">{group.label}</p>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeAll}
+                      className={`topnav-menu-item ${isActive(pathname, item.href) ? "active" : ""}`}
+                    >
+                      <Icon aria-hidden />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
+        </>
+      ) : null}
+
+      <main className="app-content">{children}</main>
     </div>
   );
 }

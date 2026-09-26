@@ -13,7 +13,7 @@ export function ReanalyzeButton() {
   return (
     <button
       type="button"
-      className="ui-btn ui-btn-outline ui-btn-sm"
+      className="ui-btn ui-btn-primary"
       disabled={pending}
       onClick={() => {
         startTransition(async () => {

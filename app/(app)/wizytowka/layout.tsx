@@ -18,6 +18,8 @@ import {
 import { AuthError } from "@/lib/session";
 import type { GbpSuggestion } from "@/lib/db/schema";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { ReanalyzeButton } from "@/features/wizytowka/components/reanalyze-button";
 import type { GbpLocation } from "@/features/wizytowka/types";
 
 export default async function WizytowkaLayout({
@@ -96,7 +98,17 @@ export default async function WizytowkaLayout({
       <div className="page-header wiz-header">
         <div>
           <h1>Wizytówka Google</h1>
-          <p>Dane na żywo z Google Business Profile - zmiany zapisują się od razu</p>
+          <p>
+            Dane na żywo z Google Business Profile - zmiany zapisują się od razu
+            <span id="wiz-topbar-slot" className="wiz-header-slot" />
+          </p>
+        </div>
+        <div className="wiz-header-actions">
+          <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-white">
+            <ArrowUpRight aria-hidden />
+            <span>Kontekst firmy</span>
+          </Link>
+          <ReanalyzeButton />
         </div>
       </div>
 
