@@ -670,11 +670,40 @@
     gap: var(--space-3);
   }
 
+  /* Spinner: jasny pierścień marki i indygo łuk, który się wydłuża i skraca w obrocie */
   .app-profile-switch-spinner {
-    width: 36px;
-    height: 36px;
-    color: var(--foreground);
-    stroke-width: 2;
+    width: 44px;
+    height: 44px;
+    animation: app-switch-rotate 1.6s linear infinite;
+  }
+
+  .app-profile-switch-track,
+  .app-profile-switch-arc {
+    fill: none;
+    stroke-width: 4;
+  }
+
+  .app-profile-switch-track {
+    stroke: var(--brand-100);
+  }
+
+  .app-profile-switch-arc {
+    stroke: var(--brand);
+    stroke-linecap: round;
+    stroke-dasharray: 1 150;
+    stroke-dashoffset: 0;
+    animation: app-switch-dash 1.4s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-profile-switch-spinner {
+      animation-duration: 3s;
+    }
+
+    .app-profile-switch-arc {
+      animation: none;
+      stroke-dasharray: 40 150;
+    }
   }
 
   .app-profile-switch-label {
@@ -682,5 +711,26 @@
     font-size: var(--type-base);
     font-weight: 500;
     color: var(--foreground);
+  }
+}
+
+@keyframes app-switch-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes app-switch-dash {
+  0% {
+    stroke-dasharray: 1 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90 150;
+    stroke-dashoffset: -124;
   }
 }

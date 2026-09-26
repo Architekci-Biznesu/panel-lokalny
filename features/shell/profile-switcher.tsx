@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronsUpDown,
-  Loader2,
   Plus,
   Search,
 } from "lucide-react";
@@ -292,10 +291,24 @@ export function ProfileSwitcher({
               aria-live="polite"
             >
               <div className="app-profile-switch-content">
-                <Loader2
+                <svg
                   aria-hidden
-                  className="app-profile-switch-spinner ui-btn-spinner"
-                />
+                  className="app-profile-switch-spinner"
+                  viewBox="0 0 50 50"
+                >
+                  <circle
+                    className="app-profile-switch-track"
+                    cx="25"
+                    cy="25"
+                    r="20"
+                  />
+                  <circle
+                    className="app-profile-switch-arc"
+                    cx="25"
+                    cy="25"
+                    r="20"
+                  />
+                </svg>
                 <p className="app-profile-switch-label">
                   Przełączanie profilu…
                 </p>
