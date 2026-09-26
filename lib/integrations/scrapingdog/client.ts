@@ -1,10 +1,19 @@
 export type ScrapingDogPlaceResult = {
   placeId: string | null;
+  dataId: string | null;
   title: string;
   address: string | null;
+  description: string | null;
+  type: string | null;
+  types: string[];
   position: number;
   rating: number | null;
   reviews: number | null;
+};
+
+export type ScrapingDogPhotosCount = {
+  count: number;
+  hasMore: boolean;
 };
 
 function getApiKey(): string {
@@ -48,6 +57,26 @@ function readNumber(
   return null;
 }
 
+function readTypes(row: Record<string, unknown>): string[] {
+  const out: string[] = [];
+  const single = readString(row, "type", "category");
+  if (single) out.push(single);
+  const raw = row.types ?? row.categories;
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (typeof item === "string" && item.trim()) {
+        out.push(item.trim());
+        continue;
+      }
+      const rec = asRecord(item);
+      if (!rec) continue;
+      const label = readString(rec, "name", "type", "title", "displayName");
+      if (label) out.push(label);
+    }
+  }
+  return [...new Set(out)];
+}
+
 function parsePlaceList(
   items: unknown[],
   positionOffset = 0,
@@ -59,7 +88,10 @@ function parsePlaceList(
     const title = readString(row, "title", "name");
     if (!title) continue;
     const placeId = readString(row, "place_id", "placeId");
+    const dataId = readString(row, "data_id", "dataId");
     const address = readString(row, "address", "formatted_address");
+    const description = readString(row, "description", "snippet");
+    const types = readTypes(row);
     const rating = readNumber(row, "rating");
     const reviews = readNumber(row, "reviews", "reviews_count", "review_count");
     const explicitPosition =
@@ -68,8 +100,12 @@ function parsePlaceList(
         : null;
     results.push({
       placeId,
+      dataId,
       title,
       address,
+      description,
+      type: types[0] ?? null,
+      types,
       rating,
       reviews,
       position: explicitPosition ?? positionOffset + i + 1,
@@ -226,4 +262,33 @@ export async function localSearch(input: {
       lastError ?? (error instanceof Error ? error : new Error(String(error)))
     );
   }
+}
+
+/** First page of Maps photos; `hasMore` when pagination token is present. */
+export async function mapsPhotosCount(
+  dataId: string,
+): Promise<ScrapingDogPhotosCount> {
+  const id = dataId.trim();
+  if (!id) return { count: 0, hasMore: false };
+
+  const data = await getJsonWithRetry(
+    "https://api.scrapingdog.com/google_maps/photos",
+    {
+      api_key: getApiKey(),
+      data_id: id,
+      language: "pl",
+    },
+    2,
+  );
+
+  const root = asRecord(data) ?? {};
+  const photos = Array.isArray(root.photos) ? root.photos : [];
+  const pagination = asRecord(root.scrapingdog_pagination);
+  const nextToken =
+    (pagination && readString(pagination, "next_page_token")) ||
+    readString(root, "next_page_token");
+  return {
+    count: photos.length,
+    hasMore: Boolean(nextToken),
+  };
 }

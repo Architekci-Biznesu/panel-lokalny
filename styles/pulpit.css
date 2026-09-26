@@ -52,8 +52,7 @@
   .pulpit-side {
     grid-column: span 4;
     position: sticky;
-    /* navbar (76px) leży nad przewijaną treścią */
-    top: calc(76px + var(--space-4));
+    top: var(--space-4);
     min-width: 0;
   }
 
@@ -87,6 +86,11 @@
     box-shadow: var(--shadow-card);
     padding: var(--space-5);
     min-width: 0;
+  }
+
+  /* Stopka full-bleed: bez hairline'a białego tła pod zaokrągleniem */
+  .pulpit-card:has(.pulpit-card-foot) {
+    overflow: hidden;
   }
 
   .pulpit-card-head {
@@ -152,7 +156,7 @@
     gap: 6px;
     margin: var(--space-5) calc(var(--space-5) * -1) calc(var(--space-5) * -1);
     padding: 14px var(--space-5);
-    border-radius: 0 0 var(--radius-card) var(--radius-card);
+    border-radius: 0;
     background: var(--canvas);
     font-size: var(--type-sm);
     font-weight: 500;
@@ -284,8 +288,8 @@
   }
 
   .pulpit-phrase-head {
-    margin: var(--space-5) 0 0;
-    padding: 0 var(--space-3) var(--space-2);
+    margin: var(--space-5) calc(var(--space-5) * -1) 0;
+    padding: 0 calc(var(--space-5) + var(--space-3)) var(--space-2);
     border-bottom: 1px solid var(--border);
     font-size: var(--type-badge);
     font-weight: 600;

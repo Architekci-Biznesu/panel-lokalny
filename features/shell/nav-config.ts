@@ -16,6 +16,12 @@ export type NavItem = {
   /** Krótsza etykieta w górnym navbarze (styl 4). */
   shortLabel?: string;
   icon: LucideIcon;
+  /**
+   * Prefiks ścieżki do podświetlenia w navbarze.
+   * Gdy href wskazuje na konkretną zakładkę (np. /wizytowka/raporty),
+   * activeMatch trzyma aktywny stan na całym module (/wizytowka/*).
+   */
+  activeMatch?: string;
 };
 
 export type NavGroup = {
@@ -33,10 +39,11 @@ export const navGroups: NavGroup[] = [
     items: [
       { href: "/strona", label: "Strona WWW", icon: Globe },
       {
-        href: "/wizytowka",
+        href: "/wizytowka/raporty",
         label: "Wizytówka Google",
         shortLabel: "Wizytówka",
         icon: Building2,
+        activeMatch: "/wizytowka",
       },
       { href: "/publikacje", label: "Publikacje", icon: FileText },
       {
@@ -76,7 +83,7 @@ const byHref = (href: string) => allItems.find((item) => item.href === href)!;
 /** Górny navbar (styl 4): pozycje w pasku. Ustawienia tylko z menu awatara. */
 export const topNavPrimary: NavItem[] = [
   "/pulpit",
-  "/wizytowka",
+  "/wizytowka/raporty",
   "/publikacje",
   "/opinie",
   "/crm",
@@ -93,11 +100,11 @@ export const placeholderRoutes: { href: string; title: string }[] = [
   { href: "/strona/tresci", title: "Treści strony" },
   { href: "/strona/backlinki", title: "Backlinki" },
   { href: "/strona/analityka", title: "Analityka strony" },
+  { href: "/wizytowka/raporty", title: "Raporty wizytówki" },
   { href: "/wizytowka/informacje", title: "Informacje o firmie" },
   { href: "/wizytowka/kontakt", title: "Kontakt" },
   { href: "/wizytowka/atrybuty", title: "Atrybuty" },
   { href: "/wizytowka/nap", title: "NAP i katalogi" },
-  { href: "/wizytowka/raporty", title: "Raporty wizytówki" },
   { href: "/publikacje/inbox", title: "Do akceptacji" },
   { href: "/publikacje/wszystkie", title: "Wszystkie publikacje" },
   { href: "/publikacje/kalendarz", title: "Kalendarz publikacji" },

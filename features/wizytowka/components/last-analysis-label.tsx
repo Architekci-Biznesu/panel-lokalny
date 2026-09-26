@@ -1,8 +1,3 @@
-"use client";
-
-import { useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";
-
 function formatAnalyzedAt(iso: string | null): string {
   if (!iso) return "jeszcze nie";
   const date = new Date(iso);
@@ -13,23 +8,11 @@ function formatAnalyzedAt(iso: string | null): string {
   }).format(date);
 }
 
-function subscribe() {
-  return () => {};
-}
-
-function getTopbarSlot() {
-  return document.getElementById("wiz-topbar-slot");
-}
-
 export function LastAnalysisLabel({ iso }: { iso: string | null }) {
-  const slot = useSyncExternalStore(subscribe, getTopbarSlot, () => null);
-
-  if (!slot) return null;
-
-  return createPortal(
-    <span className="wiz-last-analysis">
-      Ostatnia analiza: {formatAnalyzedAt(iso)}
-    </span>,
-    slot,
+  return (
+    <p className="wiz-last-analysis">
+      Ostatnia analiza:{" "}
+      <span className="mono">{formatAnalyzedAt(iso)}</span>
+    </p>
   );
 }

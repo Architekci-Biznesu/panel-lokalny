@@ -360,3 +360,130 @@ export async function refreshGbpPlaceIdAction(): Promise<
     return fail(error);
   }
 }
+
+const suggestedPhraseSchema = z.object({
+  phrase: z.string().trim().min(2).max(120),
+});
+
+/** Accept a suggested rank phrase from audit (adds keyword, removes from suggestions). */
+export async function acceptSuggestedRankPhrase(
+  input: unknown,
+): Promise<
+  | {
+      ok: true;
+      keyword: {
+        id: string;
+        phrase: string;
+        defaultRadiusKm: number;
+        createdAt: string;
+      };
+    }
+  | ActionFail
+> {
+  const parsed = suggestedPhraseSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Nieprawidłowa fraza" };
+  }
+
+  try {
+    const profile = await getActiveGbpProfile();
+    const {
+      loadLatestAuditInsights,
+      updateAuditSuggestedRankPhrases,
+    } = await import("@/features/wizytowka/competitor-insights");
+
+    const loaded = await loadLatestAuditInsights(profile.id);
+    const phrase = parsed.data.phrase;
+    const suggested = loaded?.insights.suggestedRankPhrases ?? [];
+    if (
+      !suggested.some((p) => p.toLowerCase() === phrase.toLowerCase())
+    ) {
+      return { ok: false, error: "Ta propozycja już nie istnieje" };
+    }
+
+    const existing = await db
+      .select({ id: rankKeywords.id })
+      .from(rankKeywords)
+      .where(eq(rankKeywords.profileId, profile.id));
+
+    if (existing.length >= RANK_MAX_KEYWORDS) {
+      return {
+        ok: false,
+        error: `Limit ${RANK_MAX_KEYWORDS} fraz na profil został osiągnięty`,
+      };
+    }
+
+    const duplicate = await db
+      .select({ id: rankKeywords.id, phrase: rankKeywords.phrase })
+      .from(rankKeywords)
+      .where(eq(rankKeywords.profileId, profile.id));
+    if (
+      duplicate.some((row) => row.phrase.toLowerCase() === phrase.toLowerCase())
+    ) {
+      await updateAuditSuggestedRankPhrases(
+        profile.id,
+        suggested.filter((p) => p.toLowerCase() !== phrase.toLowerCase()),
+      );
+      return { ok: false, error: "Ta fraza jest już na liście" };
+    }
+
+    const [created] = await db
+      .insert(rankKeywords)
+      .values({
+        profileId: profile.id,
+        phrase,
+        defaultRadiusKm: "10",
+      })
+      .returning();
+
+    await updateAuditSuggestedRankPhrases(
+      profile.id,
+      suggested.filter((p) => p.toLowerCase() !== phrase.toLowerCase()),
+    );
+
+    revalidatePath("/wizytowka/raporty");
+    return {
+      ok: true,
+      keyword: {
+        id: created.id,
+        phrase: created.phrase,
+        defaultRadiusKm: Number(created.defaultRadiusKm),
+        createdAt: created.createdAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** Dismiss a suggested rank phrase without adding it. */
+export async function dismissSuggestedRankPhrase(
+  input: unknown,
+): Promise<{ ok: true } | ActionFail> {
+  const parsed = suggestedPhraseSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Nieprawidłowa fraza" };
+  }
+
+  try {
+    const profile = await getActiveGbpProfile();
+    const {
+      loadLatestAuditInsights,
+      updateAuditSuggestedRankPhrases,
+    } = await import("@/features/wizytowka/competitor-insights");
+
+    const loaded = await loadLatestAuditInsights(profile.id);
+    if (!loaded) return { ok: true };
+
+    const phrase = parsed.data.phrase;
+    const next = loaded.insights.suggestedRankPhrases.filter(
+      (p) => p.toLowerCase() !== phrase.toLowerCase(),
+    );
+    await updateAuditSuggestedRankPhrases(profile.id, next);
+    revalidatePath("/wizytowka/raporty");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+

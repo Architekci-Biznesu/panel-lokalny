@@ -55,16 +55,24 @@ import {
     results: [
       {
         placeId: "other",
+        dataId: null,
         title: "Sieć Fryzjer",
         address: "Ul. A 1",
+        description: null,
+        type: null,
+        types: [],
         position: 1,
         rating: null,
         reviews: null,
       },
       {
         placeId: "ChIJ-target",
+        dataId: null,
         title: "Sieć Fryzjer",
         address: "Ul. B 2",
+        description: null,
+        type: null,
+        types: [],
         position: 2,
         rating: null,
         reviews: null,
@@ -81,8 +89,12 @@ import {
     results: [
       {
         placeId: null,
+        dataId: null,
         title: "Barber Shop Test",
         address: "Marszalkowska 10, Warszawa",
+        description: null,
+        type: null,
+        types: [],
         position: 1,
         rating: null,
         reviews: null,

@@ -295,6 +295,56 @@
     flex-wrap: wrap;
   }
 
+  .rank-suggested {
+    width: 100%;
+    max-width: 28rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    text-align: left;
+  }
+
+  .rank-suggested-title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .rank-suggested-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .rank-suggested-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-block);
+    background: var(--canvas);
+  }
+
+  .rank-suggested-phrase {
+    min-width: 0;
+    font-size: var(--type-sm);
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .rank-suggested-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.25rem;
+  }
+
   /* Mapa siatki: biały kafel z mapą w środku i paskiem skanu na dole (jak stopki kafli). */
   .rank-map-card {
     display: flex;

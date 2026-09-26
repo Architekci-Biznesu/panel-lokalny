@@ -23,8 +23,9 @@ type ShellProps = {
   ownerEmail?: string | null;
 };
 
-function isActive(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
+function isActive(pathname: string, item: { href: string; activeMatch?: string }): boolean {
+  const match = item.activeMatch ?? item.href;
+  return pathname === match || pathname.startsWith(`${match}/`);
 }
 
 function initials(name: string): string {
@@ -70,7 +71,7 @@ export function AppShell({
   const [accountOpen, setAccountOpen] = useState(false);
   const moreRef = useDismiss(moreOpen, () => setMoreOpen(false));
   const accountRef = useDismiss(accountOpen, () => setAccountOpen(false));
-  const moreActive = topNavMore.some((item) => isActive(pathname, item.href));
+  const moreActive = topNavMore.some((item) => isActive(pathname, item));
 
   function closeAll() {
     setDrawerOpen(false);
@@ -107,9 +108,9 @@ export function AppShell({
                 key={item.href}
                 href={item.href}
                 onClick={closeAll}
-                className={`topnav-link ${isActive(pathname, item.href) ? "active" : ""}`}
+                className={`topnav-link ${isActive(pathname, item) ? "active" : ""}`}
                 aria-current={
-                  isActive(pathname, item.href) ? "page" : undefined
+                  isActive(pathname, item) ? "page" : undefined
                 }
               >
                 {item.shortLabel ?? item.label}
@@ -137,7 +138,7 @@ export function AppShell({
                           href={item.href}
                           onClick={closeAll}
                           role="menuitem"
-                          className={`topnav-menu-item ${isActive(pathname, item.href) ? "active" : ""}`}
+                          className={`topnav-menu-item ${isActive(pathname, item) ? "active" : ""}`}
                         >
                           <Icon aria-hidden />
                           {item.label}
@@ -224,7 +225,7 @@ export function AppShell({
                       key={item.href}
                       href={item.href}
                       onClick={closeAll}
-                      className={`topnav-menu-item ${isActive(pathname, item.href) ? "active" : ""}`}
+                      className={`topnav-menu-item ${isActive(pathname, item) ? "active" : ""}`}
                     >
                       <Icon aria-hidden />
                       {item.label}

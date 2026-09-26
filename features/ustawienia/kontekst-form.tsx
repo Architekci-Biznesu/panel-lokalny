@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "gooey-toast";
 import { saveKontekstAction } from "@/features/ustawienia/kontekst-actions";
+import { AnalysisProgressOverlay } from "@/features/wizytowka/components/analysis-progress-overlay";
 import { reanalyzeGbpAction } from "@/features/wizytowka/actions";
 
 const schema = z.object({
@@ -48,6 +49,7 @@ export function KontekstForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [analyzing, setAnalyzing] = useState(false);
   const [reauditPrompt, setReauditPrompt] = useState(false);
   const {
     register,
@@ -60,6 +62,7 @@ export function KontekstForm({
 
   return (
     <div className="wiz-stack">
+      <AnalysisProgressOverlay active={analyzing} />
       <form
         className="kontekst-form"
         noValidate
@@ -158,20 +161,25 @@ export function KontekstForm({
               disabled={pending}
               onClick={() => {
                 startTransition(async () => {
-                  const result = await reanalyzeGbpAction();
-                  if (!result.ok) {
-                    toast.error({
-                      title: "Analiza nie powiodła się",
-                      description: result.error,
+                  setAnalyzing(true);
+                  try {
+                    const result = await reanalyzeGbpAction();
+                    if (!result.ok) {
+                      toast.error({
+                        title: "Analiza nie powiodła się",
+                        description: result.error,
+                      });
+                      return;
+                    }
+                    toast.success({
+                      title: "Analiza zakończona",
+                      description: "Nowe propozycje czekają w Wizytówce.",
                     });
-                    return;
+                    setReauditPrompt(false);
+                    router.push("/wizytowka/informacje");
+                  } finally {
+                    setAnalyzing(false);
                   }
-                  toast.success({
-                    title: "Analiza zakończona",
-                    description: "Nowe propozycje czekają w Wizytówce.",
-                  });
-                  setReauditPrompt(false);
-                  router.push("/wizytowka/informacje");
                 });
               }}
             >

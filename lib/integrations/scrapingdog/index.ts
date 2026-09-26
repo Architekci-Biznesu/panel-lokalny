@@ -1,1 +1,7 @@
-export { mapsSearch, localSearch, type ScrapingDogPlaceResult } from "./client";
+export {
+  mapsSearch,
+  localSearch,
+  mapsPhotosCount,
+  type ScrapingDogPlaceResult,
+  type ScrapingDogPhotosCount,
+} from "./client";

@@ -93,6 +93,10 @@ function cardTitle(item: ProposalCardItem): string {
     return "Atrybuty";
   }
   if (item.kind === "photos") {
+    const target = item.competitorMedian ?? item.competitorMax;
+    if (target != null && item.count < target) {
+      return "Mniej zdjęć niż konkurencja";
+    }
     return "Za mało zdjęć na wizytówce";
   }
   return PROPOSAL_META[item.suggestion.field as keyof typeof PROPOSAL_META]
@@ -107,6 +111,14 @@ function cardBlurb(item: ProposalCardItem): string {
     return `${item.count} faktów o firmie czeka na potwierdzenie. Zaznacz, co jest prawdą - AI tego nie zgadnie.`;
   }
   if (item.kind === "photos") {
+    const target = item.competitorMedian ?? item.competitorMax;
+    if (target != null && item.count < target) {
+      const approx =
+        item.competitorMedian != null
+          ? `zwykle ok. ${item.competitorMedian}`
+          : `nawet ${item.competitorMax}`;
+      return `Top konkurencja ma ${approx} zdjęć, Ty masz ${item.count}. Dodaj je w Profilu Firmy Google - w panelu nie da się jeszcze wgrywać mediów.`;
+    }
     return `Masz ${item.count} z ${GBP_PHOTO_MIN} zdjęć właściciela. Dodaj je w Profilu Firmy Google - w panelu nie da się jeszcze wgrywać mediów.`;
   }
   if (item.kind === "categories") {
@@ -165,12 +177,16 @@ export function ProposalCards({
   specialHoursHint = null,
   factsToConfirm = 0,
   photoCount = GBP_PHOTO_MIN,
+  competitorPhotoMedian = null,
+  competitorPhotoMax = null,
   mapsUri = null,
 }: {
   suggestions: GbpSuggestion[];
   specialHoursHint?: string | null;
   factsToConfirm?: number;
   photoCount?: number;
+  competitorPhotoMedian?: number | null;
+  competitorPhotoMax?: number | null;
   mapsUri?: string | null;
 }) {
   const pathname = usePathname();
@@ -182,8 +198,17 @@ export function ProposalCards({
         specialHoursHint,
         factsToConfirm,
         photoCount,
+        competitorPhotoMedian,
+        competitorPhotoMax,
       }),
-    [suggestions, specialHoursHint, factsToConfirm, photoCount],
+    [
+      suggestions,
+      specialHoursHint,
+      factsToConfirm,
+      photoCount,
+      competitorPhotoMedian,
+      competitorPhotoMax,
+    ],
   );
   const aiCount = useMemo(
     () => items.filter((item) => !isNudgeProposalCard(item)).length,
@@ -207,8 +232,7 @@ export function ProposalCards({
     <div className="wiz-proposals">
       <div className="wiz-proposals-head">
         <div className="wiz-proposals-heading">
-          <WandSparkles aria-hidden className="wiz-proposals-wand" />
-          <p className="wiz-proposals-title">Propozycje AI do Twojej decyzji</p>
+          <p className="wiz-proposals-title">Do Twojej decyzji</p>
           {remaining > 0 ? (
             <span className="wiz-proposals-badge mono">{remaining}</span>
           ) : null}
@@ -277,9 +301,20 @@ export function ProposalCards({
                   >
                     <Icon />
                   </span>
-                  <span className="ui-pill ui-pill-neutral wiz-proposal-tab-pill">
-                    {cardTabLabel(item)}
-                  </span>
+                  <div className="wiz-proposal-card-pills">
+                    {!warn ? (
+                      <span
+                        className="wiz-proposal-ai-pill"
+                        title="Propozycja AI"
+                        aria-label="Propozycja AI"
+                      >
+                        <WandSparkles aria-hidden />
+                      </span>
+                    ) : null}
+                    <span className="ui-pill ui-pill-neutral wiz-proposal-tab-pill">
+                      {cardTabLabel(item)}
+                    </span>
+                  </div>
                 </div>
                 <p className="wiz-proposal-card-title">{cardTitle(item)}</p>
                 <p className="wiz-proposal-card-blurb">{cardBlurb(item)}</p>

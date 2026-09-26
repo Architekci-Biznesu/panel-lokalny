@@ -1,4 +1,5 @@
 ﻿import { RaportyView } from "@/features/wizytowka/components/raporty-view";
+import { loadLatestAuditInsights } from "@/features/wizytowka/competitor-insights";
 import {
   ALL_PERFORMANCE_METRICS,
   emptySeriesForMetrics,
@@ -24,16 +25,23 @@ export default async function RaportyPage({
     start: ReturnType<typeof resolveRangeFromSearchParams>["start"];
     end: ReturnType<typeof resolveRangeFromSearchParams>["end"];
     loadError: boolean;
-    rank:
-      | Awaited<ReturnType<typeof loadRankRaportPayload>>
-      | {
-          placeId: string | null;
-          businessName: string;
-          keywords: [];
-          latestByKeyword: Record<string, never>;
-          scansByKeywordDay: Record<string, never>;
-          activeScan: null;
-        };
+    rank: {
+      placeId: string | null;
+      businessName: string;
+      keywords: Awaited<
+        ReturnType<typeof loadRankRaportPayload>
+      >["keywords"];
+      latestByKeyword: Awaited<
+        ReturnType<typeof loadRankRaportPayload>
+      >["latestByKeyword"];
+      scansByKeywordDay: Awaited<
+        ReturnType<typeof loadRankRaportPayload>
+      >["scansByKeywordDay"];
+      activeScan: Awaited<
+        ReturnType<typeof loadRankRaportPayload>
+      >["activeScan"];
+      suggestedPhrases: string[];
+    };
   } | null = null;
 
   try {
@@ -70,10 +78,33 @@ export default async function RaportyPage({
       loadError = true;
     }
 
-    let rank = null;
+    let rank: {
+      placeId: string | null;
+      businessName: string;
+      keywords: Awaited<ReturnType<typeof loadRankRaportPayload>>["keywords"];
+      latestByKeyword: Awaited<
+        ReturnType<typeof loadRankRaportPayload>
+      >["latestByKeyword"];
+      scansByKeywordDay: Awaited<
+        ReturnType<typeof loadRankRaportPayload>
+      >["scansByKeywordDay"];
+      activeScan: Awaited<
+        ReturnType<typeof loadRankRaportPayload>
+      >["activeScan"];
+      suggestedPhrases: string[];
+    };
     try {
-      rank = await loadRankRaportPayload(params.keyword ?? null);
+      const loaded = await loadRankRaportPayload(params.keyword ?? null);
+      let suggestedPhrases: string[] = [];
+      if (loaded.keywords.length === 0) {
+        const insights = await loadLatestAuditInsights(profile.id);
+        suggestedPhrases = insights?.insights.suggestedRankPhrases ?? [];
+      }
+      rank = { ...loaded, suggestedPhrases };
     } catch {
+      const insights = await loadLatestAuditInsights(profile.id).catch(
+        () => null,
+      );
       rank = {
         placeId: profile.gbpPlaceId,
         businessName: profile.name,
@@ -81,6 +112,7 @@ export default async function RaportyPage({
         latestByKeyword: {},
         scansByKeywordDay: {},
         activeScan: null,
+        suggestedPhrases: insights?.insights.suggestedRankPhrases ?? [],
       };
     }
 

@@ -57,6 +57,13 @@
       "when": 1790510000000,
       "tag": "0007_rank_ui_mapa",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790520000000,
+      "tag": "0008_gbp_audit_insights",
+      "breakpoints": true
     }
   ]
 }

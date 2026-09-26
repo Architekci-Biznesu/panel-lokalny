@@ -18,6 +18,8 @@ import { RankLocalPackTable } from "@/features/wizytowka/components/rank-local-p
 import { RankScanCalendar } from "@/features/wizytowka/components/rank-scan-calendar";
 import {
   addRankKeyword,
+  acceptSuggestedRankPhrase,
+  dismissSuggestedRankPhrase,
   getRankScanStatus,
   refreshGbpPlaceIdAction,
   removeRankKeyword,
@@ -99,6 +101,7 @@ export function RankPositionsSection({
   latestByKeyword: initialLatest,
   scansByKeywordDay: initialByDay,
   activeScan: initialActive,
+  suggestedPhrases: initialSuggested = [],
 }: {
   placeId: string | null;
   businessName: string;
@@ -106,8 +109,10 @@ export function RankPositionsSection({
   latestByKeyword: Record<string, RankScanView | null>;
   scansByKeywordDay: Record<string, Record<string, RankScanView>>;
   activeScan: RankScanView | null;
+  suggestedPhrases?: string[];
 }) {
   const [keywords, setKeywords] = useState(initialKeywords);
+  const [suggestedPhrases, setSuggestedPhrases] = useState(initialSuggested);
   const [latestByKeyword, setLatestByKeyword] = useState(initialLatest);
   const [scansByKeywordDay, setScansByKeywordDay] = useState(initialByDay);
   const [selectedKeywordId, setSelectedKeywordId] = useState(
@@ -134,21 +139,25 @@ export function RankPositionsSection({
     initialKeywords,
     initialLatest,
     initialByDay,
+    initialSuggested,
     placeId,
   });
   if (
     initialKeywords !== propsSnap.initialKeywords ||
     initialLatest !== propsSnap.initialLatest ||
     initialByDay !== propsSnap.initialByDay ||
+    initialSuggested !== propsSnap.initialSuggested ||
     placeId !== propsSnap.placeId
   ) {
     setPropsSnap({
       initialKeywords,
       initialLatest,
       initialByDay,
+      initialSuggested,
       placeId,
     });
     setKeywords(initialKeywords);
+    setSuggestedPhrases(initialSuggested);
     setLatestByKeyword(initialLatest);
     setScansByKeywordDay(initialByDay);
     setHasPlaceId(Boolean(placeId));
@@ -322,6 +331,51 @@ export function RankPositionsSection({
       setPhrase("");
       setAdding(false);
       toast.success({ title: "Dodano frazę" });
+    });
+  }
+
+  function onAcceptSuggested(phraseValue: string) {
+    startTransition(async () => {
+      const res = await acceptSuggestedRankPhrase({ phrase: phraseValue });
+      if (!res.ok) {
+        toast.error({ title: "Nie dodano frazy", description: res.error });
+        return;
+      }
+      const next: RankKeywordView = {
+        id: res.keyword.id,
+        phrase: res.keyword.phrase,
+        defaultRadiusKm: res.keyword.defaultRadiusKm,
+        createdAt: res.keyword.createdAt,
+        scannedToday: false,
+        runningScanId: null,
+        scanDays: [],
+      };
+      setKeywords((prev) => [next, ...prev]);
+      setLatestByKeyword((prev) => ({ ...prev, [next.id]: null }));
+      setScansByKeywordDay((prev) => ({ ...prev, [next.id]: {} }));
+      setSuggestedPhrases((prev) =>
+        prev.filter((p) => p.toLowerCase() !== phraseValue.toLowerCase()),
+      );
+      setSelectedKeywordId(next.id);
+      setSelectedDay(warsawTodayKey());
+      setScan(null);
+      toast.success({
+        title: "Dodano frazę",
+        description: "Kliknij „Skanuj teraz”, aby uruchomić raport.",
+      });
+    });
+  }
+
+  function onDismissSuggested(phraseValue: string) {
+    startTransition(async () => {
+      const res = await dismissSuggestedRankPhrase({ phrase: phraseValue });
+      if (!res.ok) {
+        toast.error({ title: "Nie odrzucono", description: res.error });
+        return;
+      }
+      setSuggestedPhrases((prev) =>
+        prev.filter((p) => p.toLowerCase() !== phraseValue.toLowerCase()),
+      );
     });
   }
 
@@ -728,6 +782,42 @@ export function RankPositionsSection({
                 Dodaj frazy kluczowe, a następnie kliknij „Skanuj teraz”, aby
                 rozpocząć monitorowanie pozycji.
               </p>
+              {keywords.length === 0 && suggestedPhrases.length > 0 ? (
+                <div className="rank-suggested">
+                  <p className="rank-suggested-title">
+                    Sugerowane frazy z analizy
+                  </p>
+                  <ul className="rank-suggested-list">
+                    {suggestedPhrases.map((phraseValue) => (
+                      <li key={phraseValue} className="rank-suggested-item">
+                        <span className="rank-suggested-phrase">
+                          {phraseValue}
+                        </span>
+                        <div className="rank-suggested-actions">
+                          <button
+                            type="button"
+                            className="ui-btn ui-btn-primary ui-btn-sm"
+                            disabled={pending}
+                            aria-label={`Dodaj frazę ${phraseValue}`}
+                            onClick={() => onAcceptSuggested(phraseValue)}
+                          >
+                            <Check aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            className="ui-btn ui-btn-ghost ui-btn-sm"
+                            disabled={pending}
+                            aria-label={`Odrzuć frazę ${phraseValue}`}
+                            onClick={() => onDismissSuggested(phraseValue)}
+                          >
+                            <X aria-hidden />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               {keywords.length === 0 ? renderAddControls(true) : null}
               {selectedKeyword && !selectedKeyword.scannedToday ? (
                 <button

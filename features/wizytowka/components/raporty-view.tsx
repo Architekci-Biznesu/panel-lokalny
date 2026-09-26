@@ -90,6 +90,7 @@ export function RaportyView({
     latestByKeyword: Record<string, RankScanView | null>;
     scansByKeywordDay: Record<string, Record<string, RankScanView>>;
     activeScan: RankScanView | null;
+    suggestedPhrases?: string[];
   } | null;
 }) {
   const summary = buildReportSummary(series);
@@ -175,6 +176,7 @@ export function RaportyView({
           latestByKeyword={rank.latestByKeyword}
           scansByKeywordDay={rank.scansByKeywordDay}
           activeScan={rank.activeScan}
+          suggestedPhrases={rank.suggestedPhrases ?? []}
         />
       ) : null}
     </div>

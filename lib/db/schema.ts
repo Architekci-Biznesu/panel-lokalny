@@ -327,6 +327,8 @@ export const gbpAuditRuns = pgTable("gbp_audit_runs", {
     .references(() => profiles.id, { onDelete: "cascade" }),
   status: gbpAuditRunStatusEnum("status").notNull().default("running"),
   error: text("error"),
+  /** Competitor Local Pack insights + suggested rank phrases from last audit. */
+  insights: jsonb("insights").$type<Record<string, unknown> | null>(),
   startedAt: timestamp("started_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

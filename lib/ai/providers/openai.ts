@@ -177,6 +177,20 @@ Bez markdownu, bez dodatkowych kluczy.`;
       "",
       "Odrzucone wcześniej (nie powtarzaj tej samej formy):",
       JSON.stringify(input.rejectedSuggestions.slice(0, 40)),
+      "",
+      "Sygnał konkurencji z Local Pack (opcjonalny kontekst):",
+      JSON.stringify(
+        input.competitorInsights
+          ? {
+              phrases: input.competitorInsights.phrases,
+              categoryStats: input.competitorInsights.categoryStats.slice(0, 15),
+              titleSamples: input.competitorInsights.titleSamples.slice(0, 8),
+              descriptionSamples:
+                input.competitorInsights.descriptionSamples.slice(0, 8),
+              photoStats: input.competitorInsights.photoStats,
+            }
+          : null,
+      ),
     ].join("\n");
 
     const raw = await completeJson(system, user);

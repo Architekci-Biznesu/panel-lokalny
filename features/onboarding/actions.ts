@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getTextProvider } from "@/lib/ai";
@@ -468,9 +468,13 @@ export async function startGbpOAuth(modeRaw: string) {
 const confirmLocationsSchema = z.object({
   mode: modeSchema,
   locationNames: z.array(z.string().min(1)).min(1),
-  groupMode: z.enum(["none", "new", "existing"]).default("none"),
+  groupMode: z
+    .enum(["none", "new", "existing", "with_profile"])
+    .default("none"),
   groupName: z.string().optional(),
   existingGroupId: z.string().uuid().optional(),
+  /** Profil bez grupy - kotwica przy groupMode=with_profile. */
+  anchorProfileId: z.string().uuid().optional(),
 });
 
 export async function confirmGbpLocations(
@@ -513,7 +517,58 @@ export async function confirmGbpLocations(
   };
 
   let groupId: string | null = null;
-  if (selected.length > 1 && parsed.data.groupMode === "new") {
+  const { groupMode } = parsed.data;
+
+  if (groupMode === "with_profile") {
+    if (!parsed.data.anchorProfileId) {
+      return { ok: false, error: "Wybierz profil do połączenia" };
+    }
+    const [anchor] = await db
+      .select({ id: profiles.id, name: profiles.name })
+      .from(profiles)
+      .where(
+        and(
+          eq(profiles.id, parsed.data.anchorProfileId),
+          eq(profiles.accountId, accountId),
+        ),
+      )
+      .limit(1);
+    if (!anchor) {
+      return { ok: false, error: "Nie znaleziono wybranego profilu" };
+    }
+    const [alreadyGrouped] = await db
+      .select({ profileId: profileGroups.profileId })
+      .from(profileGroups)
+      .where(eq(profileGroups.profileId, anchor.id))
+      .limit(1);
+    if (alreadyGrouped) {
+      return {
+        ok: false,
+        error: "Ten profil jest już w grupie - wybierz istniejącą grupę",
+      };
+    }
+    const [group] = await db
+      .insert(publishGroups)
+      .values({
+        accountId,
+        name:
+          parsed.data.groupName?.trim() ||
+          anchor.name.trim() ||
+          "Grupa publikacji",
+      })
+      .returning();
+    groupId = group.id;
+    await db.insert(profileGroups).values({
+      profileId: anchor.id,
+      groupId,
+    });
+  } else if (groupMode === "new") {
+    if (selected.length < 2) {
+      return {
+        ok: false,
+        error: "Nowa grupa wymaga co najmniej dwóch lokalizacji naraz",
+      };
+    }
     const [group] = await db
       .insert(publishGroups)
       .values({
@@ -522,7 +577,7 @@ export async function confirmGbpLocations(
       })
       .returning();
     groupId = group.id;
-  } else if (selected.length > 1 && parsed.data.groupMode === "existing") {
+  } else if (groupMode === "existing") {
     if (!parsed.data.existingGroupId) {
       return { ok: false, error: "Wybierz istniejącą grupę" };
     }
@@ -733,4 +788,20 @@ export async function listPublishGroupsForAccount() {
     .select()
     .from(publishGroups)
     .where(eq(publishGroups.accountId, accountId));
+}
+
+/** Profile konta, które jeszcze nie należą do żadnej grupy publikacji. */
+export async function listUngroupedProfilesForAccount() {
+  const accountId = await getActiveAccountId();
+  return db
+    .select({
+      id: profiles.id,
+      name: profiles.name,
+    })
+    .from(profiles)
+    .leftJoin(profileGroups, eq(profileGroups.profileId, profiles.id))
+    .where(
+      and(eq(profiles.accountId, accountId), isNull(profileGroups.groupId)),
+    )
+    .orderBy(profiles.name);
 }

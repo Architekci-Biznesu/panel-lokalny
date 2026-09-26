@@ -59,16 +59,22 @@ type DraftView = {
 };
 
 type GroupOption = { id: string; name: string };
+type ProfileOption = { id: string; name: string };
+
+type LinkMode = "none" | "new" | "existing" | "with_profile";
 
 export function OnboardingWizard({
   mode,
   draft: initialDraft,
   groups,
+  ungroupedProfiles = [],
   gbpStatus,
 }: {
   mode: "new" | "add";
   draft: DraftView;
   groups: GroupOption[];
+  /** Profile bez grupy - do „Połącz z istniejącym” przy mode=add. */
+  ungroupedProfiles?: ProfileOption[];
   gbpStatus?: string | null;
 }) {
   const router = useRouter();
@@ -113,11 +119,12 @@ export function OnboardingWizard({
       : [],
   );
   const [locationQuery, setLocationQuery] = useState("");
-  const [groupMode, setGroupMode] = useState<"none" | "new" | "existing">(
-    "none",
-  );
+  const [groupMode, setGroupMode] = useState<LinkMode>("none");
   const [groupName, setGroupName] = useState("");
   const [existingGroupId, setExistingGroupId] = useState(groups[0]?.id ?? "");
+  const [anchorProfileId, setAnchorProfileId] = useState(
+    ungroupedProfiles[0]?.id ?? "",
+  );
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenNote, setRegenNote] = useState("");
   const [regenerating, setRegenerating] = useState(false);
@@ -182,6 +189,10 @@ export function OnboardingWizard({
   }, [regenOpen]);
 
   useEffect(() => {
+    // Przy Dodaj profil + istniejące profile bez grupy użytkownik wybiera powiązanie.
+    if (mode === "add" && (ungroupedProfiles.length > 0 || groups.length > 0)) {
+      return;
+    }
     if (
       autoConfirmed.current ||
       !initialDraft.hasConnection ||
@@ -206,7 +217,13 @@ export function OnboardingWizard({
         autoConfirmed.current = false;
       }
     });
-  }, [initialDraft.hasConnection, initialDraft.pendingLocations, mode]);
+  }, [
+    initialDraft.hasConnection,
+    initialDraft.pendingLocations,
+    mode,
+    ungroupedProfiles.length,
+    groups.length,
+  ]);
 
   const briefEdited = useMemo(() => {
     return (
@@ -719,40 +736,95 @@ export function OnboardingWizard({
             )}
           </div>
 
-          {selected.length > 1 ? (
+          {selected.length > 1 ||
+          (mode === "add" &&
+            selected.length === 1 &&
+            (ungroupedProfiles.length > 0 || groups.length > 0)) ? (
             <div className="auth-field">
-              <label htmlFor="groupMode">Jak połączyć te lokalizacje?</label>
+              <label htmlFor="groupMode">
+                {selected.length > 1
+                  ? "Jak połączyć te lokalizacje?"
+                  : "Jak powiązać ten profil?"}
+              </label>
               <p className="auth-hint">
-                Zaznaczyłeś kilka miejsc. Możesz trzymać je osobno albo wrzucić
-                do jednej grupy - wtedy łatwiej publikujesz te same treści na
-                wszystkich naraz.
+                {selected.length > 1
+                  ? "Zaznaczyłeś kilka miejsc. Możesz trzymać je osobno albo wrzucić do jednej grupy - wtedy łatwiej publikujesz te same treści na wszystkich naraz."
+                  : "Możesz trzymać go osobno albo połączyć z firmą, którą już masz w panelu - wtedy łatwiej publikujesz te same treści na obu naraz."}
               </p>
               <UiSelect
                 id="groupMode"
                 value={groupMode}
-                onChange={(value) =>
-                  setGroupMode(value as "none" | "new" | "existing")
-                }
+                onChange={(value) => {
+                  const next = value as LinkMode;
+                  setGroupMode(next);
+                  if (
+                    next === "with_profile" &&
+                    !groupName.trim() &&
+                    anchorProfileId
+                  ) {
+                    const anchor = ungroupedProfiles.find(
+                      (p) => p.id === anchorProfileId,
+                    );
+                    if (anchor) setGroupName(anchor.name);
+                  }
+                }}
                 options={[
                   {
                     value: "none",
-                    label: "Osobno - każde miejsce to osobny profil",
+                    label:
+                      selected.length > 1
+                        ? "Osobno - każde miejsce to osobny profil"
+                        : "Osobno - bez grupy publikacji",
                   },
-                  {
-                    value: "new",
-                    label: "Razem - utwórz nową grupę publikacji",
-                  },
+                  ...(selected.length > 1
+                    ? [
+                        {
+                          value: "new",
+                          label: "Razem - utwórz nową grupę publikacji",
+                        },
+                      ]
+                    : []),
+                  ...(mode === "add" &&
+                  selected.length === 1 &&
+                  ungroupedProfiles.length > 0
+                    ? [
+                        {
+                          value: "with_profile",
+                          label: "Połącz z istniejącym profilem",
+                        },
+                      ]
+                    : []),
                   ...(groups.length > 0
                     ? [
                         {
                           value: "existing",
-                          label: "Razem - dodaj do istniejącej grupy",
+                          label:
+                            selected.length > 1
+                              ? "Razem - dodaj do istniejącej grupy"
+                              : "Dodaj do istniejącej grupy",
                         },
                       ]
                     : []),
                 ]}
               />
-              {groupMode === "new" ? (
+              {groupMode === "with_profile" ? (
+                <UiSelect
+                  value={anchorProfileId}
+                  onChange={(value) => {
+                    setAnchorProfileId(value);
+                    const anchor = ungroupedProfiles.find(
+                      (p) => p.id === value,
+                    );
+                    if (anchor) setGroupName(anchor.name);
+                  }}
+                  aria-label="Profil do połączenia"
+                  options={ungroupedProfiles.map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                  }))}
+                />
+              ) : null}
+              {groupMode === "new" || groupMode === "with_profile" ? (
                 <input
                   className="ui-field"
                   placeholder="Nazwa grupy, np. Salony Warszawa"
@@ -784,9 +856,13 @@ export function OnboardingWizard({
                   const result = await confirmGbpLocations({
                     mode,
                     locationNames: selected,
-                    groupMode: selected.length > 1 ? groupMode : "none",
+                    groupMode,
                     groupName,
                     existingGroupId: existingGroupId || undefined,
+                    anchorProfileId:
+                      groupMode === "with_profile"
+                        ? anchorProfileId || undefined
+                        : undefined,
                   });
                   if (result && !result.ok) {
                     toast.error({

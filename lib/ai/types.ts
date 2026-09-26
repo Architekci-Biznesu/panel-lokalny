@@ -56,6 +56,18 @@ export type GbpAuditSuggestion = {
   rationale: string;
 };
 
+export type CompetitorInsightsForAudit = {
+  phrases: string[];
+  categoryStats: Array<{ gcid: string; displayName: string; count: number }>;
+  titleSamples: string[];
+  descriptionSamples: string[];
+  photoStats: {
+    ourCount: number;
+    competitorMedian: number | null;
+    competitorMax: number | null;
+  } | null;
+};
+
 export type GenerateGbpAuditInput = {
   brief: BriefFields & {
     serviceArea?: string | null;
@@ -74,6 +86,7 @@ export type GenerateGbpAuditInput = {
     field: string;
     suggestedValue: string;
   }>;
+  competitorInsights?: CompetitorInsightsForAudit | null;
 };
 
 export interface TextProvider {

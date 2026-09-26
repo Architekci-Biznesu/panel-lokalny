@@ -12,12 +12,12 @@ export const PROPOSAL_ORDER = [
 export type ProposalField = (typeof PROPOSAL_ORDER)[number];
 
 export const WIZ_TABS = [
+  { href: "/wizytowka/raporty", label: "Raporty" },
   { href: "/wizytowka/informacje", label: "Informacje" },
   { href: "/wizytowka/uslugi", label: "Usługi" },
   { href: "/wizytowka/kontakt", label: "Kontakt" },
   { href: "/wizytowka/atrybuty", label: "Atrybuty" },
   { href: "/wizytowka/nap", label: "NAP" },
-  { href: "/wizytowka/raporty", label: "Raporty" },
 ] as const;
 
 export type WizTabHref = (typeof WIZ_TABS)[number]["href"];
@@ -85,12 +85,19 @@ export type ProposalCardItem =
     }
   | { kind: "special_hours"; hint: string }
   | { kind: "attributes"; count: number }
-  | { kind: "photos"; count: number };
+  | {
+      kind: "photos";
+      count: number;
+      competitorMedian?: number | null;
+      competitorMax?: number | null;
+    };
 
 export type ProposalCardHints = {
   specialHoursHint?: string | null;
   factsToConfirm?: number;
   photoCount?: number;
+  competitorPhotoMedian?: number | null;
+  competitorPhotoMax?: number | null;
 };
 
 export function isNudgeProposalCard(
@@ -98,7 +105,12 @@ export function isNudgeProposalCard(
 ): item is
   | { kind: "special_hours"; hint: string }
   | { kind: "attributes"; count: number }
-  | { kind: "photos"; count: number } {
+  | {
+      kind: "photos";
+      count: number;
+      competitorMedian?: number | null;
+      competitorMax?: number | null;
+    } {
   return (
     item.kind === "special_hours" ||
     item.kind === "attributes" ||
@@ -142,8 +154,22 @@ export function proposalCardItems(
   }
 
   const photoCount = hints.photoCount ?? 0;
-  if (photoCount < GBP_PHOTO_MIN) {
-    items.push({ kind: "photos", count: photoCount });
+  const competitorMedian = hints.competitorPhotoMedian ?? null;
+  const competitorMax = hints.competitorPhotoMax ?? null;
+  const behindCompetitors =
+    competitorMedian != null
+      ? photoCount < competitorMedian
+      : competitorMax != null
+        ? photoCount < competitorMax
+        : false;
+
+  if (photoCount < GBP_PHOTO_MIN || behindCompetitors) {
+    items.push({
+      kind: "photos",
+      count: photoCount,
+      competitorMedian,
+      competitorMax,
+    });
   }
 
   return items;

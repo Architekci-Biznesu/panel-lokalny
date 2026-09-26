@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import {
   listPublishGroupsForAccount,
+  listUngroupedProfilesForAccount,
   loadOnboardingState,
 } from "@/features/onboarding/actions";
 import { resolveSwitcherProfileId } from "@/lib/session";
@@ -38,6 +39,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
   const session = await auth();
   const state = await loadOnboardingState(mode);
   const groups = await listPublishGroupsForAccount();
+  const ungroupedProfiles = await listUngroupedProfilesForAccount();
   const step = (
     ["1", "2", "3"].includes(state.draft.step) ? state.draft.step : "1"
   ) as "1" | "2" | "3";
@@ -74,6 +76,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
         mode={mode}
         draft={state.draft}
         groups={groups.map((g) => ({ id: g.id, name: g.name }))}
+        ungroupedProfiles={ungroupedProfiles}
         gbpStatus={params.gbp}
       />
     </SplitScreenLayout>

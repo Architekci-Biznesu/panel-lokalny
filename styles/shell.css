@@ -67,7 +67,7 @@
     width: 100%;
     max-width: none;
     margin-inline: 0;
-    padding: calc(76px + var(--space-4)) var(--space-6) var(--space-7);
+    padding: var(--space-4) var(--space-6) var(--space-7);
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -81,7 +81,7 @@
 @layer components {
   @media (max-width: 899px) {
     .app-content {
-      padding: calc(76px + var(--space-4)) var(--space-4) var(--space-7);
+      padding: var(--space-4) var(--space-4) var(--space-7);
     }
   }
 }
@@ -479,10 +479,7 @@
 
 @layer components {
   .topnav {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    position: relative;
     z-index: 40;
     display: flex;
     align-items: center;
@@ -878,7 +875,7 @@
     }
 
     .app-content {
-      padding: calc(76px + var(--space-3)) var(--space-4) var(--space-6);
+      padding: var(--space-3) var(--space-4) var(--space-6);
     }
   }
 }

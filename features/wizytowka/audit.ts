@@ -12,21 +12,29 @@ import {
   gbpAuditRuns,
   gbpSuggestions,
   profileBriefs,
+  rankKeywords,
   type Profile,
 } from "@/lib/db/schema";
 import {
   batchGetGbpCategories,
+  countGbpOwnerPhotos,
   fetchGbpLocationDetails,
   listGbpAttributesForCategory,
   listGbpAttributesForLocation,
   listGbpCategories,
+  listGbpLocationMedia,
 } from "@/lib/integrations/gbp/client";
 import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/access";
 import { requireOwnedProfile } from "@/lib/session";
 import {
+  fetchCompetitorInsights,
+  type GbpAuditInsights,
+} from "@/features/wizytowka/competitor-insights";
+import {
   parseLocation,
   serviceItemsToDrafts,
 } from "@/features/wizytowka/types";
+import { reconcileAdditionalCategories } from "@/features/wizytowka/reconcile-additional-categories";
 
 function normalizeSuggestionValue(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -193,10 +201,14 @@ export async function runGbpAuditForProfile(profileId: string): Promise<void> {
     .returning();
 
   try {
-    await executeAudit(profile);
+    const insights = await executeAudit(profile);
     await db
       .update(gbpAuditRuns)
-      .set({ status: "done", finishedAt: new Date() })
+      .set({
+        status: "done",
+        finishedAt: new Date(),
+        insights: insights as unknown as Record<string, unknown>,
+      })
       .where(eq(gbpAuditRuns.id, run.id));
   } catch (error) {
     await db
@@ -211,7 +223,7 @@ export async function runGbpAuditForProfile(profileId: string): Promise<void> {
   }
 }
 
-async function executeAudit(profile: Profile): Promise<void> {
+async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
   const accessToken = await getGbpAccessTokenForProfile(profile);
   const locationName = profile.gbpLocationId!;
   const raw = await fetchGbpLocationDetails(accessToken, locationName);
@@ -226,7 +238,7 @@ async function executeAudit(profile: Profile): Promise<void> {
     ...(location.categories?.additionalCategories?.map((c) => c.name) ?? []),
   ].filter((n): n is string => Boolean(n));
 
-  const [allCategories, categoryDetails, attributeMetadata, rejected] =
+  const [allCategories, categoryDetails, attributeMetadata, rejected, keywordRows] =
     await Promise.all([
       listGbpCategories(accessToken).catch(() => []),
       batchGetGbpCategories(accessToken, categoryNames),
@@ -249,7 +261,20 @@ async function executeAudit(profile: Profile): Promise<void> {
             eq(gbpSuggestions.status, "rejected"),
           ),
         ),
+      db
+        .select({ id: rankKeywords.id })
+        .from(rankKeywords)
+        .where(eq(rankKeywords.profileId, profile.id))
+        .limit(1),
     ]);
+
+  let ourPhotoCount = 0;
+  try {
+    const media = await listGbpLocationMedia(accessToken, locationName);
+    ourPhotoCount = countGbpOwnerPhotos(media.owner);
+  } catch {
+    ourPhotoCount = 0;
+  }
 
   const serviceTypes = categoryDetails.flatMap((c) => c.serviceTypes ?? []);
 
@@ -260,6 +285,21 @@ async function executeAudit(profile: Profile): Promise<void> {
           name: c.name,
           displayName: c.displayName,
         }));
+
+  const primaryDisplayName =
+    location.categories?.primaryCategory?.displayName ??
+    availableCategories.find((c) => c.name === primaryName)?.displayName ??
+    primaryName ??
+    null;
+
+  const competitorInsights = await fetchCompetitorInsights({
+    location,
+    primaryDisplayName,
+    briefServices: brief?.services,
+    availableCategories,
+    ourPhotoCount,
+    suggestRankPhrases: keywordRows.length === 0,
+  });
 
   const provider = getTextProvider();
   const suggestions = await provider.generateGbpAuditSuggestions({
@@ -293,6 +333,19 @@ async function executeAudit(profile: Profile): Promise<void> {
       displayName: a.displayName,
     })),
     rejectedSuggestions: rejected,
+    competitorInsights: {
+      phrases: competitorInsights.phrases,
+      categoryStats: competitorInsights.categoryStats,
+      titleSamples: competitorInsights.titleSamples,
+      descriptionSamples: competitorInsights.descriptionSamples,
+      photoStats: competitorInsights.photoStats
+        ? {
+            ourCount: competitorInsights.photoStats.ourCount,
+            competitorMedian: competitorInsights.photoStats.competitorMedian,
+            competitorMax: competitorInsights.photoStats.competitorMax,
+          }
+        : null,
+    },
   });
 
   const rejectedSet = new Set(
@@ -352,6 +405,30 @@ async function executeAudit(profile: Profile): Promise<void> {
         ) {
           continue;
         }
+        const currentNames = (location.categories?.additionalCategories ?? [])
+          .map((c) => c.name)
+          .filter((n): n is string => Boolean(n));
+        const displayByName = new Map(
+          availableCategories.map((c) => [c.name, c.displayName ?? c.name]),
+        );
+        for (const c of location.categories?.additionalCategories ?? []) {
+          if (c.name && c.displayName) displayByName.set(c.name, c.displayName);
+        }
+        const avoidText = [brief?.avoid, brief?.outOfScope]
+          .filter(Boolean)
+          .join("\n");
+        const competitorGcids = new Set(
+          competitorInsights.categoryStats.map((s) => s.gcid),
+        );
+        suggestedValue = JSON.stringify(
+          reconcileAdditionalCategories(
+            currentNames,
+            names as string[],
+            displayByName,
+            avoidText,
+            { competitorGcids },
+          ),
+        );
       } catch {
         continue;
       }
@@ -404,6 +481,8 @@ async function executeAudit(profile: Profile): Promise<void> {
       status: "pending",
     });
   }
+
+  return competitorInsights;
 }
 
 /** Starts audit for active profile (or given owned profileId). */

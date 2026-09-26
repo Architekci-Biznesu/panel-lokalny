@@ -102,18 +102,14 @@ export function ProfileSwitcher({
       if (b.id === activeProfileId) return 1;
       return a.name.localeCompare(b.name, "pl");
     });
-    const base =
-      compact && activeProfileId
-        ? ordered.filter((p) => p.id !== activeProfileId)
-        : ordered;
     const q = query.trim().toLowerCase();
-    if (!q) return base;
-    return base.filter(
+    if (!q) return ordered;
+    return ordered.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         (p.location ?? "").toLowerCase().includes(q),
     );
-  }, [profiles, query, compact, activeProfileId]);
+  }, [profiles, query, activeProfileId]);
 
   useEffect(() => {
     function onDocClick(event: MouseEvent) {
@@ -327,11 +323,7 @@ export function ProfileSwitcher({
           {filtered.length > 0 || !query.trim() ? (
             <p className="profile-menu-section">
               <span>
-                {adminImpersonating
-                  ? "Profile klienta"
-                  : compact
-                    ? "Inne profile"
-                    : "Twoje profile"}
+                {adminImpersonating ? "Profile klienta" : "Twoje profile"}
               </span>
               <span className="mono">{filtered.length}</span>
             </p>
@@ -354,13 +346,12 @@ export function ProfileSwitcher({
                   </button>
                 </div>
               ) : (
-                <p className="profile-menu-empty">
-                  {compact ? "Brak innych profili" : "Brak wyników"}
-                </p>
+                <p className="profile-menu-empty">Brak wyników</p>
               )
             ) : (
               filtered.map((profile) => {
-                const isActive = profile.id === activeProfileId;
+                // Na onboarding/add nie zaznaczamy „skąd przyszedłeś” - to wybór, nie bieżący kontekst.
+                const isActive = !compact && profile.id === activeProfileId;
                 return (
                   <button
                     key={profile.id}

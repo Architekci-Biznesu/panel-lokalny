@@ -6,6 +6,9 @@ import {
   computeCompleteness,
   GBP_PHOTO_MIN,
 } from "@/features/wizytowka/completeness";
+import {
+  loadLatestAuditInsights,
+} from "@/features/wizytowka/competitor-insights";
 import { loadActiveGbpBundle } from "@/features/wizytowka/load-location";
 import { getUpcomingHolidayHint } from "@/features/wizytowka/polish-holidays";
 import {
@@ -40,11 +43,20 @@ export default async function WizytowkaLayout({
   let lastAnalyzedIso: string | null = null;
   let tabCounts: ReturnType<typeof countSuggestionsByTab> = {};
   let specialHoursHint: string | null = null;
+  let competitorPhotoMedian: number | null = null;
+  let competitorPhotoMax: number | null = null;
 
   try {
     const bundle = await loadActiveGbpBundle();
     location = bundle.location;
     analyzing = bundle.latestAuditRun?.status === "running";
+
+    const latestInsights = await loadLatestAuditInsights(bundle.profile.id);
+    if (latestInsights?.insights.photoStats) {
+      competitorPhotoMedian =
+        latestInsights.insights.photoStats.competitorMedian;
+      competitorPhotoMax = latestInsights.insights.photoStats.competitorMax;
+    }
 
     let photoCount = 0;
     try {
@@ -100,7 +112,6 @@ export default async function WizytowkaLayout({
           <h1>Wizytówka Google</h1>
           <p>
             Dane na żywo z Google Business Profile - zmiany zapisują się od razu
-            <span id="wiz-topbar-slot" className="wiz-header-slot" />
           </p>
         </div>
         <div className="wiz-header-actions">
@@ -108,7 +119,10 @@ export default async function WizytowkaLayout({
             <ArrowUpRight aria-hidden />
             <span>Kontekst firmy</span>
           </Link>
-          <ReanalyzeButton />
+          <div className="wiz-reanalyze">
+            <ReanalyzeButton />
+            <LastAnalysisLabel iso={lastAnalyzedIso} />
+          </div>
         </div>
       </div>
 
@@ -135,12 +149,13 @@ export default async function WizytowkaLayout({
               summary={summary}
             />
           ) : null}
-          <LastAnalysisLabel iso={lastAnalyzedIso} />
           <ProposalCards
             suggestions={pendingSuggestions}
             specialHoursHint={specialHoursHint}
             factsToConfirm={summary?.factsToConfirm ?? 0}
             photoCount={summary?.photoCount ?? GBP_PHOTO_MIN}
+            competitorPhotoMedian={competitorPhotoMedian}
+            competitorPhotoMax={competitorPhotoMax}
             mapsUri={location?.metadata?.mapsUri ?? null}
           />
           {analyzing ? (
