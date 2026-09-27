@@ -43,7 +43,7 @@ function BreakdownBars({
 }
 
 function RateTicks({ value }: { value: number }) {
-  const total = 20;
+  const total = 50;
   const filled = Math.max(
     0,
     Math.min(total, Math.round((value / 100) * total)),
