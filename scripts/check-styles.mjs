@@ -90,7 +90,7 @@ const dynamicPrefixes = [...code.matchAll(/([a-z][a-z0-9-]*-)\$\{/g)].map(
   (m) => m[1],
 );
 // .ui-* to design system (mogą czekać na użycie), is-* to modyfikatory stanu, reszta to klasy bibliotek
-const ALWAYS_USED = ["ui-", "is-", "leaflet-", "recharts-", "gooey"];
+const ALWAYS_USED = ["ui-", "is-", "leaflet-", "gooey"];
 const isUsed = (c) =>
   tokens.has(c) ||
   ALWAYS_USED.some((p) => c.startsWith(p)) ||
