@@ -294,12 +294,9 @@ const BarInner = memo(function BarInner({
             const offset = stackOffsets.get(i)?.get(dataKey) ?? 0;
             x = scale(offset) ?? 0;
             barW = valuePos - x;
-            // Apply stack gap for horizontal: shift right and reduce width
+            // Odstęp tylko przesunięciem (jak w pionie, patrz niżej)
             const gapOffset = seriesIndex * stackGap;
             x += gapOffset;
-            if (!isLastSeries && stackGap > 0) {
-              barW = Math.max(0, barW - stackGap);
-            }
           } else {
             x = 0;
             // For grouped bars, offset y position
@@ -319,13 +316,11 @@ const BarInner = memo(function BarInner({
           if (stacked && stackOffsets) {
             const offset = stackOffsets.get(i)?.get(dataKey) ?? 0;
             const offsetY = scale(offset) ?? innerHeight;
-            // Apply stack gap: shift up and reduce height
+            // Zmiana lokalna względem rejestru Bklit: odstęp robi samo przesunięcie
+            // kolejnych serii w górę. Oryginał dodatkowo skracał dolne segmenty, przez co
+            // pierwszy odstęp był podwójny, a dolny segment odklejał się od osi.
             const gapOffset = seriesIndex * stackGap;
             y = offsetY - barHeight - gapOffset;
-            // Reduce height slightly for non-last bars to create visual gap
-            if (!isLastSeries && stackGap > 0) {
-              barHeight = Math.max(0, barHeight - stackGap);
-            }
           } else {
             y = valuePos;
             // For grouped bars, offset x position

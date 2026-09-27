@@ -28,6 +28,8 @@ function weekLabel(iso: string) {
 
 /** Wspólne ustawienia słupków tygodniowych (Bklit BarChart, stos). */
 const CHART_MARGIN = { top: 16, right: 8, bottom: 32, left: 8 };
+/** Odstęp między segmentami stosu - dzięki niemu każdy segment ma zaokrąglone rogi, nie tylko górny. */
+const STACK_GAP = 3;
 
 function ChartLegend({
   items,
@@ -89,14 +91,25 @@ function ViewsChart({ series }: { series: MetricSeries[] }) {
             data={chartData}
             xDataKey="week"
             stacked
+            stackGap={STACK_GAP}
             barGap={0.35}
             aspectRatio="auto"
             className="wiz-report-bars-chart"
             margin={CHART_MARGIN}
           >
             <Grid horizontal numTicksRows={4} />
-            <Bar dataKey="maps" fill={REPORT_COLORS.maps} lineCap={4} />
-            <Bar dataKey="search" fill={REPORT_COLORS.search} lineCap={4} />
+            <Bar
+              dataKey="maps"
+              fill={REPORT_COLORS.maps}
+              lineCap={4}
+              stackGap={STACK_GAP}
+            />
+            <Bar
+              dataKey="search"
+              fill={REPORT_COLORS.search}
+              lineCap={4}
+              stackGap={STACK_GAP}
+            />
             <BarXAxis maxLabels={8} />
             <ChartTooltip
               rows={(point) => [
@@ -166,6 +179,7 @@ function ActionsChart({ series }: { series: MetricSeries[] }) {
             data={chartData}
             xDataKey="week"
             stacked
+            stackGap={STACK_GAP}
             barGap={0.35}
             aspectRatio="auto"
             className="wiz-report-bars-chart"
@@ -176,9 +190,20 @@ function ActionsChart({ series }: { series: MetricSeries[] }) {
               dataKey="directions"
               fill={REPORT_COLORS.directions}
               lineCap={4}
+              stackGap={STACK_GAP}
             />
-            <Bar dataKey="calls" fill={REPORT_COLORS.calls} lineCap={4} />
-            <Bar dataKey="website" fill={REPORT_COLORS.website} lineCap={4} />
+            <Bar
+              dataKey="calls"
+              fill={REPORT_COLORS.calls}
+              lineCap={4}
+              stackGap={STACK_GAP}
+            />
+            <Bar
+              dataKey="website"
+              fill={REPORT_COLORS.website}
+              lineCap={4}
+              stackGap={STACK_GAP}
+            />
             <BarXAxis maxLabels={8} />
             <ChartTooltip
               rows={(point) => [
