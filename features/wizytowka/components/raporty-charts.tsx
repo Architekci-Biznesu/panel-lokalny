@@ -112,6 +112,7 @@ function ViewsChart({ series }: { series: MetricSeries[] }) {
             />
             <BarXAxis maxLabels={8} />
             <ChartTooltip
+              showCrosshair={false}
               rows={(point) => [
                 {
                   color: REPORT_COLORS.maps,
@@ -206,6 +207,7 @@ function ActionsChart({ series }: { series: MetricSeries[] }) {
             />
             <BarXAxis maxLabels={8} />
             <ChartTooltip
+              showCrosshair={false}
               rows={(point) => [
                 {
                   color: REPORT_COLORS.directions,

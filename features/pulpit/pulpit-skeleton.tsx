@@ -1,8 +1,5 @@
 // Szkielet ładowania Pulpitu - ten sam układ co PulpitView (KPI + siatka 8/4).
 
-import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-
 function Bar({ w, h = "0.75rem" }: { w: string; h?: string }) {
   return <span className="ui-skel" style={{ width: w, height: h }} />;
 }
@@ -25,7 +22,10 @@ function CardHeadSkel({ leadWide = "16rem" }: { leadWide?: string }) {
   return (
     <header className="pulpit-card-head">
       <div className="pulpit-title-row">
-        <span className="ui-skel ui-skel-circle" style={{ width: 40, height: 40 }} />
+        <span
+          className="ui-skel ui-skel-circle"
+          style={{ width: 40, height: 40 }}
+        />
         <div className="ui-skel-stack">
           <Bar w="10rem" h="1.25rem" />
           <Bar w={leadWide} h="0.75rem" />
@@ -144,11 +144,10 @@ export function PulpitSkeleton() {
                 </div>
               </div>
             </div>
-            {/* Stopka jest statyczna - ta sama co w ImproveCard, żeby nie zmieniała wyglądu po załadowaniu. */}
-            <Link href="/wizytowka/informacje" className="pulpit-card-foot">
-              Przejdź do wizytówki
-              <ArrowUpRight aria-hidden />
-            </Link>
+            {/* Pusta stopka jak w ImproveCard; niewidoczny tekst trzyma tę samą wysokość. */}
+            <div className="pulpit-card-foot" aria-hidden>
+              <span style={{ visibility: "hidden" }}>Przejdź do wizytówki</span>
+            </div>
           </section>
         </aside>
       </div>
