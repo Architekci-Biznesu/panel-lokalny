@@ -52,13 +52,6 @@ export type PulpitMonthVisibility = {
   compareLabel: string | null;
 };
 
-export type PulpitImproveGap = {
-  id: string;
-  label: string;
-  why: string;
-  href?: string;
-};
-
 export type PulpitProposalItem = {
   id: string;
   field: string;
@@ -75,7 +68,6 @@ export type PulpitPayload = {
   rankPhrases: PulpitRankPhrase[];
   improve: {
     checks: CompletenessCheck[];
-    gaps: PulpitImproveGap[];
   } | null;
   proposals: PulpitProposalItem[];
   proposalsTotal: number;
@@ -362,7 +354,6 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
       rankPhrases,
       improve: {
         checks: summary.checks.filter((c) => !c.filled),
-        gaps: summary.outsidePanelGaps,
       },
       proposals: proposalItems.slice(0, PROPOSALS_PREVIEW),
       proposalsTotal: proposalItems.length,

@@ -486,11 +486,6 @@
     color: var(--warning-foreground);
   }
 
-  .pulpit-action-icon.is-gap {
-    background: var(--warning-soft);
-    color: var(--warning-foreground);
-  }
-
   .pulpit-action-icon svg {
     width: 16px;
     height: 16px;

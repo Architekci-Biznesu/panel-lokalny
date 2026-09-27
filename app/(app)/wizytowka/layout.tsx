@@ -2,6 +2,7 @@ import { GbpPreviewCard } from "@/features/wizytowka/components/gbp-preview-card
 import { LastAnalysisLabel } from "@/features/wizytowka/components/last-analysis-label";
 import { AnalysisRunningGate } from "@/features/wizytowka/components/analysis-running-gate";
 import { ProposalCards } from "@/features/wizytowka/components/proposal-cards";
+import { PendingEditsBanner } from "@/features/wizytowka/components/pending-edits-banner";
 import { WizytowkaSubnav } from "@/features/wizytowka/components/wizytowka-subnav";
 import {
   computeCompleteness,
@@ -60,8 +61,7 @@ export default async function WizytowkaLayout({
       competitorPhotoMax = latestInsights.insights.photoStats.competitorMax;
     }
     if (latestInsights?.insights.hoursStats) {
-      ourWeeklyMinutes =
-        latestInsights.insights.hoursStats.ourWeeklyMinutes;
+      ourWeeklyMinutes = latestInsights.insights.hoursStats.ourWeeklyMinutes;
       competitorHoursMedian =
         latestInsights.insights.hoursStats.competitorMedian;
       competitorHoursMax = latestInsights.insights.hoursStats.competitorMax;
@@ -158,6 +158,9 @@ export default async function WizytowkaLayout({
               photoUrls={photoUrls}
               summary={summary}
             />
+          ) : null}
+          {location?.metadata?.hasPendingEdits ? (
+            <PendingEditsBanner mapsUri={location.metadata.mapsUri ?? null} />
           ) : null}
           <ProposalCards
             suggestions={pendingSuggestions}

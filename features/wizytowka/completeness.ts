@@ -21,12 +21,6 @@ export type CompletenessSummary = {
   pendingSuggestions: number;
   factsToConfirm: number;
   photoCount: number;
-  outsidePanelGaps: Array<{
-    id: string;
-    label: string;
-    why: string;
-    href?: string;
-  }>;
   lastAnalyzedAt: Date | null;
 };
 
@@ -116,42 +110,6 @@ export function computeCompleteness(input: {
     },
   ];
 
-  const outsidePanelGaps: CompletenessSummary["outsidePanelGaps"] = [];
-
-  if (!location.websiteUri?.trim()) {
-    outsidePanelGaps.push({
-      id: "website",
-      label: "Brak strony WWW",
-      why: "Link do witryny zwiększa zaufanie i kliknięcia z profilu Google.",
-      href: "/wizytowka/informacje#wiz-field-website",
-    });
-  }
-
-  if (!location.regularHours?.periods?.length) {
-    outsidePanelGaps.push({
-      id: "hours",
-      label: "Puste godziny otwarcia",
-      why: "Bez godzin Google gorzej pokazuje firmę w wynikach „otwarte teraz”.",
-      href: "/wizytowka/informacje#wiz-field-hours",
-    });
-  }
-
-  if (photoCount < GBP_PHOTO_MIN) {
-    outsidePanelGaps.push({
-      id: "photos",
-      label: "Za mało zdjęć",
-      why: `Masz ${photoCount} z ${GBP_PHOTO_MIN} zdjęć właściciela. Dodaj je w Profilu Firmy Google - w panelu nie da się jeszcze wgrywać mediów.`,
-    });
-  }
-
-  if (location.metadata?.hasPendingEdits) {
-    outsidePanelGaps.push({
-      id: "pending_edits",
-      label: "Oczekujące zmiany w Google",
-      why: "Google wciąż przetwarza edycje - sprawdź status w Profilu Firmy.",
-    });
-  }
-
   return {
     checks,
     filledCount: checks.filter((check) => check.filled).length,
@@ -159,7 +117,6 @@ export function computeCompleteness(input: {
     pendingSuggestions: input.pendingSuggestions.length,
     factsToConfirm,
     photoCount,
-    outsidePanelGaps,
     lastAnalyzedAt: input.lastAnalyzedAt,
   };
 }

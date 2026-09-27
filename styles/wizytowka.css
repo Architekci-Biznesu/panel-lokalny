@@ -3552,3 +3552,84 @@
     transform: translateX(200%);
   }
 }
+
+/* Pasek "Oczekujące zmiany w Google" pod podglądem wizytówki (informacja o stanie, nie decyzja) */
+@layer components {
+  .wiz-pending {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 12px 12px 12px 14px;
+    border-radius: var(--radius-block);
+    background: var(--brand-50);
+    color: var(--foreground);
+  }
+
+  .wiz-pending-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    color: var(--brand);
+  }
+
+  .wiz-pending-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+    animation: wiz-pending-flip 2.4s ease-in-out infinite;
+  }
+
+  .wiz-pending-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wiz-pending-title {
+    margin: 0;
+    font-size: var(--type-sm);
+    font-weight: 500;
+  }
+
+  .wiz-pending-desc {
+    margin: 2px 0 0;
+    font-size: var(--type-xs);
+    color: var(--muted-foreground);
+    line-height: 1.4;
+  }
+
+  .wiz-pending-link {
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 639px) {
+    .wiz-pending {
+      flex-wrap: wrap;
+    }
+
+    .wiz-pending-link {
+      width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wiz-pending-icon svg {
+      animation: none;
+    }
+  }
+}
+
+/* Klepsydra obraca się co chwilę - czekamy na Google */
+@keyframes wiz-pending-flip {
+  0%,
+  70% {
+    transform: rotate(0deg);
+  }
+  85%,
+  100% {
+    transform: rotate(180deg);
+  }
+}

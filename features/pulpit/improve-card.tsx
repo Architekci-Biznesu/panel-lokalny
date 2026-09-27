@@ -5,17 +5,15 @@ import {
   ChevronRight,
   CircleAlert,
   CircleDashed,
-  ExternalLink,
   Sparkles,
 } from "lucide-react";
 import type {
-  PulpitImproveGap,
   PulpitPayload,
   PulpitProposalItem,
 } from "@/features/pulpit/load-pulpit";
 import type { CompletenessCheck } from "@/features/wizytowka/completeness";
 
-type Tone = "ai" | "check" | "gap";
+type Tone = "ai" | "check";
 
 function ActionRow({
   tone,
@@ -85,9 +83,7 @@ export function ImproveCard({
   proposalsTotal: number;
 }) {
   const checks: CompletenessCheck[] = improve?.checks ?? [];
-  const gaps: PulpitImproveGap[] = improve?.gaps ?? [];
-  const isEmpty =
-    proposals.length === 0 && checks.length === 0 && gaps.length === 0;
+  const isEmpty = proposals.length === 0 && checks.length === 0;
 
   const lead =
     proposalsTotal > 0
@@ -98,7 +94,7 @@ export function ImproveCard({
               ? "propozycje AI"
               : "propozycji AI"
         } i luki w profilu.`
-      : "Luki w kompletności profilu i rzeczy poza panelem.";
+      : "Luki w kompletności profilu.";
 
   return (
     <section className="pulpit-card pulpit-improve">
@@ -156,21 +152,6 @@ export function ImproveCard({
                   title={item.label}
                   meta="Uzupełnij w panelu"
                   href={item.href}
-                />
-              ))}
-            </Group>
-          ) : null}
-
-          {gaps.length > 0 ? (
-            <Group title="Poza panelem" count={gaps.length}>
-              {gaps.map((gap) => (
-                <ActionRow
-                  key={`gap-${gap.id}`}
-                  tone="gap"
-                  icon={<ExternalLink />}
-                  title={gap.label}
-                  meta={gap.why}
-                  href={gap.href}
                 />
               ))}
             </Group>
