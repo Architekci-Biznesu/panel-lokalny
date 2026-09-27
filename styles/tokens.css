@@ -70,6 +70,25 @@
   --chart-1: #4f46e5;
   --chart-2: #f26b3a;
   --chart-3: #a5b4fc;
+  --chart-4: var(--brand-200);
+  --chart-5: var(--brand-50);
+
+  /* Wykresy Bklit UI (components/charts) - zmienne, które czytają komponenty z rejestru */
+  --chart-background: var(--card);
+  --chart-foreground: var(--foreground);
+  --chart-foreground-muted: var(--muted-foreground);
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: var(--brand-soft);
+  --chart-grid: var(--neutral-150);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: var(--primary);
+  --chart-tooltip-foreground: var(--primary-foreground);
+  --chart-tooltip-muted: var(--neutral-400);
+  --chart-marker-background: var(--card);
+  --chart-marker-border: var(--border);
+  --chart-marker-foreground: var(--foreground);
+  --chart-label: var(--muted-foreground);
 
   /* Promienie i cienie */
   --radius-pill: 999px;

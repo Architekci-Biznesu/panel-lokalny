@@ -7,6 +7,8 @@ next-env.d.ts
 package-lock.json
 
 # Pliki generowane
+# Wykresy z rejestru Bklit UI (vendor) - bez przeformatowania, żeby łatwo je aktualizować
+components/charts
 drizzle
 public
 docs/design/styl-4/html

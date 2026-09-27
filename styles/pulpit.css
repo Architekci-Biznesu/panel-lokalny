@@ -230,7 +230,7 @@
   }
 
   .pulpit-month-body {
-    margin: var(--space-5) calc(var(--space-2) * -1) 0 calc(var(--space-2) * -1);
+    margin-top: var(--space-4);
   }
 
   .pulpit-month-chart {

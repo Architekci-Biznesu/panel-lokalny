@@ -1,28 +1,16 @@
 "use client";
 
 import { Eye, TrendingDown, TrendingUp } from "lucide-react";
+import { useMemo } from "react";
 import {
   Area,
   AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
+  Grid,
   XAxis,
-  YAxis,
-} from "recharts";
+} from "@/components/charts";
 import type { PulpitMonthVisibility } from "@/features/pulpit/load-pulpit";
-import { formatIntPl, REPORT_COLORS } from "@/features/wizytowka/performance";
-
-function formatTick(iso: string) {
-  const [, m, d] = iso.split("-");
-  return `${Number(d)}.${Number(m)}`;
-}
-
-const AXIS_TICK = {
-  fill: "var(--muted-foreground)",
-  fontSize: 11,
-  fontFamily: "var(--font-mono), ui-monospace, monospace",
-};
+import { formatIntPl } from "@/features/wizytowka/performance";
 
 export function VisibilityCard({
   visibility,
@@ -38,6 +26,16 @@ export function VisibilityCard({
       : `${change >= 0 ? "+" : ""}${Math.round(change).toLocaleString("pl-PL")}%`;
 
   const hasSummary = hasData && visibility != null;
+
+  // Bklit oczekuje obiektów Date na osi X (dni z API przychodzą jako "YYYY-MM-DD").
+  const chartData = useMemo(
+    () =>
+      (visibility?.days ?? []).map((d) => ({
+        date: new Date(`${d.date}T12:00:00`),
+        value: d.value,
+      })),
+    [visibility],
+  );
 
   return (
     <section className="pulpit-card pulpit-visibility">
@@ -85,94 +83,30 @@ export function VisibilityCard({
       ) : (
         <div className="pulpit-month-body">
           <div className="pulpit-month-chart">
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart
-                data={days}
-                margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient
-                    id="pulpitViewsFill"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor={REPORT_COLORS.maps}
-                      stopOpacity={0.22}
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor={REPORT_COLORS.maps}
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  stroke="var(--border)"
-                  vertical={false}
-                  strokeDasharray="0"
-                />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatTick}
-                  tick={AXIS_TICK}
-                  axisLine={false}
-                  tickLine={false}
-                  minTickGap={36}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={AXIS_TICK}
-                  axisLine={false}
-                  tickLine={false}
-                  width={36}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  cursor={{
-                    stroke: "var(--brand-soft)",
-                    strokeWidth: 1,
-                    strokeDasharray: "4 4",
-                  }}
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: 0,
-                    background: "var(--primary)",
-                    boxShadow: "var(--shadow-pop)",
-                    padding: "8px 12px",
-                    fontSize: 12,
-                  }}
-                  labelStyle={{
-                    color: "var(--primary-foreground)",
-                    opacity: 0.7,
-                    marginBottom: 2,
-                  }}
-                  itemStyle={{ color: "var(--primary-foreground)", padding: 0 }}
-                  labelFormatter={(label) => formatTick(String(label))}
-                  formatter={(value) => [
-                    formatIntPl(Number(value ?? 0)),
-                    "Wyświetlenia",
-                  ]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke={REPORT_COLORS.maps}
-                  strokeWidth={2}
-                  fill="url(#pulpitViewsFill)"
-                  activeDot={{
-                    r: 5,
-                    fill: REPORT_COLORS.maps,
-                    stroke: "var(--card)",
-                    strokeWidth: 2,
-                  }}
-                  isAnimationActive={false}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <AreaChart
+              data={chartData}
+              aspectRatio="auto"
+              style={{ height: 240 }}
+              margin={{ top: 16, right: 20, bottom: 32, left: 20 }}
+            >
+              <Grid horizontal numTicksRows={4} />
+              <Area
+                dataKey="value"
+                fill="var(--chart-line-primary)"
+                strokeWidth={2}
+                fillOpacity={0.25}
+              />
+              <XAxis numTicks={6} />
+              <ChartTooltip
+                rows={(point) => [
+                  {
+                    color: "var(--chart-line-primary)",
+                    label: "Wyświetlenia",
+                    value: formatIntPl(Number(point.value ?? 0)),
+                  },
+                ]}
+              />
+            </AreaChart>
           </div>
         </div>
       )}

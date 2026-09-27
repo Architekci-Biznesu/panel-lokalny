@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Wykresy z rejestru Bklit UI (vendor, MIT) - aktualizujemy je z rejestru, nie ręcznie
+    "components/charts/**",
   ]),
 ]);
 
