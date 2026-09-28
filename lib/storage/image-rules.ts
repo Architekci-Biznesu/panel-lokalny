@@ -4,11 +4,16 @@
 
 export const PUBLIC_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
+/** Formats stored and sent to Google (posts accept JPG and PNG). */
 export type PublicImageType = "image/png" | "image/jpeg";
 
-export const PUBLIC_IMAGE_TYPES: readonly PublicImageType[] = [
+/** Formats accepted on upload - WEBP is converted to JPEG before storing. */
+export type UploadImageType = PublicImageType | "image/webp";
+
+export const UPLOAD_IMAGE_TYPES: readonly UploadImageType[] = [
   "image/png",
   "image/jpeg",
+  "image/webp",
 ];
 
 const EXTENSION: Record<PublicImageType, string> = {
@@ -16,12 +21,19 @@ const EXTENSION: Record<PublicImageType, string> = {
   "image/jpeg": "jpg",
 };
 
-export function isAllowedImageType(value: string): value is PublicImageType {
-  return (PUBLIC_IMAGE_TYPES as readonly string[]).includes(value);
+/** Browsers send "image/jpg" or no type at all - normalize before comparing. */
+function declaredType(value: string): string {
+  const type = value.trim().toLowerCase();
+  return type === "image/jpg" || type === "image/pjpeg" ? "image/jpeg" : type;
+}
+
+/** Stored format for an accepted upload. */
+export function storedImageType(type: UploadImageType): PublicImageType {
+  return type === "image/webp" ? "image/jpeg" : type;
 }
 
 /** Type from the file signature - the declared mimeType is never trusted alone. */
-export function detectImageType(bytes: Uint8Array): PublicImageType | null {
+export function detectImageType(bytes: Uint8Array): UploadImageType | null {
   if (
     bytes.length >= 8 &&
     bytes[0] === 0x89 &&
@@ -43,6 +55,13 @@ export function detectImageType(bytes: Uint8Array): PublicImageType | null {
   ) {
     return "image/jpeg";
   }
+  if (
+    bytes.length >= 12 &&
+    String.fromCharCode(...bytes.subarray(0, 4)) === "RIFF" &&
+    String.fromCharCode(...bytes.subarray(8, 12)) === "WEBP"
+  ) {
+    return "image/webp";
+  }
   return null;
 }
 
@@ -50,18 +69,25 @@ export function detectImageType(bytes: Uint8Array): PublicImageType | null {
 export function assertPublicImage(
   bytes: Uint8Array,
   mimeType: string,
-): PublicImageType {
-  if (!isAllowedImageType(mimeType)) {
-    throw new Error("Dozwolone są tylko grafiki PNG i JPEG");
+): UploadImageType {
+  const declared = declaredType(mimeType);
+  if (
+    declared &&
+    !(UPLOAD_IMAGE_TYPES as readonly string[]).includes(declared)
+  ) {
+    throw new Error("Dozwolone są zdjęcia JPG, PNG i WEBP");
   }
   if (bytes.length === 0) {
     throw new Error("Pusta grafika");
   }
   if (bytes.length > PUBLIC_IMAGE_MAX_BYTES) {
-    throw new Error("Grafika jest za duża (maks. 8 MB)");
+    throw new Error("Zdjęcie jest za duże (maks. 8 MB)");
   }
   const detected = detectImageType(bytes);
-  if (detected !== mimeType) {
+  if (!detected) {
+    throw new Error("Dozwolone są zdjęcia JPG, PNG i WEBP");
+  }
+  if (declared && detected !== declared) {
     throw new Error("Zawartość pliku nie zgadza się z typem grafiki");
   }
   return detected;

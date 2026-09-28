@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { SquarePen } from "lucide-react";
 import { GenerateProposalButton } from "@/features/publikacje/components/generate-proposal-button";
 import { PublikacjeSubnav } from "@/features/publikacje/components/publikacje-subnav";
 import { countPendingContent } from "@/features/publikacje/load-inbox";
@@ -21,7 +23,13 @@ export default async function PublikacjeLayout({
             czacie obok albo odrzucasz
           </p>
         </div>
-        <GenerateProposalButton />
+        <div className="pub-header-actions">
+          <Link href="/publikacje?nowy=1" className="ui-btn ui-btn-white">
+            <SquarePen aria-hidden />
+            Nowy post
+          </Link>
+          <GenerateProposalButton />
+        </div>
       </div>
       <PublikacjeSubnav pendingCount={pendingCount} />
       <div className="pub-body">{children}</div>

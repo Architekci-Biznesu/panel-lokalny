@@ -20,6 +20,8 @@ import {
 
 export type InboxItem = {
   id: string;
+  /** "manual" = written by the customer, "ai" = AI proposal */
+  origin: "ai" | "manual";
   title: string;
   body: string;
   imageUrl: string | null;
@@ -56,6 +58,7 @@ export async function loadInbox(profile: Profile): Promise<InboxData> {
   const rows = await db
     .select({
       id: contentItems.id,
+      origin: contentItems.origin,
       title: contentItems.title,
       body: contentItems.body,
       imageUrl: contentItems.imageUrl,

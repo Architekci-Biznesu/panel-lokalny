@@ -484,6 +484,9 @@ export const contentStatusEnum = pgEnum("content_status", [
   "rejected",
 ]);
 
+/** Who wrote the post: AI proposal or the customer by hand. */
+export const contentOriginEnum = pgEnum("content_origin", ["ai", "manual"]);
+
 export const contentChannelEnum = pgEnum("content_channel", [
   "gbp",
   "facebook",
@@ -510,6 +513,7 @@ export const contentItems = pgTable(
       onDelete: "set null",
     }),
     type: contentTypeEnum("type").notNull().default("post"),
+    origin: contentOriginEnum("origin").notNull().default("ai"),
     status: contentStatusEnum("status").notNull().default("pending"),
     topic: text("topic").notNull(),
     title: text("title").notNull(),

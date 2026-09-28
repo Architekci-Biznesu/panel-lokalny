@@ -9,6 +9,7 @@ import {
   buildImageKey,
   keyFromPublicUrl,
   publicUrlForKey,
+  storedImageType,
   type PublicImageType,
 } from "@/lib/storage/image-rules";
 
@@ -60,12 +61,15 @@ function getClient(config: R2Config): S3Client {
   return client;
 }
 
-/** Re-encodes the image (drops metadata and anything smuggled after the pixels). */
+/**
+ * Re-encodes the image (drops metadata and anything smuggled after the
+ * pixels) and applies the EXIF orientation, so phone photos are not sideways.
+ */
 async function reencode(
   bytes: Uint8Array,
   type: PublicImageType,
 ): Promise<Buffer> {
-  const image = sharp(bytes, { failOn: "error" });
+  const image = sharp(bytes, { failOn: "error" }).rotate();
   return type === "image/png"
     ? image.png().toBuffer()
     : image.jpeg({ quality: 88 }).toBuffer();
@@ -76,7 +80,7 @@ export async function putPublicImage(
   mimeType: string,
   options: { profileId: string },
 ): Promise<{ url: string; key: string }> {
-  const type = assertPublicImage(bytes, mimeType);
+  const type = storedImageType(assertPublicImage(bytes, mimeType));
   const config = readConfig();
   const body = await reencode(bytes, type);
   const key = buildImageKey(options.profileId, type);

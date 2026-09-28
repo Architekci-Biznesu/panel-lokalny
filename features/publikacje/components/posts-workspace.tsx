@@ -14,6 +14,7 @@ import {
   type EditRequest,
 } from "@/features/publikacje/components/content-chat";
 import { GenerateProposalButton } from "@/features/publikacje/components/generate-proposal-button";
+import { ManualPostForm } from "@/features/publikacje/components/manual-post-form";
 import {
   HistoryFilters,
   HistoryList,
@@ -86,6 +87,7 @@ export function PostsWorkspace({
   channel,
   activeProfile,
   initialRuns,
+  newPostOpen,
 }: {
   inbox: InboxData;
   history: HistoryItem[];
@@ -93,6 +95,8 @@ export function PostsWorkspace({
   channel: ContentChannel | "all";
   activeProfile: { id: string; name: string };
   initialRuns: GenerationStatus[];
+  /** "Nowy post" form open (?nowy=1) */
+  newPostOpen: boolean;
 }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -170,7 +174,10 @@ export function PostsWorkspace({
   const showPending = status === "pending" || status === "all";
   const pendingItems = showPending ? inbox.items : [];
   const isEmpty =
-    pendingSlots === 0 && pendingItems.length === 0 && history.length === 0;
+    !newPostOpen &&
+    pendingSlots === 0 &&
+    pendingItems.length === 0 &&
+    history.length === 0;
 
   function edit(itemId: string) {
     setEditRequest(null);
@@ -183,6 +190,16 @@ export function PostsWorkspace({
     <div className={`pub-workspace${collapsed ? " is-chat-collapsed" : ""}`}>
       <div className="pub-workspace-list">
         <HistoryFilters status={status} channel={channel} />
+
+        {newPostOpen ? (
+          <ManualPostForm
+            onClose={() => {
+              const params = new URLSearchParams({ status });
+              if (channel !== "all") params.set("kanal", channel);
+              router.replace(`/publikacje?${params.toString()}`);
+            }}
+          />
+        ) : null}
 
         {Array.from({ length: pendingSlots }, (_, i) => (
           <PostSkeleton

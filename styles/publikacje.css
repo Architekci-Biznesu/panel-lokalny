@@ -57,15 +57,6 @@
     top: var(--space-5);
   }
 
-  .pub-card-image {
-    display: block;
-    width: 100%;
-    aspect-ratio: 3 / 2;
-    object-fit: cover;
-    border-radius: var(--radius-block);
-    background: var(--canvas);
-  }
-
   .pub-card-placeholder {
     display: flex;
     flex-direction: column;
@@ -1115,6 +1106,220 @@
   @media (prefers-reduced-motion: reduce) {
     .pub-chat-dock {
       transition: none;
+    }
+  }
+}
+
+/* Ręczne posty: formularz, edycja w miejscu, własne zdjęcia */
+@layer components {
+  .pub-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .pub-manual {
+    gap: var(--space-4);
+  }
+
+  .pub-manual-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .pub-manual-title {
+    margin: 0;
+    font-size: var(--type-lg);
+    font-weight: 400;
+  }
+
+  .pub-manual-form {
+    display: grid;
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .pub-manual-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .pub-manual-label {
+    font-size: var(--type-sm);
+    font-weight: 500;
+  }
+
+  .pub-manual-label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .pub-manual-body {
+    min-height: 10rem;
+    resize: vertical;
+  }
+
+  .pub-manual-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .pub-counter {
+    font-size: var(--type-xs);
+    color: var(--muted-foreground);
+  }
+
+  .pub-counter.is-over {
+    color: var(--danger-strong);
+  }
+
+  /* Zdjęcie posta: podgląd z akcjami albo pusty stan z "Wgraj zdjęcie" */
+  .pub-image {
+    position: relative;
+    border-radius: var(--radius-block);
+    overflow: hidden;
+    background: var(--canvas);
+  }
+
+  .pub-image-img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+  }
+
+  .pub-image-busy {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--card) 60%, transparent);
+  }
+
+  .pub-image-busy svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    animation: pub-spin 0.8s linear infinite;
+  }
+
+  .pub-image-actions {
+    position: absolute;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    display: flex;
+    gap: var(--space-1);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .pub-image:hover .pub-image-actions,
+  .pub-image:focus-within .pub-image-actions {
+    opacity: 1;
+  }
+
+  .pub-image-empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1);
+  }
+
+  /* Tytuł i treść edytowalne w miejscu */
+  .pub-editable {
+    margin: 0;
+  }
+
+  .pub-editable-trigger {
+    position: relative;
+    display: block;
+    /* Hover tło wychodzi poza tekst, a sam tekst zostaje w linii z resztą karty */
+    width: calc(100% + 2 * var(--space-2));
+    margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1);
+    padding: var(--space-1) var(--space-6) var(--space-1) var(--space-2);
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: text;
+    box-sizing: border-box;
+    transition: background-color 0.15s ease;
+  }
+
+  .pub-editable-trigger:hover:not(:disabled),
+  .pub-editable-trigger:focus-visible {
+    background: var(--canvas);
+    outline: none;
+  }
+
+  .pub-editable-icon {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    width: 0.9rem;
+    height: 0.9rem;
+    color: var(--muted-foreground);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .pub-editable-trigger:hover .pub-editable-icon,
+  .pub-editable-trigger:focus-visible .pub-editable-icon {
+    opacity: 1;
+  }
+
+  .pub-inline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .pub-inline-title {
+    font-size: var(--type-md);
+  }
+
+  .pub-inline-body {
+    resize: vertical;
+    line-height: 1.55;
+  }
+
+  .pub-inline-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .pub-inline-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+}
+
+@layer components {
+  @media (max-width: 899px) {
+    .pub-manual-form {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* Na dotyk nie ma hover - akcje zdjęcia i ołówek zawsze widoczne */
+  @media (hover: none) {
+    .pub-image-actions,
+    .pub-editable-icon {
+      opacity: 1;
     }
   }
 }

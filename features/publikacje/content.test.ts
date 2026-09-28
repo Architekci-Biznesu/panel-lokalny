@@ -13,6 +13,11 @@ import {
 } from "../../lib/ai/content-revision";
 import { gbpPublishErrorMessage } from "../../lib/integrations/gbp/publish-errors";
 import { contentDisplayStatus, matchesStatusFilter } from "./content-status";
+import {
+  checkManualPost,
+  MANUAL_BODY_MAX,
+  manualEditLabel,
+} from "./manual-post-rules";
 import { extractGbpSnapshot } from "./gbp-snapshot";
 import { groupSiblings, resolveGroupTargets } from "./group-targets";
 
@@ -300,6 +305,22 @@ const context: ContentContext = {
   assert.equal(photoPick.body, "Stara treść");
   assert.equal(photoPick.newImagePrompt, "fundament budynku");
   assert.ok(!instructionAsksForTitle("zmień opis na test", "Stary"));
+}
+
+/** Manual posts: trimmed fields, Google's text limit, readable history labels. */
+{
+  assert.deepEqual(
+    checkManualPost({ title: "  Nowy   post ", body: "  Treść\r\nlinia 2 " }),
+    { ok: true, title: "Nowy post", body: "Treść\nlinia 2" },
+  );
+  assert.equal(checkManualPost({ title: " ", body: "x" }).ok, false);
+  assert.equal(checkManualPost({ title: "T", body: "" }).ok, false);
+  assert.equal(
+    checkManualPost({ title: "T", body: "a".repeat(MANUAL_BODY_MAX + 1) }).ok,
+    false,
+  );
+  assert.equal(manualEditLabel(true, false), "Edycja ręczna: tytuł");
+  assert.equal(manualEditLabel(true, true), "Edycja ręczna: tytuł i treść");
 }
 
 console.log("content loop tests passed");

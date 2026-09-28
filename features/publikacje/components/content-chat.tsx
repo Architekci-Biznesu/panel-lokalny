@@ -355,9 +355,9 @@ function EditThread({
       ? [{ id: newId(), role: "user", text: initialInstruction }]
       : [],
   );
-  const [title, setTitle] = useState(item.title);
-  const [body, setBody] = useState(item.body);
-  const [revisions, setRevisions] = useState(item.revisionCount);
+  // Title, text and history come from the list (refreshed after every change,
+  // also a manual one), so the chat always works on the current version.
+  const { title, body, revisionCount: revisions } = item;
   const [working, setWorking] = useState<"revise" | "apply" | "undo" | null>(
     initialInstruction ? "revise" : null,
   );
@@ -462,9 +462,7 @@ function EditThread({
       toast.error({ title: "Nie zapisano wersji", description: result.error });
       return;
     }
-    setTitle(result.title);
-    setBody(result.body);
-    setRevisions((n) => n + 1);
+
     patchProposal(message.id, "saved");
     toast.success({ title: "Zapisano nową wersję posta" });
     startTransition(() => router.refresh());
@@ -478,9 +476,7 @@ function EditThread({
       toast.error({ title: "Nie cofnięto zmiany", description: result.error });
       return;
     }
-    setTitle(result.title);
-    setBody(result.body);
-    setRevisions((n) => Math.max(0, n - 1));
+
     setMessages((list) => [
       ...list,
       {

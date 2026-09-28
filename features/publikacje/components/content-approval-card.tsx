@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Check,
-  ImageIcon,
-  Loader2,
-  MessageSquareText,
-  Sparkles,
-} from "lucide-react";
+import { Check, Loader2, MessageSquareText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "gooey-toast";
@@ -17,7 +11,11 @@ import {
   generateContentImage,
   getContentPublishStatus,
   rejectContent,
+  removePostImage,
+  uploadPostImage,
 } from "@/features/publikacje/actions";
+import { PostImagePicker } from "@/features/publikacje/components/post-image-picker";
+import { PostTextEditor } from "@/features/publikacje/components/post-text-editor";
 import { ChannelPicker } from "@/features/publikacje/components/channel-picker";
 import type {
   ChannelOption,
@@ -95,7 +93,9 @@ export function ContentApprovalCard({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [busy, setBusy] = useState<"accept" | "reject" | "image" | null>(null);
+  const [busy, setBusy] = useState<
+    "accept" | "reject" | "image" | "upload" | null
+  >(null);
   const [selected, setSelected] = useState<ContentChannel[]>(
     channels.filter((c) => c.available).map((c) => c.channel),
   );
@@ -179,6 +179,44 @@ export function ContentApprovalCard({
     });
   }
 
+  function uploadImage(file: File) {
+    const data = new FormData();
+    data.set("itemId", item.id);
+    data.set("image", file);
+    setBusy("upload");
+    startTransition(async () => {
+      const result = await uploadPostImage(data);
+      setBusy(null);
+      if (!result.ok) {
+        toast.error({ title: "Nie wgrano zdjęcia", description: result.error });
+        return;
+      }
+      toast.success({ title: "Zdjęcie dodane do posta" });
+      router.refresh();
+    });
+  }
+
+  function removeImage() {
+    setBusy("upload");
+    startTransition(async () => {
+      const result = await removePostImage({ itemId: item.id });
+      setBusy(null);
+      if (!result.ok) {
+        toast.error({
+          title: "Nie usunięto zdjęcia",
+          description: result.error,
+        });
+        return;
+      }
+      setWithImage(false);
+      toast.success({
+        title: "Usunięto zdjęcie",
+        description: "Możesz je przywrócić w czacie: „Cofnij ostatnią zmianę”.",
+      });
+      router.refresh();
+    });
+  }
+
   function makeImage() {
     setBusy("image");
     startTransition(async () => {
@@ -203,50 +241,38 @@ export function ContentApprovalCard({
       className={`ui-section pub-card${isEditing ? " is-editing" : ""}`}
     >
       <div className="pub-card-media">
-        {item.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- public R2 URL, domain set per environment
-          <img src={item.imageUrl} alt="" className="pub-card-image" />
-        ) : (
-          <div className="pub-card-placeholder">
-            <ImageIcon aria-hidden />
-            <p>
-              {withImage
-                ? "Grafika powstanie przy akceptacji"
-                : "Post bez grafiki"}
-            </p>
-            <button
-              type="button"
-              className="ui-btn ui-btn-white ui-btn-sm"
-              disabled={disabled}
-              onClick={makeImage}
-            >
-              {busy === "image" ? (
-                <Loader2 aria-hidden className="ui-btn-spinner" />
-              ) : (
-                <Sparkles aria-hidden />
-              )}
-              {busy === "image" ? "Tworzę grafikę…" : "Wygeneruj teraz"}
-            </button>
-          </div>
-        )}
+        <PostImagePicker
+          previewUrl={item.imageUrl}
+          emptyLabel={
+            withImage ? "Grafika AI powstanie przy akceptacji" : undefined
+          }
+          disabled={disabled}
+          busy={busy === "upload"}
+          onPick={uploadImage}
+          onRemove={removeImage}
+          onGenerate={makeImage}
+          generating={busy === "image"}
+        />
       </div>
 
       <div className="pub-card-main">
         <div className="pub-card-meta">
           <span className="ui-pill ui-pill-neutral">Post</span>
-          <span className="ui-pill ui-pill-info">Wygenerowane przez AI</span>
+          {item.origin === "manual" ? (
+            <span className="ui-pill ui-pill-neutral">Twój post</span>
+          ) : (
+            <span className="ui-pill ui-pill-info">Wygenerowane przez AI</span>
+          )}
           <span className="pub-card-date mono">
             {formatDay(new Date(item.createdAt))}
           </span>
           {item.revisionCount > 0 ? (
             <span className="pub-card-date">
-              Poprawiono w czacie:{" "}
-              <span className="mono">{item.revisionCount}</span>
+              Zmiany: <span className="mono">{item.revisionCount}</span>
             </span>
           ) : null}
         </div>
-        <h3 className="pub-card-title">{item.title}</h3>
-        <p className="pub-card-body">{item.body}</p>
+        <PostTextEditor item={item} disabled={disabled} />
 
         <ChannelPicker
           channels={channels}

@@ -21,6 +21,7 @@ import {
 import { isChannelAvailable } from "@/lib/integrations/publishers";
 import {
   deletePublicImage,
+  putPublicImage,
   publicImageKeyFromUrl,
   StorageNotConfiguredError,
 } from "@/lib/storage";
@@ -36,6 +37,10 @@ import {
   enqueueContentGeneration,
 } from "@/features/publikacje/generate";
 import { MORE_POSTS } from "@/features/publikacje/generation-rules";
+import {
+  checkManualPost,
+  manualEditLabel,
+} from "@/features/publikacje/manual-post-rules";
 import { resolveGroupTargets } from "@/features/publikacje/group-targets";
 import {
   loadContentScope,
@@ -370,6 +375,178 @@ export async function getContentPublishStatus(input: unknown): Promise<
       .from(contentTargets)
       .where(eq(contentTargets.contentItemId, item.id));
     return { ok: true, targets };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+// --- Posty i zdjęcia ręcznie ---
+
+/** The uploaded file from a form, or null when none was chosen. */
+async function readImageFile(
+  formData: FormData,
+): Promise<{ bytes: Uint8Array; type: string } | null> {
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) return null;
+  return { bytes: new Uint8Array(await file.arrayBuffer()), type: file.type };
+}
+
+/** Customer's own post: text pasted by hand, optional own photo. */
+export async function createManualPost(
+  formData: FormData,
+): Promise<{ ok: true; itemId: string } | ActionFail> {
+  const check = checkManualPost({
+    title: String(formData.get("title") ?? ""),
+    body: String(formData.get("body") ?? ""),
+  });
+  if (!check.ok) return { ok: false, error: check.error };
+
+  try {
+    const profile = await getActiveProfile();
+    const scope = await loadContentScope(profile);
+    const file = await readImageFile(formData);
+    // Upload first - a failed photo must not leave a half-made post.
+    const image = file
+      ? await putPublicImage(file.bytes, file.type, { profileId: profile.id })
+      : null;
+
+    const [item] = await db
+      .insert(contentItems)
+      .values({
+        profileId: profile.id,
+        groupId: scope.groupId,
+        type: "post",
+        origin: "manual",
+        status: "pending",
+        topic: check.title,
+        title: check.title,
+        body: check.body,
+        imageUrl: image?.url ?? null,
+        imageKey: image?.key ?? null,
+      })
+      .returning({ id: contentItems.id });
+
+    revalidateModule();
+    return { ok: true, itemId: item.id };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+const textSchema = z.object({
+  itemId: z.string().uuid(),
+  title: z.string().max(2000),
+  body: z.string().max(5000),
+});
+
+/** Inline edit of title / text; the previous version goes to history. */
+export async function updatePostText(
+  input: unknown,
+): Promise<{ ok: true; title: string; body: string } | ActionFail> {
+  const parsed = textSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
+  const check = checkManualPost(parsed.data);
+  if (!check.ok) return { ok: false, error: check.error };
+
+  try {
+    const profile = await getActiveProfile();
+    const item = await requirePending(profile, parsed.data.itemId);
+    const titleChanged = check.title !== item.title;
+    const bodyChanged = check.body !== item.body;
+    if (!titleChanged && !bodyChanged) {
+      return { ok: true, title: item.title, body: item.body };
+    }
+
+    await db.transaction(async (tx) => {
+      await tx.insert(contentRevisions).values({
+        contentItemId: item.id,
+        title: titleChanged ? item.title : null,
+        body: item.body,
+        imageUrl: item.imageUrl,
+        instruction: manualEditLabel(titleChanged, bodyChanged),
+      });
+      await tx
+        .update(contentItems)
+        .set({ title: check.title, body: check.body, updatedAt: new Date() })
+        .where(eq(contentItems.id, item.id));
+    });
+
+    revalidateModule();
+    return { ok: true, title: check.title, body: check.body };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** Customer's own photo for a post (new or replacing the current one). */
+export async function uploadPostImage(
+  formData: FormData,
+): Promise<{ ok: true; imageUrl: string } | ActionFail> {
+  const itemId = z.string().uuid().safeParse(formData.get("itemId"));
+  if (!itemId.success) return { ok: false, error: "Niepoprawne dane" };
+
+  try {
+    const profile = await getActiveProfile();
+    const item = await requirePending(profile, itemId.data);
+    const file = await readImageFile(formData);
+    if (!file) return { ok: false, error: "Wybierz zdjęcie" };
+    const image = await putPublicImage(file.bytes, file.type, {
+      profileId: profile.id,
+    });
+
+    await db.transaction(async (tx) => {
+      await tx.insert(contentRevisions).values({
+        contentItemId: item.id,
+        body: item.body,
+        imageUrl: item.imageUrl,
+        instruction: item.imageUrl
+          ? "Podmiana na własne zdjęcie"
+          : "Własne zdjęcie",
+      });
+      await tx
+        .update(contentItems)
+        .set({
+          imageUrl: image.url,
+          imageKey: image.key,
+          updatedAt: new Date(),
+        })
+        .where(eq(contentItems.id, item.id));
+    });
+
+    revalidateModule();
+    return { ok: true, imageUrl: image.url };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** Removes the post's image (kept in storage - "Cofnij" can bring it back). */
+export async function removePostImage(
+  input: unknown,
+): Promise<{ ok: true } | ActionFail> {
+  const parsed = z.object({ itemId: z.string().uuid() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
+
+  try {
+    const profile = await getActiveProfile();
+    const item = await requirePending(profile, parsed.data.itemId);
+    if (!item.imageUrl) return { ok: true };
+
+    await db.transaction(async (tx) => {
+      await tx.insert(contentRevisions).values({
+        contentItemId: item.id,
+        body: item.body,
+        imageUrl: item.imageUrl,
+        instruction: "Usunięto zdjęcie",
+      });
+      await tx
+        .update(contentItems)
+        .set({ imageUrl: null, imageKey: null, updatedAt: new Date() })
+        .where(eq(contentItems.id, item.id));
+    });
+
+    revalidateModule();
+    return { ok: true };
   } catch (error) {
     return fail(error);
   }

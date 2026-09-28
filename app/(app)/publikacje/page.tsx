@@ -10,7 +10,7 @@ import { getActiveProfile } from "@/lib/session";
 export default async function PublikacjePage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; kanal?: string }>;
+  searchParams: Promise<{ status?: string; kanal?: string; nowy?: string }>;
 }) {
   const params = await searchParams;
   const profile = await getActiveProfile();
@@ -41,6 +41,7 @@ export default async function PublikacjePage({
       channel={channel}
       activeProfile={{ id: profile.id, name: profile.name }}
       initialRuns={runs}
+      newPostOpen={params.nowy === "1"}
     />
   );
 }
