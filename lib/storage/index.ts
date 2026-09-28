@@ -9,6 +9,8 @@ import {
   buildImageKey,
   keyFromPublicUrl,
   publicUrlForKey,
+  POST_IMAGE_MAX_HEIGHT,
+  POST_IMAGE_MAX_WIDTH,
   storedImageType,
   type PublicImageType,
 } from "@/lib/storage/image-rules";
@@ -69,9 +71,16 @@ async function reencode(
   bytes: Uint8Array,
   type: PublicImageType,
 ): Promise<Buffer> {
-  const image = sharp(bytes, { failOn: "error" }).rotate();
+  const image = sharp(bytes, { failOn: "error" }).rotate().resize({
+    width: POST_IMAGE_MAX_WIDTH,
+    height: POST_IMAGE_MAX_HEIGHT,
+    fit: "inside",
+    withoutEnlargement: true,
+  });
+  // 1200 x 900 is at most ~4.3 MB even as raw pixels, so both formats stay
+  // under Google's 5 MB limit.
   return type === "image/png"
-    ? image.png().toBuffer()
+    ? image.png({ compressionLevel: 9 }).toBuffer()
     : image.jpeg({ quality: 88 }).toBuffer();
 }
 

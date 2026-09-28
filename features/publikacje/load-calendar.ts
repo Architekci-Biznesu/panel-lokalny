@@ -1,4 +1,4 @@
-import { and, eq, gte, lt, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   contentItems,
@@ -72,9 +72,12 @@ export async function loadCalendar(
   profile: Profile,
   value: CalendarMonth,
 ): Promise<CalendarEntry[]> {
-  const from = new Date(value.year, value.month - 1, 1);
-  const to = new Date(value.year, value.month, 1);
+  // Month bounds as Warsaw calendar days, compared in the database: a raw SQL
+  // expression has no column type, so JS Dates would be sent as unreadable text.
+  const from = monthParam(value);
+  const to = monthParam(shiftMonth(value, 1));
   const day = sql<Date>`coalesce(${contentTargets.scheduledAt}, ${contentTargets.publishedAt})`;
+  const warsawDay = sql`(${day} at time zone 'Europe/Warsaw')`;
 
   const rows = await db
     .select({
@@ -90,8 +93,8 @@ export async function loadCalendar(
     .where(
       and(
         eq(contentTargets.profileId, profile.id),
-        gte(day, from),
-        lt(day, to),
+        sql`${warsawDay} >= ${`${from}-01`}::timestamp`,
+        sql`${warsawDay} < ${`${to}-01`}::timestamp`,
       ),
     )
     .orderBy(day);

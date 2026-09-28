@@ -4,6 +4,13 @@
 
 export const PUBLIC_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
+/**
+ * Stored images fit in Google's recommended post size (1200 x 900, 4:3) -
+ * never cropped, never enlarged. Keeps files well under Google's 5 MB limit.
+ */
+export const POST_IMAGE_MAX_WIDTH = 1200;
+export const POST_IMAGE_MAX_HEIGHT = 900;
+
 /** Formats stored and sent to Google (posts accept JPG and PNG). */
 export type PublicImageType = "image/png" | "image/jpeg";
 
