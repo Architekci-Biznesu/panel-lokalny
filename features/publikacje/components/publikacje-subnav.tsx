@@ -3,11 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export const PUB_TABS = [
-  { href: "/publikacje", label: "Przegląd", exact: true },
-  { href: "/publikacje/inbox", label: "Do akceptacji", exact: false },
-  { href: "/publikacje/nowy", label: "Nowa publikacja", exact: false },
-  { href: "/publikacje/wszystkie", label: "Wszystkie", exact: false },
+const PUB_TABS = [
+  { href: "/publikacje", label: "Posty", exact: true },
   { href: "/publikacje/kalendarz", label: "Kalendarz", exact: false },
 ] as const;
 
@@ -21,7 +18,7 @@ export function PublikacjeSubnav({ pendingCount }: { pendingCount: number }) {
         const active = tab.exact
           ? pathname === tab.href
           : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-        const count = tab.href === "/publikacje/inbox" ? pendingCount : 0;
+        const count = tab.href === "/publikacje" ? pendingCount : 0;
         return (
           <Link
             key={tab.href}

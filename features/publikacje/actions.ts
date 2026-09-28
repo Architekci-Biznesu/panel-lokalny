@@ -1,15 +1,16 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
-import { getImageProvider, getTextProvider } from "@/lib/ai";
+import { getTextProvider } from "@/lib/ai";
 import { defaultImagePrompt, GBP_POST_MAX } from "@/lib/ai/content-prompts";
 import { appendBriefAvoid } from "@/lib/brief";
 import { db } from "@/lib/db";
 import {
   contentChannelEnum,
+  contentGenerationRuns,
   contentItems,
   contentRevisions,
   contentTargets,
@@ -21,7 +22,6 @@ import { isChannelAvailable } from "@/lib/integrations/publishers";
 import {
   deletePublicImage,
   publicImageKeyFromUrl,
-  putPublicImage,
   StorageNotConfiguredError,
 } from "@/lib/storage";
 import {
@@ -31,7 +31,17 @@ import {
   requireOwnedProfile,
 } from "@/lib/session";
 import { loadContentContext } from "@/features/publikacje/content-context";
+import {
+  createPostImage,
+  enqueueContentGeneration,
+} from "@/features/publikacje/generate";
+import { MORE_POSTS } from "@/features/publikacje/generation-rules";
 import { resolveGroupTargets } from "@/features/publikacje/group-targets";
+import {
+  loadContentScope,
+  ownedByScope,
+  runsInScope,
+} from "@/features/publikacje/scope";
 import { initialTargetStatus } from "@/features/publikacje/publish-core";
 import { publishTargets } from "@/features/publikacje/publish";
 
@@ -59,17 +69,16 @@ function revalidateModule() {
   revalidatePath("/pulpit");
 }
 
-/** Item of the active profile, or an AuthError-like failure. */
+/** Item owned by the active profile or shared by its group, else AuthError. */
 async function getOwnedItem(
   profile: Profile,
   itemId: string,
 ): Promise<ContentItem> {
+  const scope = await loadContentScope(profile);
   const [item] = await db
     .select()
     .from(contentItems)
-    .where(
-      and(eq(contentItems.id, itemId), eq(contentItems.profileId, profile.id)),
-    )
+    .where(and(eq(contentItems.id, itemId), ownedByScope(scope)))
     .limit(1);
   if (!item) throw new AuthError("Publikacja nie istnieje", 404);
   return item;
@@ -83,62 +92,164 @@ async function requirePending(profile: Profile, itemId: string) {
   return item;
 }
 
-/** Generates an image, stores it publicly and returns its url + key. */
-async function createPostImage(
-  profile: Profile,
-  prompt: string,
-): Promise<{ url: string; key: string }> {
-  const image = await getImageProvider().generateImage({
-    prompt,
-    size: "1536x1024",
-  });
-  return putPublicImage(Buffer.from(image.base64, "base64"), image.mimeType, {
-    profileId: profile.id,
-  });
+// --- Propozycje (generowanie w tle) ---
+
+/** "Wygeneruj kolejne" - 3 posts in the background, images on demand. */
+export async function generateMoreProposals(): Promise<
+  { ok: true; runId: string } | ActionFail
+> {
+  try {
+    const profile = await getActiveProfile();
+    const scope = await loadContentScope(profile);
+    const runId = await enqueueContentGeneration({
+      profile,
+      scope,
+      count: MORE_POSTS,
+    });
+    revalidateModule();
+    return { ok: true, runId };
+  } catch (error) {
+    return fail(error);
+  }
 }
 
-// --- Propozycje ---
-
-const proposalSchema = z.object({
-  request: z.string().trim().max(500).optional(),
+const chatMessageSchema = z.object({
+  message: z.string().trim().min(1).max(1000),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        text: z.string().trim().min(1).max(1000),
+      }),
+    )
+    .max(8)
+    .default([]),
 });
 
-/** AI topic + post for the active profile -> new pending item in the inbox. */
-export async function generateContentProposal(
+const ROUTER_POSTS = 20;
+const EXCERPT = 160;
+
+export type ChatRouteResult =
+  | { ok: true; kind: "create"; runId: string; count: number }
+  | {
+      ok: true;
+      kind: "edit";
+      itemId: string;
+      itemTitle: string;
+      instruction: string;
+    }
+  | { ok: true; kind: "clarify"; question: string }
+  | { ok: true; kind: "reply"; text: string };
+
+/**
+ * Chat without a selected post: AI decides whether the message asks for new
+ * posts (starts a background run) or a change to one of the pending posts.
+ */
+export async function routeChatMessage(
   input: unknown,
-): Promise<{ ok: true; itemId: string } | ActionFail> {
-  const parsed = proposalSchema.safeParse(input ?? {});
+): Promise<ChatRouteResult | ActionFail> {
+  const parsed = chatMessageSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: "Napisz, czego potrzebujesz" };
+
+  try {
+    const profile = await getActiveProfile();
+    const scope = await loadContentScope(profile);
+    const pending = await db
+      .select({
+        id: contentItems.id,
+        title: contentItems.title,
+        body: contentItems.body,
+      })
+      .from(contentItems)
+      .where(and(ownedByScope(scope), eq(contentItems.status, "pending")))
+      .orderBy(desc(contentItems.createdAt))
+      .limit(ROUTER_POSTS);
+
+    const intent = await getTextProvider().routeContentChat({
+      context: await loadContentContext(profile),
+      message: parsed.data.message,
+      history: parsed.data.history,
+      posts: pending.map((post) => ({
+        id: post.id,
+        title: post.title,
+        excerpt: post.body.slice(0, EXCERPT),
+      })),
+    });
+
+    if (intent.kind === "edit") {
+      return {
+        ok: true,
+        kind: "edit",
+        itemId: intent.postId,
+        itemTitle:
+          pending.find((post) => post.id === intent.postId)?.title ?? "",
+        instruction: intent.instruction,
+      };
+    }
+    if (intent.kind === "clarify") {
+      return { ok: true, kind: "clarify", question: intent.question };
+    }
+    if (intent.kind === "reply") {
+      return { ok: true, kind: "reply", text: intent.text };
+    }
+
+    const runId = await enqueueContentGeneration({
+      profile,
+      scope,
+      count: intent.count,
+      request: intent.request,
+    });
+    revalidateModule();
+    return { ok: true, kind: "create", runId, count: intent.count };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export type GenerationStatus = {
+  id: string;
+  status: "running" | "done" | "failed";
+  requested: number;
+  created: number;
+  error: string | null;
+};
+
+/** Background runs of the active profile / its group started in the last hour. */
+export async function getGenerationStatus(
+  input?: unknown,
+): Promise<{ ok: true; runs: GenerationStatus[] } | ActionFail> {
+  const parsed = z
+    .object({ runIds: z.array(z.string().uuid()).max(20).optional() })
+    .safeParse(input ?? {});
   if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
 
   try {
     const profile = await getActiveProfile();
-    const context = await loadContentContext(profile);
-    const ai = getTextProvider();
-    const topic = await ai.generateTopic({
-      context,
-      channel: "wizytówka Google",
-      request: parsed.data.request || null,
-    });
-    const content = await ai.generateContent({
-      context,
-      topic,
-      channel: "wizytówka Google",
-    });
-
-    const [item] = await db
-      .insert(contentItems)
-      .values({
-        profileId: profile.id,
-        type: "post",
-        status: "pending",
-        topic: parsed.data.request || topic,
-        title: topic,
-        body: content.body,
+    const scope = await loadContentScope(profile);
+    const runs = await db
+      .select({
+        id: contentGenerationRuns.id,
+        status: contentGenerationRuns.status,
+        requested: contentGenerationRuns.requested,
+        created: contentGenerationRuns.created,
+        error: contentGenerationRuns.error,
       })
-      .returning({ id: contentItems.id });
-
-    revalidateModule();
-    return { ok: true, itemId: item.id };
+      .from(contentGenerationRuns)
+      .where(
+        and(
+          runsInScope(scope),
+          gte(
+            contentGenerationRuns.startedAt,
+            new Date(Date.now() - 3_600_000),
+          ),
+          parsed.data.runIds?.length
+            ? inArray(contentGenerationRuns.id, parsed.data.runIds)
+            : eq(contentGenerationRuns.status, "running"),
+        ),
+      )
+      .orderBy(desc(contentGenerationRuns.startedAt));
+    return { ok: true, runs };
   } catch (error) {
     return fail(error);
   }
@@ -187,7 +298,7 @@ export async function acceptContent(
     if (parsed.data.withImage && !item.imageUrl) {
       const context = await loadContentContext(profile);
       const image = await createPostImage(
-        profile,
+        profile.id,
         defaultImagePrompt(context, item.title),
       );
       await db
@@ -277,7 +388,7 @@ export async function generateContentImage(
     const item = await requirePending(profile, parsed.data.itemId);
     const context = await loadContentContext(profile);
     const image = await createPostImage(
-      profile,
+      profile.id,
       defaultImagePrompt(context, item.title),
     );
     await db
@@ -325,42 +436,99 @@ export async function rejectContent(
 
 // --- Edycja przez czat ---
 
-const reviseSchema = z.object({
-  itemId: z.string().uuid(),
-  instruction: z.string().trim().min(2).max(1000),
+const turnSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  text: z.string().trim().min(1).max(2000),
 });
 
-/** AI rewrite preview - nothing is saved until applyContentRevision. */
-export async function previewContentRevision(input: unknown): Promise<
+const postChatSchema = z.object({
+  itemId: z.string().uuid(),
+  message: z.string().trim().min(1).max(1000),
+  /** Earlier turns of this chat (general + edit), oldest first */
+  conversation: z.array(turnSchema).max(12).default([]),
+});
+
+const POST_HISTORY = 10;
+
+/** Saved requests that changed this post (content_revisions), oldest first. */
+async function savedInstructions(itemId: string): Promise<string[]> {
+  const rows = await db
+    .select({ instruction: contentRevisions.instruction })
+    .from(contentRevisions)
+    .where(eq(contentRevisions.contentItemId, itemId))
+    .orderBy(desc(contentRevisions.createdAt))
+    .limit(POST_HISTORY);
+  return rows.map((row) => row.instruction).reverse();
+}
+
+/**
+ * Chat about one post. AI answers (ideas, variants, opinion - nothing
+ * changes) or, when the customer explicitly asks for a change, prepares a
+ * version to compare. Nothing is saved until applyContentRevision.
+ */
+export async function chatAboutPost(input: unknown): Promise<
+  | { ok: true; kind: "reply"; text: string }
   | {
       ok: true;
+      kind: "proposal";
+      /** Self-contained change request (saved in content_revisions) */
+      instruction: string;
       body: string;
-      /** AI decided the customer asked for a new image */
+      /** New title when the customer asked for one, else null (unchanged) */
+      title: string | null;
+      /** Description of the new image, else null */
       newImagePrompt: string | null;
     }
   | ActionFail
 > {
-  const parsed = reviseSchema.safeParse(input);
-  if (!parsed.success) {
-    return { ok: false, error: "Napisz, co zmienić w treści" };
-  }
+  const parsed = postChatSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Napisz wiadomość" };
 
   try {
     const profile = await getActiveProfile();
     const item = await requirePending(profile, parsed.data.itemId);
     const context = await loadContentContext(profile);
-    const content = await getTextProvider().generateContent({
+    const ai = getTextProvider();
+
+    const answer = await ai.respondToPostChat({
+      context,
+      post: {
+        title: item.title,
+        body: item.body,
+        hasImage: Boolean(item.imageUrl),
+      },
+      conversation: parsed.data.conversation,
+      message: parsed.data.message,
+    });
+    if (answer.kind === "reply") {
+      return { ok: true, kind: "reply", text: answer.text };
+    }
+
+    const content = await ai.generateContent({
       context,
       topic: item.topic,
       channel: "wizytówka Google",
       revision: {
+        previousTitle: item.title,
         previousBody: item.body,
-        instruction: parsed.data.instruction,
+        instruction: answer.instruction,
+        parts: answer.parts,
+        history: [
+          ...new Set([
+            ...(await savedInstructions(item.id)),
+            ...parsed.data.conversation
+              .filter((turn) => turn.role === "user")
+              .map((turn) => turn.text),
+          ]),
+        ].slice(-POST_HISTORY),
       },
     });
     return {
       ok: true,
+      kind: "proposal",
+      instruction: answer.instruction,
       body: content.body,
+      title: content.title,
       newImagePrompt: content.newImagePrompt,
     };
   } catch (error) {
@@ -368,15 +536,21 @@ export async function previewContentRevision(input: unknown): Promise<
   }
 }
 
-const applySchema = reviseSchema.extend({
+const applySchema = z.object({
+  itemId: z.string().uuid(),
+  instruction: z.string().trim().min(2).max(2000),
   body: z.string().trim().min(1).max(GBP_POST_MAX),
+  title: z.string().trim().min(1).max(160).nullable().optional(),
   newImagePrompt: z.string().trim().max(1000).nullable().optional(),
 });
 
 /** Saves the previewed version; the previous one goes to content_revisions. */
 export async function applyContentRevision(
   input: unknown,
-): Promise<{ ok: true; body: string; imageUrl: string | null } | ActionFail> {
+): Promise<
+  | { ok: true; title: string; body: string; imageUrl: string | null }
+  | ActionFail
+> {
   const parsed = applySchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
 
@@ -385,12 +559,17 @@ export async function applyContentRevision(
     const item = await requirePending(profile, parsed.data.itemId);
 
     const image = parsed.data.newImagePrompt
-      ? await createPostImage(profile, parsed.data.newImagePrompt)
+      ? await createPostImage(
+          profile.id,
+          `${parsed.data.newImagePrompt}. Realistyczne zdjęcie, naturalne światło, bez tekstu, bez logo, bez znaków wodnych.`,
+        )
       : null;
 
     await db.transaction(async (tx) => {
+      const title = parsed.data.title ?? null;
       await tx.insert(contentRevisions).values({
         contentItemId: item.id,
+        title: title && title !== item.title ? item.title : null,
         body: item.body,
         imageUrl: item.imageUrl,
         instruction: parsed.data.instruction,
@@ -399,6 +578,7 @@ export async function applyContentRevision(
         .update(contentItems)
         .set({
           body: parsed.data.body,
+          ...(title ? { title } : {}),
           ...(image ? { imageUrl: image.url, imageKey: image.key } : {}),
           updatedAt: new Date(),
         })
@@ -408,6 +588,7 @@ export async function applyContentRevision(
     revalidateModule();
     return {
       ok: true,
+      title: parsed.data.title ?? item.title,
       body: parsed.data.body,
       imageUrl: image?.url ?? item.imageUrl,
     };
@@ -419,7 +600,10 @@ export async function applyContentRevision(
 /** Restores the version saved before the last chat change (a DB read, no AI). */
 export async function undoContentRevision(
   input: unknown,
-): Promise<{ ok: true; body: string; imageUrl: string | null } | ActionFail> {
+): Promise<
+  | { ok: true; title: string; body: string; imageUrl: string | null }
+  | ActionFail
+> {
   const parsed = z.object({ itemId: z.string().uuid() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
 
@@ -441,6 +625,7 @@ export async function undoContentRevision(
       await tx
         .update(contentItems)
         .set({
+          ...(last.title ? { title: last.title } : {}),
           body: last.body,
           imageUrl: last.imageUrl,
           imageKey: last.imageUrl ? publicImageKeyFromUrl(last.imageUrl) : null,
@@ -457,7 +642,12 @@ export async function undoContentRevision(
     }
 
     revalidateModule();
-    return { ok: true, body: last.body, imageUrl: last.imageUrl };
+    return {
+      ok: true,
+      title: last.title ?? item.title,
+      body: last.body,
+      imageUrl: last.imageUrl,
+    };
   } catch (error) {
     return fail(error);
   }

@@ -63,20 +63,6 @@ export const METRIC_LABELS: Record<DailyMetric, string> = {
   BUSINESS_FOOD_MENU_CLICKS: "Kliknięcia menu",
 };
 
-export const METRIC_SHORT_LABELS: Record<DailyMetric, string> = {
-  BUSINESS_IMPRESSIONS_DESKTOP_MAPS: "Mapy desktop",
-  BUSINESS_IMPRESSIONS_DESKTOP_SEARCH: "Wyszukiwarka desktop",
-  BUSINESS_IMPRESSIONS_MOBILE_MAPS: "Mapy mobile",
-  BUSINESS_IMPRESSIONS_MOBILE_SEARCH: "Wyszukiwarka mobile",
-  CALL_CLICKS: "Telefon",
-  WEBSITE_CLICKS: "Witryna",
-  BUSINESS_DIRECTION_REQUESTS: "Dojazd",
-  BUSINESS_CONVERSATIONS: "Rozmowy",
-  BUSINESS_BOOKINGS: "Rezerwacje",
-  BUSINESS_FOOD_ORDERS: "Zamówienia",
-  BUSINESS_FOOD_MENU_CLICKS: "Menu",
-};
-
 export const REPORT_COLORS = {
   maps: "#4f46e5",
   search: "#a5b4fc",
@@ -145,12 +131,6 @@ export function addDays(parts: DateParts, days: number): DateParts {
   const d = fromDateParts(parts);
   d.setDate(d.getDate() + days);
   return toDateParts(d);
-}
-
-export function daysBetween(start: DateParts, end: DateParts): number {
-  const a = fromDateParts(start).getTime();
-  const b = fromDateParts(end).getTime();
-  return Math.round((b - a) / (1000 * 60 * 60 * 24));
 }
 
 export function defaultRange(): { start: DateParts; end: DateParts } {
@@ -250,23 +230,6 @@ export function emptySeriesForMetrics(metrics: DailyMetric[]): MetricSeries[] {
   }));
 }
 
-export function kpiSeriesToShow(series: MetricSeries[]): MetricSeries[] {
-  const byMetric = new Map(series.map((s) => [s.metric, s]));
-  const core = CORE_METRICS.map(
-    (m) =>
-      byMetric.get(m) ?? {
-        metric: m,
-        label: METRIC_LABELS[m],
-        total: 0,
-        points: [],
-      },
-  );
-  const optional = OPTIONAL_METRICS.map((m) => byMetric.get(m)).filter(
-    (s): s is MetricSeries => Boolean(s && s.total > 0),
-  );
-  return [...core, ...optional];
-}
-
 export function metricTotal(
   series: MetricSeries[],
   metric: DailyMetric,
@@ -360,25 +323,6 @@ export function buildReportSummary(series: MetricSeries[]): ReportSummary {
     ],
     actionsPer100: viewsTotal > 0 ? (actionsTotal / viewsTotal) * 100 : 0,
   };
-}
-
-export function buildChartRows(
-  series: MetricSeries[],
-  metrics: DailyMetric[],
-): Array<Record<string, string | number>> {
-  const map = new Map<string, Record<string, string | number>>();
-  for (const metric of metrics) {
-    const item = series.find((s) => s.metric === metric);
-    if (!item) continue;
-    for (const point of item.points) {
-      const row = map.get(point.date) ?? { date: point.date };
-      row[metric] = point.value;
-      map.set(point.date, row);
-    }
-  }
-  return [...map.values()].sort((a, b) =>
-    String(a.date).localeCompare(String(b.date)),
-  );
 }
 
 function weekStartIso(iso: string): string {

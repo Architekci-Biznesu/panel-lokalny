@@ -682,11 +682,6 @@ export function pickGbpCollageUrls(items: GbpMediaItem[], limit = 6): string[] {
   return urls;
 }
 
-/** Prefer COVER, then PROFILE, then first photo with a usable URL. */
-export function pickGbpCoverUrl(items: GbpMediaItem[]): string | null {
-  return pickGbpCollageUrls(items, 1)[0] ?? null;
-}
-
 /**
  * v4 `accounts/{aid}/locations/{id}` for a v1 `locations/{id}` - same account
  * probing as listGbpLocationMedia (the account that can list the location's posts owns it).

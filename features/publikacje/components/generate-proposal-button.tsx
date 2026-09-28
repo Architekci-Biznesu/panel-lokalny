@@ -4,11 +4,15 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "gooey-toast";
-import { generateContentProposal } from "@/features/publikacje/actions";
+import { generateMoreProposals } from "@/features/publikacje/actions";
+import {
+  GENERATION_STARTED_EVENT,
+  MORE_POSTS,
+} from "@/features/publikacje/generation-rules";
 
-/** "Wygeneruj propozycję" - AI picks a topic and writes a post into the inbox. */
+/** "Wygeneruj kolejne" - AI writes 3 more proposals in the background. */
 export function GenerateProposalButton({
-  label = "Wygeneruj propozycję",
+  label = "Wygeneruj kolejne",
   variant = "primary",
 }: {
   label?: string;
@@ -24,17 +28,24 @@ export function GenerateProposalButton({
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          const result = await generateContentProposal({});
+          const result = await generateMoreProposals();
           if (!result.ok) {
             toast.error({
-              title: "Nie udało się wygenerować",
+              title: "Nie udało się zacząć",
               description: result.error,
             });
             return;
           }
-          toast.success({ title: "Nowa propozycja czeka na akceptację" });
-          router.push("/publikacje/inbox");
-          router.refresh();
+          toast.info({
+            title: "AI pisze kolejne propozycje",
+            description: "Pojawią się na liście za chwilę.",
+          });
+          window.dispatchEvent(
+            new CustomEvent(GENERATION_STARTED_EVENT, {
+              detail: { runId: result.runId, count: MORE_POSTS },
+            }),
+          );
+          router.push("/publikacje?status=pending");
         })
       }
     >
@@ -43,7 +54,7 @@ export function GenerateProposalButton({
       ) : (
         <Sparkles aria-hidden />
       )}
-      {pending ? "AI pisze post…" : label}
+      {label}
     </button>
   );
 }

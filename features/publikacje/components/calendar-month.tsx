@@ -101,7 +101,7 @@ export function CalendarMonth({
               {list.map((entry) => (
                 <Link
                   key={entry.targetId}
-                  href="/publikacje/wszystkie"
+                  href="/publikacje?status=all"
                   className={`pub-cal-entry is-${entry.status}`}
                   title={`${CHANNEL_LABELS[entry.channel]} · ${entry.title}`}
                 >

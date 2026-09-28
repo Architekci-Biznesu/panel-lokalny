@@ -1,11 +1,11 @@
-import { desc, eq, inArray, or } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   contentItems,
-  contentTargets,
   type ContentChannel,
   type Profile,
 } from "@/lib/db/schema";
+import { loadContentScope, visibleInScope } from "@/features/publikacje/scope";
 import {
   contentDisplayStatus,
   matchesStatusFilter,
@@ -33,18 +33,14 @@ export type HistoryItem = {
 };
 
 /**
- * Publications of the active profile: authored by it or published to it
- * (group publishing). Every query is scoped to the profile / account.
+ * Publications of the active profile: its own, its group's shared list and
+ * posts published to it. Every query is scoped to the profile / account.
  */
 export async function loadHistory(
   profile: Profile,
   filters: { status: HistoryStatusFilter; channel: ContentChannel | "all" },
 ): Promise<HistoryItem[]> {
-  const targeted = db
-    .select({ id: contentTargets.contentItemId })
-    .from(contentTargets)
-    .where(eq(contentTargets.profileId, profile.id));
-
+  const scope = await loadContentScope(profile);
   const items = await db
     .select({
       id: contentItems.id,
@@ -55,12 +51,7 @@ export async function loadHistory(
       status: contentItems.status,
     })
     .from(contentItems)
-    .where(
-      or(
-        eq(contentItems.profileId, profile.id),
-        inArray(contentItems.id, targeted),
-      ),
-    )
+    .where(visibleInScope(scope))
     .orderBy(desc(contentItems.createdAt))
     .limit(HISTORY_LIMIT);
 

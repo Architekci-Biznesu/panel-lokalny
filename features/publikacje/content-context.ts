@@ -8,9 +8,10 @@ import {
   type Profile,
 } from "@/lib/db/schema";
 import { extractGbpSnapshot } from "@/features/publikacje/gbp-snapshot";
+import { loadContentScope, ownedByScope } from "@/features/publikacje/scope";
 
 /** How many recent titles the AI sees so it does not repeat a topic. */
-export const RECENT_TITLES_LIMIT = 10;
+const RECENT_TITLES_LIMIT = 10;
 
 /**
  * Builds the AI context for one profile. Caller must have verified that the
@@ -37,10 +38,12 @@ export async function loadContentContext(
     .orderBy(desc(companyContext.fetchedAt))
     .limit(1);
 
+  // Group posts count too - the group shares one list, so no repeats across it.
+  const scope = await loadContentScope(profile);
   const recent = await db
     .select({ title: contentItems.title })
     .from(contentItems)
-    .where(eq(contentItems.profileId, profile.id))
+    .where(ownedByScope(scope))
     .orderBy(desc(contentItems.createdAt))
     .limit(RECENT_TITLES_LIMIT);
 

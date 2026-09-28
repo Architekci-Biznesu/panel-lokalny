@@ -505,6 +505,10 @@ export const contentItems = pgTable(
     profileId: uuid("profile_id")
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
+    /** Shared post of a publish group - visible from every profile in it. */
+    groupId: uuid("group_id").references(() => publishGroups.id, {
+      onDelete: "set null",
+    }),
     type: contentTypeEnum("type").notNull().default("post"),
     status: contentStatusEnum("status").notNull().default("pending"),
     topic: text("topic").notNull(),
@@ -521,6 +525,7 @@ export const contentItems = pgTable(
   },
   (table) => [
     index("content_items_profile_id_idx").on(table.profileId),
+    index("content_items_group_id_idx").on(table.groupId),
     index("content_items_status_idx").on(table.status),
   ],
 );
@@ -564,6 +569,8 @@ export const contentRevisions = pgTable(
     contentItemId: uuid("content_item_id")
       .notNull()
       .references(() => contentItems.id, { onDelete: "cascade" }),
+    /** Title before the change - null when the change kept the title. */
+    title: text("title"),
     body: text("body").notNull(),
     imageUrl: text("image_url"),
     instruction: text("instruction").notNull(),
@@ -576,7 +583,42 @@ export const contentRevisions = pgTable(
   ],
 );
 
+export const contentGenerationStatusEnum = pgEnum("content_generation_status", [
+  "running",
+  "done",
+  "failed",
+]);
+
+/** Background batch of AI proposals (after onboarding, "Wygeneruj kolejne", chat). */
+export const contentGenerationRuns = pgTable(
+  "content_generation_runs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    groupId: uuid("group_id").references(() => publishGroups.id, {
+      onDelete: "set null",
+    }),
+    status: contentGenerationStatusEnum("status").notNull().default("running"),
+    requested: integer("requested").notNull(),
+    created: integer("created").notNull().default(0),
+    withImage: integer("with_image").notNull().default(0),
+    request: text("request"),
+    error: text("error"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("content_generation_runs_profile_id_idx").on(table.profileId),
+    index("content_generation_runs_group_id_idx").on(table.groupId),
+  ],
+);
+
 export type ContentItem = typeof contentItems.$inferSelect;
+export type ContentGenerationRun = typeof contentGenerationRuns.$inferSelect;
 export type ContentTarget = typeof contentTargets.$inferSelect;
 export type ContentRevision = typeof contentRevisions.$inferSelect;
 export type ContentChannel = (typeof contentChannelEnum.enumValues)[number];

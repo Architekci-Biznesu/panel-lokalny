@@ -9,7 +9,7 @@ export default async function PublikacjeLayout({
   children: React.ReactNode;
 }) {
   const profile = await getActiveProfile();
-  const pendingCount = await countPendingContent(profile.id);
+  const pendingCount = await countPendingContent(profile);
 
   return (
     <div className="pub-page">
@@ -17,8 +17,8 @@ export default async function PublikacjeLayout({
         <div>
           <h1>Publikacje</h1>
           <p>
-            AI proponuje posty do wizytówki Google - Ty akceptujesz, poprawiasz
-            w czacie albo odrzucasz
+            AI proponuje posty do wizytówki Google - akceptujesz, poprawiasz w
+            czacie obok albo odrzucasz
           </p>
         </div>
         <GenerateProposalButton />

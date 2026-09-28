@@ -22,6 +22,7 @@ import {
 } from "@/lib/integrations/gbp/client";
 import { scrapeWebsite, type ScrapeResult } from "@/lib/scrape/website";
 import { getActiveAccountId, listAccountProfileOptions } from "@/lib/session";
+import { scheduleOnboardingProposals } from "@/features/publikacje/generate";
 
 const modeSchema = z.enum(["new", "add"]).default("new");
 
@@ -446,6 +447,9 @@ export async function skipGbpAndFinish(modeRaw: string) {
 
   await insertWebsiteContext(created.id, draft);
   await insertBrief(created.id, draft);
+  await scheduleOnboardingProposals(accountId, [
+    { profileId: created.id, groupId: null },
+  ]);
 
   await unstable_update({
     user: { activeProfileId: created.id },
@@ -721,6 +725,12 @@ export async function confirmGbpLocations(
       error: `Nie udało się utworzyć profili. ${errors.join("; ")}`,
     };
   }
+
+  // Pierwsze propozycje postów powstają w tle (3 na grupę / profil bez grupy).
+  await scheduleOnboardingProposals(
+    accountId,
+    createdProfileIds.map((profileId) => ({ profileId, groupId })),
+  );
 
   await unstable_update({
     user: { activeProfileId: createdProfileIds[0] },

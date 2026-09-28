@@ -20,7 +20,7 @@ import {
 } from "@/lib/integrations/gbp/client";
 import { AuthError } from "@/lib/session";
 import type { ContentChannel, GbpSuggestion, Profile } from "@/lib/db/schema";
-import { loadRecentPublished } from "@/features/publikacje/load-overview";
+import { loadRecentPublished } from "@/features/publikacje/load-published";
 import {
   ALL_PERFORMANCE_METRICS,
   buildReportSummary,

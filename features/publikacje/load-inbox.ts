@@ -1,6 +1,7 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+  contentGenerationRuns,
   contentItems,
   contentRevisions,
   contentChannelEnum,
@@ -10,6 +11,12 @@ import {
 import { isChannelAvailable } from "@/lib/integrations/publishers";
 import { listAccountProfileOptions } from "@/lib/session";
 import { groupSiblings } from "@/features/publikacje/group-targets";
+import type { GenerationStatus } from "@/features/publikacje/actions";
+import {
+  loadContentScope,
+  ownedByScope,
+  runsInScope,
+} from "@/features/publikacje/scope";
 
 export type InboxItem = {
   id: string;
@@ -18,6 +25,8 @@ export type InboxItem = {
   imageUrl: string | null;
   createdAt: Date;
   revisionCount: number;
+  /** Requests that changed this post in the chat, oldest first (last 5) */
+  recentInstructions: string[];
 };
 
 export type ChannelOption = {
@@ -33,20 +42,17 @@ export type InboxData = {
   groupName: string | null;
 };
 
-export async function countPendingContent(profileId: string): Promise<number> {
+export async function countPendingContent(profile: Profile): Promise<number> {
+  const scope = await loadContentScope(profile);
   const [row] = await db
     .select({ value: count() })
     .from(contentItems)
-    .where(
-      and(
-        eq(contentItems.profileId, profileId),
-        eq(contentItems.status, "pending"),
-      ),
-    );
+    .where(and(ownedByScope(scope), eq(contentItems.status, "pending")));
   return row?.value ?? 0;
 }
 
 export async function loadInbox(profile: Profile): Promise<InboxData> {
+  const scope = await loadContentScope(profile);
   const rows = await db
     .select({
       id: contentItems.id,
@@ -61,21 +67,42 @@ export async function loadInbox(profile: Profile): Promise<InboxData> {
       contentRevisions,
       eq(contentRevisions.contentItemId, contentItems.id),
     )
-    .where(
-      and(
-        eq(contentItems.profileId, profile.id),
-        eq(contentItems.status, "pending"),
-      ),
-    )
+    .where(and(ownedByScope(scope), eq(contentItems.status, "pending")))
     .groupBy(contentItems.id)
     .orderBy(desc(contentItems.createdAt));
+
+  const history = rows.length
+    ? await db
+        .select({
+          contentItemId: contentRevisions.contentItemId,
+          instruction: contentRevisions.instruction,
+        })
+        .from(contentRevisions)
+        .where(
+          inArray(
+            contentRevisions.contentItemId,
+            rows.map((row) => row.id),
+          ),
+        )
+        .orderBy(asc(contentRevisions.createdAt))
+    : [];
+  const byItem = new Map<string, string[]>();
+  for (const row of history) {
+    byItem.set(row.contentItemId, [
+      ...(byItem.get(row.contentItemId) ?? []),
+      row.instruction,
+    ]);
+  }
 
   const options = await listAccountProfileOptions();
   const siblings = groupSiblings(profile.id, options);
   const own = options.find((option) => option.id === profile.id);
 
   return {
-    items: rows,
+    items: rows.map((row) => ({
+      ...row,
+      recentInstructions: (byItem.get(row.id) ?? []).slice(-5),
+    })),
     channels: contentChannelEnum.enumValues.map((channel) => ({
       channel,
       available: isChannelAvailable(channel),
@@ -83,4 +110,27 @@ export async function loadInbox(profile: Profile): Promise<InboxData> {
     groupSiblings: siblings.map(({ id, name }) => ({ id, name })),
     groupName: siblings.length ? (own?.groupName ?? null) : null,
   };
+}
+
+/** Background generation runs still writing posts for this profile / group. */
+export async function loadActiveRuns(
+  profile: Profile,
+): Promise<GenerationStatus[]> {
+  const scope = await loadContentScope(profile);
+  return db
+    .select({
+      id: contentGenerationRuns.id,
+      status: contentGenerationRuns.status,
+      requested: contentGenerationRuns.requested,
+      created: contentGenerationRuns.created,
+      error: contentGenerationRuns.error,
+    })
+    .from(contentGenerationRuns)
+    .where(
+      and(
+        runsInScope(scope),
+        eq(contentGenerationRuns.status, "running"),
+        gte(contentGenerationRuns.startedAt, new Date(Date.now() - 3_600_000)),
+      ),
+    );
 }

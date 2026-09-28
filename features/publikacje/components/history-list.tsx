@@ -25,11 +25,10 @@ function filterHref(
   status: HistoryStatusFilter,
   channel: ContentChannel | "all",
 ): string {
-  const params = new URLSearchParams();
-  if (status !== "all") params.set("status", status);
+  // status is always explicit - without it the page picks a default.
+  const params = new URLSearchParams({ status });
   if (channel !== "all") params.set("kanal", channel);
-  const query = params.toString();
-  return `/publikacje/wszystkie${query ? `?${query}` : ""}`;
+  return `/publikacje?${params.toString()}`;
 }
 
 /** Status and channel filters as link chips (work without JS). */

@@ -44,15 +44,22 @@ export type GenerateContentInput = {
   context: ContentContext;
   topic: string;
   channel?: string;
-  /** Chat edit: rewrite `previousBody` following `instruction` */
+  /** Chat edit: rewrite the post following `instruction` */
   revision?: {
+    previousTitle: string;
     previousBody: string;
     instruction: string;
+    /** Earlier customer requests about this post, oldest first */
+    history?: string[];
+    /** Parts the customer agreed to change - nothing outside them changes */
+    parts?: PostPart[];
   } | null;
 };
 
 export type GeneratedContent = {
   body: string;
+  /** Chat edit only: new title when the customer asked to change it, else null. */
+  title: string | null;
   /**
    * Set only when the customer asked for a new image in a chat edit -
    * a prompt for the image provider. Null keeps the current image.
@@ -128,10 +135,57 @@ export type GenerateGbpAuditInput = {
   competitorInsights?: CompetitorInsightsForAudit | null;
 };
 
+/** A pending post the chat can refer to ("zmień tytuł posta o oponach"). */
+export type ChatPostRef = { id: string; title: string; excerpt: string };
+
+/** Earlier chat turn - lets the router read an answer to its own question. */
+export type ChatTurn = { role: "user" | "assistant"; text: string };
+
+export type RouteContentChatInput = {
+  /** Business context, so the chat can also answer questions and suggest ideas */
+  context: ContentContext;
+  message: string;
+  posts: ChatPostRef[];
+  /** Recent turns of the general chat, oldest first */
+  history: ChatTurn[];
+};
+
+/** What a chat message means (validated against the offered posts). */
+export type ChatIntent =
+  | { kind: "create"; count: number; request: string }
+  | { kind: "edit"; postId: string; instruction: string }
+  | { kind: "clarify"; question: string }
+  /** Conversation only - ideas, answers, opinions; nothing changes */
+  | { kind: "reply"; text: string };
+
+/** Parts of a post a chat change may touch. */
+export type PostPart = "title" | "body" | "image";
+
+/** One message in the chat about a single post. */
+export type PostChatInput = {
+  context: ContentContext;
+  post: { title: string; body: string; hasImage: boolean };
+  /** Earlier turns (customer and assistant), oldest first */
+  conversation: ChatTurn[];
+  message: string;
+};
+
+/**
+ * Talk (reply) or an explicit request to change the post. `instruction` is
+ * self-contained - it carries details agreed earlier in the conversation.
+ */
+export type PostChatResult =
+  | { kind: "reply"; text: string }
+  | { kind: "change"; instruction: string; parts: PostPart[] };
+
 export interface TextProvider {
   generateBrief(input: GenerateBriefInput): Promise<BriefFields>;
   generateTopic(input: GenerateTopicInput): Promise<string>;
   generateContent(input: GenerateContentInput): Promise<GeneratedContent>;
+  /** Decides whether a chat message creates new posts or edits an existing one. */
+  routeContentChat(input: RouteContentChatInput): Promise<ChatIntent>;
+  /** Chat about one post: answer, or turn an explicit request into a change. */
+  respondToPostChat(input: PostChatInput): Promise<PostChatResult>;
   generateReviewReply(input: GenerateReviewReplyInput): Promise<string>;
   generateGbpAuditSuggestions(
     input: GenerateGbpAuditInput,

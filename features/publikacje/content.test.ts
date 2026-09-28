@@ -6,6 +6,11 @@ import {
   topicUserPrompt,
 } from "../../lib/ai/content-prompts";
 import { mergeAvoid } from "../../lib/brief-avoid";
+import {
+  instructionAsksForImage,
+  instructionAsksForTitle,
+  mergeGeneratedContent,
+} from "../../lib/ai/content-revision";
 import { gbpPublishErrorMessage } from "../../lib/integrations/gbp/publish-errors";
 import { contentDisplayStatus, matchesStatusFilter } from "./content-status";
 import { extractGbpSnapshot } from "./gbp-snapshot";
@@ -61,13 +66,33 @@ const context: ContentContext = {
   const revision = contentUserPrompt({
     context,
     topic: "Przegląd przed zimą",
-    revision: { previousBody: "Stara treść", instruction: "krócej" },
+    revision: {
+      previousTitle: "Stary tytuł",
+      previousBody: "Stara treść",
+      instruction: "krócej",
+    },
   });
   assert.match(revision, /Obecna treść posta:\nStara treść/);
   assert.match(revision, /Instrukcja klienta - co zmienić: krócej/);
   assert.doesNotMatch(
     contentUserPrompt({ context, topic: "X" }),
     /Instrukcja klienta/,
+  );
+
+  // Earlier requests about the post reach the prompt ("a teraz jeszcze krócej").
+  const withHistory = contentUserPrompt({
+    context,
+    topic: "X",
+    revision: {
+      previousTitle: "T",
+      previousBody: "B",
+      instruction: "a teraz jeszcze krócej",
+      history: ["skróć do 3 zdań", "zaproponuj zdjęcie"],
+    },
+  });
+  assert.match(
+    withHistory,
+    /Wcześniejsze prośby klienta[^\n]*\n- skróć do 3 zdań\n- zaproponuj zdjęcie/,
   );
 
   const empty = contentContextBlock({
@@ -180,6 +205,101 @@ const context: ContentContext = {
     "air conditioning repair",
   ]);
   assert.deepEqual(extractGbpSnapshot(null), { categories: [], services: [] });
+}
+
+/** Chat edit: only the parts the customer asked for change, even if AI rewrote more. */
+{
+  const revision = {
+    previousTitle: "Stary tytuł",
+    previousBody: "Stara treść",
+    instruction: "zmień tytuł",
+  };
+  const titleOnly = mergeGeneratedContent(
+    { changes: ["title"], title: "Nowy tytuł.", body: "Przepisana treść" },
+    revision,
+    1500,
+  );
+  assert.deepEqual(titleOnly, {
+    body: "Stara treść",
+    title: "Nowy tytuł",
+    newImagePrompt: null,
+  });
+  const imageOnly = mergeGeneratedContent(
+    { changes: ["image"], newImagePrompt: "office photo", title: "X" },
+    { ...revision, instruction: "daj inne zdjęcie" },
+    1500,
+  );
+  assert.deepEqual(imageOnly, {
+    body: "Stara treść",
+    title: null,
+    newImagePrompt: "office photo",
+  });
+  assert.equal(
+    mergeGeneratedContent(
+      { changes: ["title"], title: "Stary tytuł" },
+      revision,
+      1500,
+    ).title,
+    null,
+    "same title is not a change",
+  );
+  assert.throws(() => mergeGeneratedContent({ body: "" }, null, 1500));
+
+  // A post about photos: "zmień tytuł" never adds an image, even if AI marks it.
+  const photoPost = {
+    previousTitle: "Dlaczego warto aktualizować zdjęcia w wizytówce",
+    previousBody: "Treść",
+    instruction:
+      "zaktualizuj tytuł na test 123: Dlaczego warto aktualizować zdjęcia w wizytówce",
+  };
+  assert.equal(
+    mergeGeneratedContent(
+      {
+        changes: ["title", "image"],
+        title: "test 123",
+        newImagePrompt: "photo",
+      },
+      photoPost,
+      1500,
+    ).newImagePrompt,
+    null,
+  );
+  assert.ok(instructionAsksForImage("podmień grafikę na biuro", "Tytuł"));
+  assert.ok(!instructionAsksForImage("zmień tytuł", "Tytuł o zdjęciach"));
+
+  // "opis" is the post text - the title stays even if AI rewrote it.
+  assert.equal(
+    mergeGeneratedContent(
+      { changes: ["title", "body"], title: "Test", body: "Nowy opis" },
+      {
+        previousTitle: "test 69",
+        previousBody: "Stary opis",
+        instruction: "zmień opis na test i daj zdanie o kaktusie",
+      },
+      1500,
+    ).title,
+    null,
+  );
+  assert.ok(instructionAsksForTitle("zmień tytuł na test 69", "Stary"));
+
+  // Picking a photo variant: only the image may change, even if AI rewrote the text.
+  const photoPick = mergeGeneratedContent(
+    {
+      changes: ["body", "image"],
+      body: "Przepisana treść",
+      newImagePrompt: "fundament budynku",
+    },
+    {
+      previousTitle: "Test",
+      previousBody: "Stara treść",
+      instruction: "dodaj zdjęcie fundamentu budynku",
+      parts: ["image"],
+    },
+    1500,
+  );
+  assert.equal(photoPick.body, "Stara treść");
+  assert.equal(photoPick.newImagePrompt, "fundament budynku");
+  assert.ok(!instructionAsksForTitle("zmień opis na test", "Stary"));
 }
 
 console.log("content loop tests passed");

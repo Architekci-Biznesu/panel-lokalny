@@ -32,7 +32,7 @@ export function RecentPublicationsCard({
       {publications.length === 0 ? (
         <p className="pulpit-empty">
           Jeszcze nic nie zostało opublikowane.{" "}
-          <Link href="/publikacje/inbox" className="wiz-inline-link">
+          <Link href="/publikacje?status=pending" className="wiz-inline-link">
             Zobacz propozycje AI
           </Link>
           .
@@ -41,7 +41,10 @@ export function RecentPublicationsCard({
         <ul className="pulpit-action-list">
           {publications.map((item) => (
             <li key={item.targetId}>
-              <Link href="/publikacje/wszystkie" className="pulpit-action-row">
+              <Link
+                href="/publikacje?status=published"
+                className="pulpit-action-row"
+              >
                 <span className="pulpit-action-icon is-published" aria-hidden>
                   <FileText />
                 </span>
@@ -61,7 +64,7 @@ export function RecentPublicationsCard({
         </ul>
       )}
 
-      <Link href="/publikacje/wszystkie" className="pulpit-card-foot">
+      <Link href="/publikacje?status=all" className="pulpit-card-foot">
         Zobacz wszystkie
         <ArrowUpRight aria-hidden />
       </Link>

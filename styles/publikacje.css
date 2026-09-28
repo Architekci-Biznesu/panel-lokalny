@@ -215,10 +215,6 @@
   .pub-think-head svg {
     width: 1rem;
     height: 1rem;
-    color: var(--muted-foreground);
-  }
-
-  .pub-think-head svg.is-working {
     color: var(--brand);
   }
 
@@ -233,10 +229,6 @@
     background-clip: text;
     color: transparent;
     animation: pub-shimmer 1.4s linear infinite;
-  }
-
-  .pub-think-done {
-    color: var(--muted-foreground);
   }
 
   .pub-think-steps {
@@ -276,32 +268,7 @@
     animation: pub-spin 0.7s linear infinite;
   }
 
-  /* --- panel czatu (ChatEditPanel, na bazie Beautiful UI) --- */
-
-  .pub-chat-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    background: color-mix(in srgb, var(--foreground) 18%, transparent);
-  }
-
-  .pub-chat-panel {
-    position: fixed;
-    top: var(--space-3);
-    right: var(--space-3);
-    bottom: var(--space-3);
-    z-index: 51;
-    display: flex;
-    flex-direction: column;
-    width: min(560px, calc(100vw - 2 * var(--space-3)));
-    border-radius: var(--radius-card);
-    background: var(--card);
-    box-shadow: var(--shadow-pop);
-    color: var(--foreground);
-    outline: none;
-    overflow: hidden;
-    animation: pub-slide-in 0.24s cubic-bezier(0.23, 1, 0.32, 1);
-  }
+  /* --- czat (ContentChat, na bazie Beautiful UI) --- */
 
   .pub-chat-head {
     display: flex;
@@ -359,6 +326,37 @@
     color: var(--muted-foreground);
   }
 
+  .pub-chat-post-title {
+    margin: 0 0 var(--space-2);
+    font-size: var(--type-base);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .pub-chat-earlier {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border);
+    opacity: 0.75;
+  }
+
+  .pub-chat-history {
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pub-chat-history-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
+  }
+
   .pub-chat-current {
     padding-bottom: var(--space-4);
     border-bottom: 1px solid var(--border);
@@ -387,6 +385,20 @@
     line-height: 1.4;
   }
 
+  /* Odpowiedź AI w rozmowie (bez zmian w poście) */
+  .pub-chat-reply {
+    margin: 0;
+    margin-right: 2rem;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-block);
+    background: var(--brand-50);
+    color: var(--foreground);
+    font-size: var(--type-base);
+    line-height: 1.5;
+    white-space: pre-line;
+    animation: pub-fade-up 0.3s cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+
   .pub-chat-proposal {
     animation: pub-fade-up 0.4s cubic-bezier(0.23, 1, 0.32, 1) both;
     transition: opacity 0.3s ease;
@@ -396,17 +408,34 @@
     opacity: 0.5;
   }
 
+  /* W wąskim czacie porównanie jeden pod drugim, nie dwie ściśnięte kolumny */
   .pub-chat-compare {
+    grid-template-columns: minmax(0, 1fr);
     border: 1px solid var(--border);
     border-radius: var(--radius-block);
     overflow: hidden;
+  }
+
+  .pub-chat-compare .ui-compare-col-next {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .pub-chat-image {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-block);
   }
 
   .pub-chat-image-note {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    margin: var(--space-2) 0 0;
+    margin: 0;
     font-size: var(--type-sm);
     color: var(--brand-deep);
   }
@@ -534,41 +563,6 @@
     width: 1rem;
     height: 1rem;
     stroke-width: 2.4;
-  }
-
-  /* --- nowa publikacja --- */
-
-  .pub-new {
-    gap: var(--space-5);
-  }
-
-  .pub-new-form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    max-width: 44rem;
-  }
-
-  .pub-new-label {
-    font-size: var(--type-lg);
-    font-weight: 400;
-  }
-
-  .pub-new-examples {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1);
-  }
-
-  .pub-new-hint {
-    margin: 0;
-    font-size: var(--type-sm);
-    color: var(--muted-foreground);
-  }
-
-  .pub-new-actions {
-    display: flex;
-    justify-content: flex-start;
   }
 
   /* --- historia (Wszystkie) --- */
@@ -830,116 +824,6 @@
   .pub-cal-key.is-failed::before {
     background: var(--danger-200);
   }
-
-  /* --- przegląd --- */
-
-  .pub-overview-alert {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-3);
-    background: var(--danger-soft);
-  }
-
-  .pub-overview-alert > svg {
-    width: 1.25rem;
-    height: 1.25rem;
-    flex-shrink: 0;
-    color: var(--danger-strong);
-  }
-
-  .pub-overview-alert > div {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .pub-overview-alert-title {
-    margin: 0;
-    font-weight: 500;
-  }
-
-  .pub-overview-alert-text {
-    margin: var(--space-1) 0 0;
-    font-size: var(--type-sm);
-    color: var(--danger-strong);
-  }
-
-  .pub-overview-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-5);
-  }
-
-  .pub-overview-card {
-    gap: var(--space-3);
-  }
-
-  .pub-overview-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-  }
-
-  .pub-overview-title {
-    margin: 0;
-    font-size: var(--type-lg);
-    font-weight: 400;
-  }
-
-  .pub-overview-count {
-    font-size: var(--type-lg);
-    color: var(--muted-foreground);
-  }
-
-  .pub-overview-link {
-    font-size: var(--type-sm);
-    font-weight: 500;
-    color: var(--foreground);
-    text-underline-offset: 3px;
-  }
-
-  .pub-overview-actions {
-    display: flex;
-    margin-top: auto;
-    padding-top: var(--space-2);
-  }
-
-  .pub-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .pub-list-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-3) 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .pub-list-row:last-child {
-    border-bottom: 0;
-  }
-
-  .pub-list-main {
-    min-width: 0;
-  }
-
-  .pub-list-title {
-    margin: 0;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .pub-list-meta {
-    margin: 2px 0 0;
-    font-size: var(--type-sm);
-    color: var(--muted-foreground);
-  }
 }
 
 @layer components {
@@ -951,10 +835,6 @@
     .pub-card-media {
       position: static;
       max-width: 28rem;
-    }
-
-    .pub-overview-grid {
-      grid-template-columns: minmax(0, 1fr);
     }
 
     /* Historia na mobile jako karty, bez poziomego scrolla */
@@ -991,14 +871,6 @@
       flex: 1 1 auto;
     }
 
-    .pub-chat-panel {
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 100vw;
-      border-radius: 0;
-    }
-
     .pub-cal-day {
       min-height: 4.5rem;
       padding: var(--space-1);
@@ -1015,7 +887,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .pub-chat-panel,
     .pub-chat-user,
     .pub-chat-proposal,
     .pub-think-step,
@@ -1048,9 +919,202 @@
   }
 }
 
-@keyframes pub-slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(24px);
+/* Przestrzeń robocza: lista postów + czat AI zadokowany z boku */
+@layer components {
+  .pub-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .pub-workspace.is-chat-collapsed {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .pub-workspace-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+
+  .pub-card.is-editing {
+    box-shadow:
+      0 0 0 2px var(--brand),
+      var(--shadow-card);
+  }
+
+  .pub-card-skel-media {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    border-radius: var(--radius-block);
+  }
+
+  .pub-card-skel-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--type-sm);
+    font-weight: 500;
+    color: var(--brand-deep);
+  }
+
+  .pub-card-skel-label svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .pub-chat-dock {
+    position: sticky;
+    top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 2 * var(--space-4));
+    max-height: 860px;
+    min-height: 420px;
+    border-radius: var(--radius-card);
+    background: var(--card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .pub-chat-dock.is-collapsed {
+    height: auto;
+    min-height: 0;
+  }
+
+  .pub-chat-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-3);
+    border: 0;
+    background: none;
+    color: var(--foreground);
+    font: inherit;
+    font-size: var(--type-sm);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .pub-chat-rail span {
+    writing-mode: vertical-rl;
+  }
+
+  .pub-chat-rail svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--brand);
+  }
+
+  .pub-chat-rail:hover {
+    background: var(--canvas);
+  }
+
+  .pub-chat-mobile-close,
+  .pub-chat-fab {
+    display: none;
+  }
+
+  .pub-chat-editing {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3) var(--space-2) var(--space-5);
+    border-bottom: 1px solid var(--border);
+    background: var(--brand-50);
+  }
+
+  .pub-chat-editing-label {
+    flex-shrink: 0;
+    font-size: var(--type-xs);
+    color: var(--brand-deep);
+  }
+
+  .pub-chat-editing-title {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--type-sm);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@layer components {
+  @media (max-width: 1279px) {
+    .pub-workspace {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+    }
+
+    /* Karta propozycji w węższej kolumnie: grafika nad treścią */
+    .pub-workspace .pub-card {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pub-workspace .pub-card-media {
+      position: static;
+      max-width: 28rem;
+    }
+  }
+
+  /* Mobile / tablet: czat jako panel od dołu, otwierany przyciskiem */
+  @media (max-width: 899px) {
+    .pub-workspace,
+    .pub-workspace.is-chat-collapsed {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pub-chat-dock,
+    .pub-chat-dock.is-collapsed {
+      position: fixed;
+      top: auto;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 60;
+      height: 85dvh;
+      max-height: none;
+      border-radius: var(--radius-card) var(--radius-card) 0 0;
+      box-shadow: var(--shadow-pop);
+      transform: translateY(100%);
+      visibility: hidden;
+      transition:
+        transform 0.25s cubic-bezier(0.23, 1, 0.32, 1),
+        visibility 0.25s;
+    }
+
+    .pub-chat-dock.is-mobile-open {
+      transform: none;
+      visibility: visible;
+    }
+
+    .pub-chat-collapse {
+      display: none;
+    }
+
+    .pub-chat-mobile-close {
+      display: inline-flex;
+    }
+
+    .pub-chat-fab {
+      display: inline-flex;
+      position: fixed;
+      right: var(--space-4);
+      bottom: var(--space-4);
+      z-index: 55;
+      box-shadow: var(--shadow-pop);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pub-chat-dock {
+      transition: none;
+    }
   }
 }

@@ -2,16 +2,23 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { GBP_AUDIT_SYSTEM_PROMPT } from "@/lib/ai/gbp-audit-guidelines";
 import { GBP_DESCRIPTION_MAX, clampTextToLimit } from "@/lib/ai/gbp-limits";
+import { resolveChatIntent, resolvePostChat } from "@/lib/ai/chat-intent";
+import { mergeGeneratedContent } from "@/lib/ai/content-revision";
 import {
+  CHAT_ROUTER_SYSTEM_PROMPT,
   CONTENT_SYSTEM_PROMPT,
+  POST_CHAT_SYSTEM_PROMPT,
+  postChatUserPrompt,
   GBP_POST_MAX,
   TOPIC_SYSTEM_PROMPT,
+  chatRouterUserPrompt,
   contentUserPrompt,
   topicUserPrompt,
 } from "@/lib/ai/content-prompts";
 import { stripReviewFluffFromDescription } from "@/features/wizytowka/description-sanitize";
 import type {
   BriefFields,
+  ChatIntent,
   GbpAuditSuggestion,
   GenerateBriefInput,
   GenerateContentInput,
@@ -20,13 +27,18 @@ import type {
   GenerateReviewReplyInput,
   GenerateTopicInput,
   GeneratedContent,
+  PostChatInput,
+  PostChatResult,
+  RouteContentChatInput,
   GeneratedImage,
   ImageProvider,
   TextProvider,
 } from "@/lib/ai/types";
 
 const generatedContentSchema = z.object({
-  body: z.string().min(1),
+  changes: z.array(z.string()).nullable().optional(),
+  body: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
   newImagePrompt: z.string().nullable().optional(),
 });
 
@@ -148,13 +160,32 @@ Bez markdownu, bez dodatkowych kluczy.`;
       CONTENT_SYSTEM_PROMPT,
       contentUserPrompt(input),
     );
-    const parsed = generatedContentSchema.parse(JSON.parse(raw));
-    return {
-      body: clampTextToLimit(parsed.body.trim(), GBP_POST_MAX),
-      newImagePrompt: input.revision
-        ? parsed.newImagePrompt?.trim() || null
-        : null,
-    };
+    return mergeGeneratedContent(
+      generatedContentSchema.parse(JSON.parse(raw)),
+      input.revision,
+      GBP_POST_MAX,
+    );
+  },
+
+  async routeContentChat(input: RouteContentChatInput): Promise<ChatIntent> {
+    const raw = await completeJson(
+      CHAT_ROUTER_SYSTEM_PROMPT,
+      chatRouterUserPrompt(input),
+    );
+    return resolveChatIntent(
+      JSON.parse(raw),
+      input.message,
+      input.posts,
+      input.history,
+    );
+  },
+
+  async respondToPostChat(input: PostChatInput): Promise<PostChatResult> {
+    const raw = await completeJson(
+      POST_CHAT_SYSTEM_PROMPT,
+      postChatUserPrompt(input),
+    );
+    return resolvePostChat(JSON.parse(raw), input.message);
   },
 
   async generateReviewReply(input: GenerateReviewReplyInput): Promise<string> {

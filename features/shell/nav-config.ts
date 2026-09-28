@@ -93,32 +93,3 @@ export const topNavPrimary: NavItem[] = [
 ].map(byHref);
 
 export const topNavMore: NavItem[] = [];
-
-/** All leaf routes that need a placeholder page in phase 1 */
-export const placeholderRoutes: { href: string; title: string }[] = [
-  { href: "/pulpit", title: "Pulpit" },
-  { href: "/strona/tresci", title: "Treści strony" },
-  { href: "/strona/backlinki", title: "Backlinki" },
-  { href: "/strona/analityka", title: "Analityka strony" },
-  { href: "/wizytowka/raporty", title: "Raporty wizytówki" },
-  { href: "/wizytowka/informacje", title: "Informacje o firmie" },
-  { href: "/wizytowka/kontakt", title: "Kontakt" },
-  { href: "/wizytowka/atrybuty", title: "Atrybuty" },
-  { href: "/wizytowka/nap", title: "NAP i katalogi" },
-  { href: "/opinie", title: "Opinie i komentarze" },
-  { href: "/opinie/ustawienia", title: "Ustawienia opinii" },
-  { href: "/crm", title: "Klienci (CRM)" },
-  { href: "/kampanie-wysylkowe/kontakty", title: "Kontakty" },
-  { href: "/kampanie-wysylkowe/nowa-wiadomosc", title: "Nowa wiadomość" },
-  { href: "/kampanie-wysylkowe/historia", title: "Historia wysyłek" },
-  { href: "/kampanie-wysylkowe/sekwencje", title: "Sekwencje" },
-  { href: "/kampanie-wysylkowe/linki", title: "Linki" },
-  { href: "/kampanie-wysylkowe/prywatne-oceny", title: "Prywatne oceny" },
-  { href: "/sklep", title: "Sklep i dodatki" },
-  { href: "/sklep/zamowienia", title: "Zamówienia" },
-  { href: "/ustawienia/plan", title: "Plan i rozliczenia" },
-  { href: "/ustawienia/profile", title: "Profile" },
-  { href: "/ustawienia/kontekst", title: "Kontekst firmy" },
-  { href: "/ustawienia/integracje", title: "Integracje" },
-  { href: "/ustawienia/zespol", title: "Zespół" },
-];

@@ -22,7 +22,11 @@ export function getImageProvider(): ImageProvider {
 
 export type {
   BriefFields,
+  ChatIntent,
+  ChatPostRef,
+  ChatTurn,
   ContentContext,
+  PostChatResult,
   GeneratedContent,
   GenerateBriefInput,
   TextProvider,

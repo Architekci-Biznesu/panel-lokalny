@@ -3,7 +3,7 @@ import {
   isGbpUnauthenticatedError,
 } from "@/lib/integrations/gbp/errors";
 
-export const GBP_RECONNECT_MESSAGE =
+const GBP_RECONNECT_MESSAGE =
   "Autoryzacja Google wygasła - połącz ponownie wizytówkę w Ustawienia > Integracje";
 
 /** Short, readable reason from a Google error body (never the raw HTTP dump). */

@@ -19,7 +19,6 @@ import {
   rejectContent,
 } from "@/features/publikacje/actions";
 import { ChannelPicker } from "@/features/publikacje/components/channel-picker";
-import { ChatEditPanel } from "@/features/publikacje/components/chat-edit-panel";
 import type {
   ChannelOption,
   InboxItem,
@@ -81,17 +80,22 @@ export function ContentApprovalCard({
   groupName,
   groupSiblings,
   activeProfile,
+  isEditing,
+  onEdit,
 }: {
   item: InboxItem;
   channels: ChannelOption[];
   groupName: string | null;
   groupSiblings: Array<{ id: string; name: string }>;
   activeProfile: { id: string; name: string };
+  /** This post is open in the docked chat. */
+  isEditing: boolean;
+  /** Opens the post in the docked chat (edit mode). */
+  onEdit: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<"accept" | "reject" | "image" | null>(null);
-  const [chatOpen, setChatOpen] = useState(false);
   const [selected, setSelected] = useState<ContentChannel[]>(
     channels.filter((c) => c.available).map((c) => c.channel),
   );
@@ -194,7 +198,10 @@ export function ContentApprovalCard({
   }
 
   return (
-    <article className="ui-section pub-card">
+    <article
+      id={`pub-post-${item.id}`}
+      className={`ui-section pub-card${isEditing ? " is-editing" : ""}`}
+    >
       <div className="pub-card-media">
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- public R2 URL, domain set per environment
@@ -305,10 +312,11 @@ export function ContentApprovalCard({
             type="button"
             className="ui-btn ui-btn-white"
             disabled={disabled}
-            onClick={() => setChatOpen(true)}
+            aria-pressed={isEditing}
+            onClick={onEdit}
           >
             <MessageSquareText aria-hidden />
-            Edytuj przez czat
+            {isEditing ? "Edytujesz w czacie" : "Edytuj przez czat"}
           </button>
           <button
             type="button"
@@ -325,8 +333,6 @@ export function ContentApprovalCard({
           </button>
         </div>
       </div>
-
-      <ChatEditPanel item={item} open={chatOpen} onOpenChange={setChatOpen} />
     </article>
   );
 }
