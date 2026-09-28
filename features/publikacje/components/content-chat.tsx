@@ -10,6 +10,7 @@
 
 import {
   ArrowUp,
+  ImageIcon,
   ImagePlus,
   Loader2,
   MessageSquareText,
@@ -37,6 +38,7 @@ export type EditableItem = {
   id: string;
   title: string;
   body: string;
+  imageUrl: string | null;
   revisionCount: number;
   /** Requests that already changed this post (saved), oldest first */
   recentInstructions: string[];
@@ -504,11 +506,21 @@ function EditThread({
   return (
     <>
       <div className="pub-chat-editing">
-        <span className="pub-chat-editing-label">Edytujesz</span>
-        <span className="pub-chat-editing-title">{title}</span>
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- public R2 URL, domain set per environment
+          <img src={item.imageUrl} alt="" className="pub-chat-editing-thumb" />
+        ) : (
+          <span className="pub-chat-editing-thumb" aria-hidden>
+            <ImageIcon />
+          </span>
+        )}
+        <span className="pub-chat-editing-text">
+          <span className="pub-chat-editing-label">Edytujesz post</span>
+          <span className="pub-chat-editing-title">{title}</span>
+        </span>
         <button
           type="button"
-          className="ui-btn ui-btn-ghost ui-btn-sm"
+          className="ui-btn ui-btn-ghost ui-btn-sm pub-chat-editing-close"
           aria-label="Zakończ edycję"
           onClick={onExit}
         >
@@ -542,11 +554,6 @@ function EditThread({
             </ul>
           </div>
         ) : null}
-        <div className="pub-chat-current">
-          <p className="pub-chat-label">Obecny post</p>
-          <p className="pub-chat-post-title">{title}</p>
-          <p className="pub-chat-body">{body}</p>
-        </div>
 
         {messages.map((message) => {
           if (message.role === "user") {
@@ -827,14 +834,14 @@ export function ContentChat({
           </button>
         ) : (
           <>
-            <header className="pub-chat-head">
+            <header className={`pub-chat-head${editing ? " is-editing" : ""}`}>
               <div className="pub-chat-head-text">
                 <h2 className="pub-chat-title">
                   Czat <span className="pub-ai-text">AI</span>
                 </h2>
-                <p className="pub-chat-sub">
-                  {editing ? "Edycja propozycji" : "Nowe propozycje postów"}
-                </p>
+                {editing ? null : (
+                  <p className="pub-chat-sub">Nowe propozycje postów</p>
+                )}
               </div>
               <button
                 type="button"

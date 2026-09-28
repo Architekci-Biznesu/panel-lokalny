@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Pencil } from "lucide-react";
+import { ChevronDown, Loader2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "gooey-toast";
@@ -160,11 +160,12 @@ export function PostTextEditor({
           {long ? (
             <button
               type="button"
-              className="pub-card-more"
+              className={`pub-card-more${expanded ? " is-open" : ""}`}
               aria-expanded={expanded}
               onClick={() => setExpanded((v) => !v)}
             >
               {expanded ? "Zwiń" : "Pokaż całość"}
+              <ChevronDown aria-hidden />
             </button>
           ) : null}
         </div>

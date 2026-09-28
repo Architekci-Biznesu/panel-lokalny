@@ -7,6 +7,7 @@ import {
   Sparkles,
   Trash2,
   UserRound,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -95,6 +96,7 @@ export function ContentApprovalCard({
   activeProfile,
   isEditing,
   onEdit,
+  onExitEdit,
 }: {
   item: InboxItem;
   channels: ChannelOption[];
@@ -105,6 +107,8 @@ export function ContentApprovalCard({
   isEditing: boolean;
   /** Opens the post in the docked chat (edit mode). */
   onEdit: () => void;
+  /** Closes the edit mode (the "Edytujesz z AI" badge). */
+  onExitEdit: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -287,10 +291,20 @@ export function ContentApprovalCard({
       className={`pub-card${isEditing ? " is-editing" : ""}`}
     >
       {isEditing ? (
-        <p className="pub-card-strip">
-          Ten post jest otwarty w czacie obok - zmiany zobaczysz tu po zapisaniu
-          wersji
-        </p>
+        <span className="pub-card-badge">
+          <Sparkles aria-hidden />
+          <span className="pub-ai-text">Edytujesz z AI</span>
+          <span className="pub-card-badge-sep" aria-hidden />
+          <button
+            type="button"
+            className="pub-card-badge-close"
+            aria-label="Zakończ edycję z AI"
+            title="Zakończ edycję"
+            onClick={onExitEdit}
+          >
+            <X aria-hidden />
+          </button>
+        </span>
       ) : null}
 
       <div className="pub-card-top">

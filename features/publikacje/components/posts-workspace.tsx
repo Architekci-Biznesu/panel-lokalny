@@ -215,6 +215,11 @@ export function PostsWorkspace({
     if (collapsed) writeCollapsed(false);
   }
 
+  function exitEdit() {
+    setEditRequest(null);
+    setEditingId(null);
+  }
+
   return (
     <div className={`pub-workspace${collapsed ? " is-chat-collapsed" : ""}`}>
       <div className="pub-workspace-list">
@@ -285,6 +290,7 @@ export function PostsWorkspace({
             activeProfile={activeProfile}
             isEditing={item.id === editingId}
             onEdit={() => edit(item.id)}
+            onExitEdit={exitEdit}
           />
         ))}
 
@@ -336,10 +342,7 @@ export function PostsWorkspace({
             .getElementById(`pub-post-${itemId}`)
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
         }}
-        onExitEdit={() => {
-          setEditRequest(null);
-          setEditingId(null);
-        }}
+        onExitEdit={exitEdit}
         runs={runs}
         onRunStarted={(runId, count) => trackRun(runId, count)}
         collapsed={collapsed}
