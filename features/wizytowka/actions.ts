@@ -13,11 +13,8 @@ import {
 } from "@/features/wizytowka/types";
 import { GBP_DESCRIPTION_MAX, clampTextToLimit } from "@/lib/ai/gbp-limits";
 import { db } from "@/lib/db";
-import {
-  gbpSuggestions,
-  napInterestRequests,
-  profileBriefs,
-} from "@/lib/db/schema";
+import { appendBriefAvoid } from "@/lib/brief";
+import { gbpSuggestions, napInterestRequests } from "@/lib/db/schema";
 import {
   getActiveGbpProfile,
   getGbpAccessTokenForProfile,
@@ -511,23 +508,7 @@ export async function rejectGbpSuggestion(
       .set({ status: "rejected" })
       .where(eq(gbpSuggestions.id, suggestion.id));
 
-    const reason = parsed.data.reason?.trim();
-    if (reason) {
-      const [brief] = await db
-        .select()
-        .from(profileBriefs)
-        .where(eq(profileBriefs.profileId, profile.id))
-        .limit(1);
-      if (brief) {
-        const nextAvoid = [brief.avoid?.trim(), reason]
-          .filter(Boolean)
-          .join("\n");
-        await db
-          .update(profileBriefs)
-          .set({ avoid: nextAvoid, updatedAt: new Date() })
-          .where(eq(profileBriefs.id, brief.id));
-      }
-    }
+    await appendBriefAvoid(profile.id, parsed.data.reason);
 
     revalidatePath("/wizytowka", "layout");
     revalidatePath("/ustawienia/kontekst");

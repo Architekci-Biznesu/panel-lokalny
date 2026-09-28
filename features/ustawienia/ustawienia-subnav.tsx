@@ -15,7 +15,7 @@ export function UstawieniaSubnav() {
   const pathname = usePathname();
 
   return (
-    <nav className="wiz-subnav" aria-label="Zakładki ustawień">
+    <nav className="ui-subnav" aria-label="Zakładki ustawień">
       {tabs.map((tab) => {
         const active =
           pathname === tab.href || pathname.startsWith(`${tab.href}/`);
@@ -23,7 +23,7 @@ export function UstawieniaSubnav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`wiz-subnav-link ${active ? "active" : ""}`}
+            className={`ui-subnav-link ${active ? "active" : ""}`}
           >
             {tab.label}
           </Link>

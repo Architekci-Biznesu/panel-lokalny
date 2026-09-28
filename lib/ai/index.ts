@@ -22,6 +22,8 @@ export function getImageProvider(): ImageProvider {
 
 export type {
   BriefFields,
+  ContentContext,
+  GeneratedContent,
   GenerateBriefInput,
   TextProvider,
   ImageProvider,

@@ -64,6 +64,13 @@
       "when": 1790520000000,
       "tag": "0008_gbp_audit_insights",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790588865567,
+      "tag": "0009_content_loop",
+      "breakpoints": true
     }
   ]
 }

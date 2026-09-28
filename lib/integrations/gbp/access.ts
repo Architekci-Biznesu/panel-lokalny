@@ -7,13 +7,12 @@ import {
   sealTokens,
 } from "@/lib/integrations/gbp/client";
 import { getActiveProfile } from "@/lib/session";
+import { GbpNotConnectedError } from "@/lib/integrations/gbp/errors";
 
-export class GbpNotConnectedError extends Error {
-  constructor(message = "Profil nie ma podłączonej wizytówki Google") {
-    super(message);
-    this.name = "GbpNotConnectedError";
-  }
-}
+export {
+  GbpNotConnectedError,
+  isGbpUnauthenticatedError,
+} from "@/lib/integrations/gbp/errors";
 
 export async function getActiveGbpProfile(): Promise<Profile> {
   const profile = await getActiveProfile();
@@ -21,11 +20,6 @@ export async function getActiveGbpProfile(): Promise<Profile> {
     throw new GbpNotConnectedError();
   }
   return profile;
-}
-
-export function isGbpUnauthenticatedError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : "";
-  return message.includes("UNAUTHENTICATED") || message.includes('"code": 401');
 }
 
 /** Returns a fresh access token for the profile's OAuth connection. */

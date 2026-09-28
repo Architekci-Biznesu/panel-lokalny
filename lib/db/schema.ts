@@ -472,3 +472,114 @@ export const rankResultsRelations = relations(rankResults, ({ one }) => ({
 export type RankKeyword = typeof rankKeywords.$inferSelect;
 export type RankScan = typeof rankScans.$inferSelect;
 export type RankResult = typeof rankResults.$inferSelect;
+
+// --- Faza 4: pętla contentowa (Publikacje) ---
+
+export const contentTypeEnum = pgEnum("content_type", ["post", "blog"]);
+
+export const contentStatusEnum = pgEnum("content_status", [
+  "draft",
+  "pending",
+  "accepted",
+  "rejected",
+]);
+
+export const contentChannelEnum = pgEnum("content_channel", [
+  "gbp",
+  "facebook",
+  "instagram",
+]);
+
+export const contentTargetStatusEnum = pgEnum("content_target_status", [
+  "queued",
+  "scheduled",
+  "published",
+  "failed",
+]);
+
+/** One piece of content; profile_id is the author / source profile. */
+export const contentItems = pgTable(
+  "content_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    type: contentTypeEnum("type").notNull().default("post"),
+    status: contentStatusEnum("status").notNull().default("pending"),
+    topic: text("topic").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    imageUrl: text("image_url"),
+    imageKey: text("image_key"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("content_items_profile_id_idx").on(table.profileId),
+    index("content_items_status_idx").on(table.status),
+  ],
+);
+
+/** Where one content item goes - one row per profile + channel. */
+export const contentTargets = pgTable(
+  "content_targets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    contentItemId: uuid("content_item_id")
+      .notNull()
+      .references(() => contentItems.id, { onDelete: "cascade" }),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    channel: contentChannelEnum("channel").notNull(),
+    status: contentTargetStatusEnum("status").notNull().default("queued"),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    /** Google localPost `name` - needed to find or delete the post later. */
+    externalId: text("external_id"),
+    error: text("error"),
+  },
+  (table) => [
+    uniqueIndex("content_targets_item_profile_channel_uidx").on(
+      table.contentItemId,
+      table.profileId,
+      table.channel,
+    ),
+    index("content_targets_profile_id_idx").on(table.profileId),
+    index("content_targets_status_idx").on(table.status),
+    index("content_targets_scheduled_at_idx").on(table.scheduledAt),
+  ],
+);
+
+/** Chat edit history: the version before each change and the instruction that changed it. */
+export const contentRevisions = pgTable(
+  "content_revisions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    contentItemId: uuid("content_item_id")
+      .notNull()
+      .references(() => contentItems.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    imageUrl: text("image_url"),
+    instruction: text("instruction").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("content_revisions_content_item_id_idx").on(table.contentItemId),
+  ],
+);
+
+export type ContentItem = typeof contentItems.$inferSelect;
+export type ContentTarget = typeof contentTargets.$inferSelect;
+export type ContentRevision = typeof contentRevisions.$inferSelect;
+export type ContentChannel = (typeof contentChannelEnum.enumValues)[number];
+export type ContentTargetStatus =
+  (typeof contentTargetStatusEnum.enumValues)[number];
+export type ContentStatus = (typeof contentStatusEnum.enumValues)[number];

@@ -149,6 +149,16 @@ export function PulpitSkeleton() {
               <span style={{ visibility: "hidden" }}>Przejdź do wizytówki</span>
             </div>
           </section>
+          <section className="pulpit-card">
+            <CardHeadSkel leadWide="11rem" />
+            <div className="pulpit-action-list" aria-hidden>
+              <ActionRowSkel />
+              <ActionRowSkel />
+            </div>
+            <div className="pulpit-card-foot" aria-hidden>
+              <span style={{ visibility: "hidden" }}>Zobacz wszystkie</span>
+            </div>
+          </section>
         </aside>
       </div>
     </div>

@@ -49,10 +49,13 @@
     min-width: 0;
   }
 
+  /* Dwa kafle w kolumnie (Co do poprawy + Ostatnie publikacje) - bez sticky,
+     żeby dolny kafel był zawsze osiągalny. */
   .pulpit-side {
     grid-column: span 4;
-    position: sticky;
-    top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
     min-width: 0;
   }
 
@@ -73,10 +76,6 @@
     .pulpit-main,
     .pulpit-side {
       grid-column: 1 / -1;
-    }
-
-    .pulpit-side {
-      position: static;
     }
   }
 }
@@ -179,6 +178,11 @@
   .pulpit-icon-circle.is-warn {
     background: var(--warning-soft);
     color: var(--warning-foreground);
+  }
+
+  .pulpit-icon-circle.is-dark {
+    background: var(--primary);
+    color: var(--primary-foreground);
   }
 
   .pulpit-icon-circle svg {
@@ -484,6 +488,12 @@
   .pulpit-action-icon.is-check {
     background: var(--warning-soft);
     color: var(--warning-foreground);
+  }
+
+  /* Ostatnie publikacje: czarny = opublikowano (Styl 4) */
+  .pulpit-action-icon.is-published {
+    background: var(--primary);
+    color: var(--primary-foreground);
   }
 
   .pulpit-action-icon svg {

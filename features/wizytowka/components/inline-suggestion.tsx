@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Check, Loader2, Pencil, WandSparkles } from "lucide-react";
 import { toast } from "gooey-toast";
-import { RejectPopover } from "@/features/wizytowka/components/reject-popover";
+import { RejectPopover } from "@/components/ui/reject-popover";
 import {
   acceptGbpSuggestion,
   rejectGbpSuggestion,
@@ -36,17 +36,17 @@ function CharMeter({ value }: { value: string }) {
   const tone = ratio >= 0.95 ? "warn" : "ok";
 
   return (
-    <span className="wiz-compare-meter">
+    <span className="ui-compare-meter">
       <span
-        className={`wiz-compare-meter-track wiz-compare-meter-${tone}`}
+        className={`ui-compare-meter-track ui-compare-meter-${tone}`}
         aria-hidden
       >
         <span
-          className="wiz-compare-meter-fill"
+          className="ui-compare-meter-fill"
           style={{ width: `${ratio * 100}%` }}
         />
       </span>
-      <span className="mono wiz-compare-count">
+      <span className="mono ui-compare-count">
         {len} / {GBP_DESCRIPTION_MAX}
       </span>
     </span>
@@ -69,9 +69,9 @@ function CategoryDiff({
   const removed = oldNames.filter((name) => !newSet.has(name));
 
   return (
-    <div className="wiz-compare-cols">
-      <div className="wiz-compare-col">
-        <div className="wiz-compare-col-head">
+    <div className="ui-compare-cols">
+      <div className="ui-compare-col">
+        <div className="ui-compare-col-head">
           <span>Obecnie</span>
         </div>
         <ul className="wiz-preview-chips">
@@ -90,8 +90,8 @@ function CategoryDiff({
           )}
         </ul>
       </div>
-      <div className="wiz-compare-col wiz-compare-col-next">
-        <div className="wiz-compare-col-head">
+      <div className="ui-compare-col ui-compare-col-next">
+        <div className="ui-compare-col-head">
           <span>Po zmianie</span>
         </div>
         <ul className="wiz-preview-chips">
@@ -205,9 +205,9 @@ export function InlineSuggestion({
 
       <div className="wiz-proposal-panel">
         {editing ? (
-          <div className="wiz-compare-cols">
-            <div className="wiz-compare-col">
-              <div className="wiz-compare-col-head">
+          <div className="ui-compare-cols">
+            <div className="ui-compare-col">
+              <div className="ui-compare-col-head">
                 <span>Obecnie</span>
                 {suggestion.field === "description" ? (
                   <CharMeter value={oldValue} />
@@ -220,8 +220,8 @@ export function InlineSuggestion({
                 struck
               />
             </div>
-            <div className="wiz-compare-col wiz-compare-col-next">
-              <div className="wiz-compare-col-head">
+            <div className="ui-compare-col ui-compare-col-next">
+              <div className="ui-compare-col-head">
                 <span>Po zmianie</span>
                 {suggestion.field === "description" ? (
                   <CharMeter value={draft} />
@@ -244,9 +244,9 @@ export function InlineSuggestion({
             categoryOptions={categoryOptions}
           />
         ) : (
-          <div className="wiz-compare-cols">
-            <div className="wiz-compare-col">
-              <div className="wiz-compare-col-head">
+          <div className="ui-compare-cols">
+            <div className="ui-compare-col">
+              <div className="ui-compare-col-head">
                 <span>Obecnie</span>
                 {suggestion.field === "description" ? (
                   <CharMeter value={oldValue} />
@@ -259,8 +259,8 @@ export function InlineSuggestion({
                 struck
               />
             </div>
-            <div className="wiz-compare-col wiz-compare-col-next">
-              <div className="wiz-compare-col-head">
+            <div className="ui-compare-col ui-compare-col-next">
+              <div className="ui-compare-col-head">
                 <span>Po zmianie</span>
                 {suggestion.field === "description" ? (
                   <CharMeter value={draft} />

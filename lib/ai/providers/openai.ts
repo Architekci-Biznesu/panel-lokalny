@@ -2,6 +2,13 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { GBP_AUDIT_SYSTEM_PROMPT } from "@/lib/ai/gbp-audit-guidelines";
 import { GBP_DESCRIPTION_MAX, clampTextToLimit } from "@/lib/ai/gbp-limits";
+import {
+  CONTENT_SYSTEM_PROMPT,
+  GBP_POST_MAX,
+  TOPIC_SYSTEM_PROMPT,
+  contentUserPrompt,
+  topicUserPrompt,
+} from "@/lib/ai/content-prompts";
 import { stripReviewFluffFromDescription } from "@/features/wizytowka/description-sanitize";
 import type {
   BriefFields,
@@ -12,10 +19,16 @@ import type {
   GenerateImageInput,
   GenerateReviewReplyInput,
   GenerateTopicInput,
+  GeneratedContent,
   GeneratedImage,
   ImageProvider,
   TextProvider,
 } from "@/lib/ai/types";
+
+const generatedContentSchema = z.object({
+  body: z.string().min(1),
+  newImagePrompt: z.string().nullable().optional(),
+});
 
 const briefSchema = z.object({
   services: z.string(),
@@ -121,17 +134,27 @@ Bez markdownu, bez dodatkowych kluczy.`;
   },
 
   async generateTopic(input: GenerateTopicInput): Promise<string> {
-    return completeText(
-      "Proponujesz jeden temat publikacji dla lokalnej firmy. Odpowiedz samym tytułem tematu po polsku.",
-      `${briefContext(input.brief)}\nKanał: ${input.channel ?? "ogólny"}`,
+    const topic = await completeText(
+      TOPIC_SYSTEM_PROMPT,
+      topicUserPrompt(input),
     );
+    return topic.replace(/^["„”]+|["„”.]+$/g, "").trim();
   },
 
-  async generateContent(input: GenerateContentInput): Promise<string> {
-    return completeText(
-      "Piszesz treść publikacji dla lokalnej firmy po polsku. Zwróć samą treść. Opieraj się na konkretnych wyróżnikach, unikaj pustych fraz.",
-      `Temat: ${input.topic}\n${briefContext(input.brief)}\nKanał: ${input.channel ?? "ogólny"}`,
+  async generateContent(
+    input: GenerateContentInput,
+  ): Promise<GeneratedContent> {
+    const raw = await completeJson(
+      CONTENT_SYSTEM_PROMPT,
+      contentUserPrompt(input),
     );
+    const parsed = generatedContentSchema.parse(JSON.parse(raw));
+    return {
+      body: clampTextToLimit(parsed.body.trim(), GBP_POST_MAX),
+      newImagePrompt: input.revision
+        ? parsed.newImagePrompt?.trim() || null
+        : null,
+    };
   },
 
   async generateReviewReply(input: GenerateReviewReplyInput): Promise<string> {
@@ -184,7 +207,10 @@ Bez markdownu, bez dodatkowych kluczy.`;
         input.competitorInsights
           ? {
               phrases: input.competitorInsights.phrases,
-              categoryStats: input.competitorInsights.categoryStats.slice(0, 15),
+              categoryStats: input.competitorInsights.categoryStats.slice(
+                0,
+                15,
+              ),
               titleSamples: input.competitorInsights.titleSamples.slice(0, 8),
               descriptionSamples:
                 input.competitorInsights.descriptionSamples.slice(0, 8),

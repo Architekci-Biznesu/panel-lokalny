@@ -50,6 +50,7 @@ const PREFIXES = {
   pulpit: ["pulpit-"],
   admin: ["admin-"],
   ustawienia: ["kontekst-", "ustawienia-"],
+  publikacje: ["pub-"],
 };
 
 const errors = [];

@@ -8,7 +8,7 @@ import {
   updateGbpRegularHours,
   updateGbpSpecialHours,
 } from "@/features/wizytowka/actions";
-import { TimeField } from "@/features/wizytowka/components/time-field";
+import { TimeField } from "@/components/ui/time-field";
 import {
   getUpcomingHolidayHint,
   holidayNameFor,

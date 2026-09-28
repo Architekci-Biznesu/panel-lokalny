@@ -12,7 +12,7 @@ export function WizytowkaSubnav({
   const pathname = usePathname();
 
   return (
-    <nav className="wiz-subnav" aria-label="Zakładki wizytówki">
+    <nav className="ui-subnav" aria-label="Zakładki wizytówki">
       {WIZ_TABS.map((tab) => {
         const active =
           pathname === tab.href || pathname.startsWith(`${tab.href}/`);
@@ -21,12 +21,12 @@ export function WizytowkaSubnav({
           <Link
             key={tab.href}
             href={tab.href}
-            className={`wiz-subnav-link ${active ? "active" : ""}`}
+            className={`ui-subnav-link ${active ? "active" : ""}`}
           >
             <span>{tab.label}</span>
             {count > 0 ? (
               <span
-                className="wiz-subnav-badge"
+                className="ui-subnav-badge"
                 aria-label={`${count} propozycji`}
               >
                 {count}

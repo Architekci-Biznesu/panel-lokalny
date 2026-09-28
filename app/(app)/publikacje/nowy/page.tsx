@@ -1,5 +1,5 @@
-﻿import { PlaceholderPage } from "@/features/shell/placeholder-page";
+import { NewContentForm } from "@/features/publikacje/components/new-content-form";
 
-export default function Page() {
-  return <PlaceholderPage title="Nowa publikacja" />;
+export default function PublikacjeNowyPage() {
+  return <NewContentForm />;
 }

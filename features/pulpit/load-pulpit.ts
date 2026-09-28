@@ -19,7 +19,8 @@ import {
   listGbpLocationMedia,
 } from "@/lib/integrations/gbp/client";
 import { AuthError } from "@/lib/session";
-import type { GbpSuggestion } from "@/lib/db/schema";
+import type { ContentChannel, GbpSuggestion, Profile } from "@/lib/db/schema";
+import { loadRecentPublished } from "@/features/publikacje/load-overview";
 import {
   ALL_PERFORMANCE_METRICS,
   buildReportSummary,
@@ -60,6 +61,13 @@ export type PulpitProposalItem = {
   href: string;
 };
 
+export type PulpitPublication = {
+  targetId: string;
+  title: string;
+  channel: ContentChannel;
+  date: Date | null;
+};
+
 export type PulpitPayload = {
   connected: boolean;
   reportSummary: ReportSummary | null;
@@ -71,6 +79,7 @@ export type PulpitPayload = {
   } | null;
   proposals: PulpitProposalItem[];
   proposalsTotal: number;
+  publications: PulpitPublication[];
   loadError: string | null;
 };
 
@@ -232,8 +241,28 @@ function emptyPayload(
     improve: null,
     proposals: [],
     proposalsTotal: 0,
+    publications: [],
     ...partial,
   };
+}
+
+const PUBLICATIONS_PREVIEW = 4;
+
+async function loadPulpitPublications(
+  profile: Profile,
+): Promise<PulpitPublication[]> {
+  try {
+    const rows = await loadRecentPublished(profile, PUBLICATIONS_PREVIEW);
+    return rows.map(({ targetId, title, channel, date }) => ({
+      targetId,
+      title,
+      channel,
+      date,
+    }));
+  } catch (error) {
+    console.error("Pulpit publications failed:", error);
+    return [];
+  }
 }
 
 export async function loadPulpitPayload(): Promise<PulpitPayload> {
@@ -357,6 +386,7 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
       },
       proposals: proposalItems.slice(0, PROPOSALS_PREVIEW),
       proposalsTotal: proposalItems.length,
+      publications: await loadPulpitPublications(profile),
       loadError: metricsError,
     };
   } catch (error) {

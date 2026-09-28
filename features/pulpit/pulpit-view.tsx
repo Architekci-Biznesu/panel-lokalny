@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, CalendarDays } from "lucide-react";
 import { ImproveCard } from "@/features/pulpit/improve-card";
 import { RankPhrasesCard } from "@/features/pulpit/rank-phrases-card";
+import { RecentPublicationsCard } from "@/features/pulpit/recent-publications-card";
 import { ReportKpiStrip } from "@/features/pulpit/report-kpi-strip";
 import { VisibilityCard } from "@/features/pulpit/visibility-card";
 import type { PulpitPayload } from "@/features/pulpit/load-pulpit";
@@ -55,6 +56,7 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
             proposals={data.proposals}
             proposalsTotal={data.proposalsTotal}
           />
+          <RecentPublicationsCard publications={data.publications} />
         </aside>
       </div>
     </div>

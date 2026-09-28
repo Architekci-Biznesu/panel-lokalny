@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Check, Loader2, Pencil, Star, WandSparkles } from "lucide-react";
 import { toast } from "gooey-toast";
-import { RejectPopover } from "@/features/wizytowka/components/reject-popover";
+import { RejectPopover } from "@/components/ui/reject-popover";
 import {
   acceptGbpSuggestion,
   rejectGbpSuggestion,
@@ -142,9 +142,9 @@ export function CategoriesSuggestion({
 
       <div className="wiz-proposal-panel">
         {editing ? (
-          <div className="wiz-compare-cols">
-            <div className="wiz-compare-col">
-              <div className="wiz-compare-col-head">
+          <div className="ui-compare-cols">
+            <div className="ui-compare-col">
+              <div className="ui-compare-col-head">
                 <span>Obecnie</span>
               </div>
               <CategoryChips
@@ -155,8 +155,8 @@ export function CategoriesSuggestion({
                 additional={additional}
               />
             </div>
-            <div className="wiz-compare-col wiz-compare-col-next">
-              <div className="wiz-compare-col-head">
+            <div className="ui-compare-col ui-compare-col-next">
+              <div className="ui-compare-col-head">
                 <span>Po zmianie</span>
               </div>
               <div className="wiz-proposal-edit wiz-cat-edit">
@@ -178,9 +178,9 @@ export function CategoriesSuggestion({
             </div>
           </div>
         ) : (
-          <div className="wiz-compare-cols">
-            <div className="wiz-compare-col">
-              <div className="wiz-compare-col-head">
+          <div className="ui-compare-cols">
+            <div className="ui-compare-col">
+              <div className="ui-compare-col-head">
                 <span>Obecnie</span>
               </div>
               <CategoryChips
@@ -191,8 +191,8 @@ export function CategoriesSuggestion({
                 additional={additional}
               />
             </div>
-            <div className="wiz-compare-col wiz-compare-col-next">
-              <div className="wiz-compare-col-head">
+            <div className="ui-compare-col ui-compare-col-next">
+              <div className="ui-compare-col-head">
                 <span>Po zmianie</span>
               </div>
               <ul className="wiz-cat-chips">

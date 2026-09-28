@@ -81,7 +81,7 @@ export function TimeField({
     place();
     // Zaznaczona godzina i minuta na środku kolumn (bez przewijania strony).
     panelRef.current
-      ?.querySelectorAll<HTMLElement>(".wiz-time-list")
+      ?.querySelectorAll<HTMLElement>(".ui-time-list")
       .forEach((list) => {
         const active = list.querySelector<HTMLElement>(".is-active");
         if (!active) return;
@@ -89,7 +89,7 @@ export function TimeField({
           active.offsetTop - list.clientHeight / 2 + active.offsetHeight / 2;
       });
     panelRef.current
-      ?.querySelector<HTMLElement>(".wiz-time-opt.is-active")
+      ?.querySelector<HTMLElement>(".ui-time-opt.is-active")
       ?.focus({ preventScroll: true });
   }, [open, place]);
 
@@ -125,7 +125,7 @@ export function TimeField({
       <button
         ref={triggerRef}
         type="button"
-        className={`ui-field wiz-time-field${open ? " is-open" : ""}${className ? ` ${className}` : ""}`}
+        className={`ui-field ui-time-field${open ? " is-open" : ""}${className ? ` ${className}` : ""}`}
         aria-label={`${ariaLabel}: ${hour}:${minute}`}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -141,7 +141,7 @@ export function TimeField({
         ? createPortal(
             <div
               ref={panelRef}
-              className="wiz-time-pop"
+              className="ui-time-pop"
               role="dialog"
               aria-label={ariaLabel}
               style={style}
@@ -187,16 +187,16 @@ function TimeColumn({
   onPick: (value: string) => void;
 }) {
   return (
-    <div className="wiz-time-col">
-      <p className="wiz-time-col-label">{label}</p>
-      <ul className="wiz-time-list" role="listbox" aria-label={label}>
+    <div className="ui-time-col">
+      <p className="ui-time-col-label">{label}</p>
+      <ul className="ui-time-list" role="listbox" aria-label={label}>
         {options.map((option) => (
           <li key={option} role="presentation">
             <button
               type="button"
               role="option"
               aria-selected={option === selected}
-              className={`wiz-time-opt mono${option === selected ? " is-active" : ""}`}
+              className={`ui-time-opt mono${option === selected ? " is-active" : ""}`}
               onClick={() => onPick(option)}
             >
               {option}

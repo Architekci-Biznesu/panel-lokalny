@@ -1,0 +1,350 @@
+"use client";
+
+import {
+  Check,
+  ImageIcon,
+  Loader2,
+  MessageSquareText,
+  Sparkles,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useSyncExternalStore, useTransition } from "react";
+import { toast } from "gooey-toast";
+import { RejectPopover } from "@/components/ui/reject-popover";
+import type { ContentChannel } from "@/lib/db/schema";
+import {
+  acceptContent,
+  generateContentImage,
+  getContentPublishStatus,
+  rejectContent,
+} from "@/features/publikacje/actions";
+import { ChannelPicker } from "@/features/publikacje/components/channel-picker";
+import { ChatEditPanel } from "@/features/publikacje/components/chat-edit-panel";
+import type {
+  ChannelOption,
+  InboxItem,
+} from "@/features/publikacje/load-inbox";
+import { TimeField } from "@/components/ui/time-field";
+
+const POLL_MS = 2000;
+const POLL_LIMIT = 30;
+
+const noopSubscribe = () => () => {};
+
+function isLocalHost(): boolean {
+  if (typeof window === "undefined") return false;
+  return /^(localhost|127\.0\.0\.1|\[::1\])$|\.localhost$|\.test$/.test(
+    window.location.hostname,
+  );
+}
+
+function formatDay(date: Date): string {
+  return new Intl.DateTimeFormat("pl-PL", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
+}
+
+/** Waits for background publishing and reports each target by name. */
+async function reportPublishResult(
+  itemId: string,
+  profileNames: Map<string, string>,
+) {
+  for (let i = 0; i < POLL_LIMIT; i++) {
+    await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+    const status = await getContentPublishStatus({ itemId });
+    if (!status.ok) return;
+    if (status.targets.some((t) => t.status === "queued")) continue;
+
+    const failed = status.targets.filter((t) => t.status === "failed");
+    const published = status.targets.filter((t) => t.status === "published");
+    if (published.length) {
+      toast.success({
+        title:
+          published.length > 1
+            ? `Opublikowano w ${published.length} wizytówkach`
+            : "Post jest już w Google",
+      });
+    }
+    for (const target of failed) {
+      toast.error({
+        title: `Nie opublikowano: ${profileNames.get(target.profileId) ?? "wizytówka"}`,
+        description: target.error ?? undefined,
+      });
+    }
+    return;
+  }
+  toast.info({
+    title: "Publikacja trwa dłużej",
+    description: "Sprawdź status w zakładce Wszystkie.",
+  });
+}
+
+/**
+ * One AI proposal in the inbox: image, title, post, targets and the three
+ * decisions - Akceptuj / Edytuj przez czat / Odrzuć.
+ */
+export function ContentApprovalCard({
+  item,
+  channels,
+  groupName,
+  groupSiblings,
+  activeProfile,
+}: {
+  item: InboxItem;
+  channels: ChannelOption[];
+  groupName: string | null;
+  groupSiblings: Array<{ id: string; name: string }>;
+  activeProfile: { id: string; name: string };
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [busy, setBusy] = useState<"accept" | "reject" | "image" | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [selected, setSelected] = useState<ContentChannel[]>(
+    channels.filter((c) => c.available).map((c) => c.channel),
+  );
+  const [extraProfileIds, setExtraProfileIds] = useState<string[]>([]);
+  const [withImage, setWithImage] = useState(Boolean(item.imageUrl));
+  const [schedule, setSchedule] = useState(false);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("10:00");
+  // Hostname never changes while the page is open - no subscription needed.
+  const local = useSyncExternalStore(noopSubscribe, isLocalHost, () => false);
+
+  const disabled = pending || busy !== null;
+
+  function toggle<T>(list: T[], value: T): T[] {
+    return list.includes(value)
+      ? list.filter((v) => v !== value)
+      : [...list, value];
+  }
+
+  function accept() {
+    if (!selected.length) {
+      toast.error({ title: "Wybierz co najmniej jeden kanał" });
+      return;
+    }
+    let scheduledAt: string | null = null;
+    if (schedule) {
+      if (!date) {
+        toast.error({ title: "Wybierz dzień publikacji" });
+        return;
+      }
+      const when = new Date(`${date}T${time}:00`);
+      if (Number.isNaN(when.getTime()) || when.getTime() < Date.now()) {
+        toast.error({ title: "Data publikacji musi być w przyszłości" });
+        return;
+      }
+      scheduledAt = when.toISOString();
+    }
+
+    setBusy("accept");
+    startTransition(async () => {
+      const result = await acceptContent({
+        itemId: item.id,
+        channels: selected,
+        extraProfileIds,
+        scheduledAt,
+        withImage,
+      });
+      if (!result.ok) {
+        setBusy(null);
+        toast.error({ title: "Nie zaakceptowano", description: result.error });
+        return;
+      }
+      if (result.status === "scheduled") {
+        toast.success({ title: "Zaplanowano publikację" });
+      } else {
+        toast.info({ title: "Publikuję w Google…" });
+        const names = new Map(
+          [activeProfile, ...groupSiblings].map((p) => [p.id, p.name]),
+        );
+        await reportPublishResult(item.id, names);
+      }
+      setBusy(null);
+      router.refresh();
+    });
+  }
+
+  function reject(reason: string | undefined) {
+    setBusy("reject");
+    startTransition(async () => {
+      const result = await rejectContent({ itemId: item.id, reason });
+      setBusy(null);
+      if (!result.ok) {
+        toast.error({ title: "Nie odrzucono", description: result.error });
+        return;
+      }
+      toast.success({
+        title: "Propozycja odrzucona",
+        description: reason
+          ? "Powód trafił do kontekstu firmy - AI nie zaproponuje tego ponownie."
+          : undefined,
+      });
+      router.refresh();
+    });
+  }
+
+  function makeImage() {
+    setBusy("image");
+    startTransition(async () => {
+      const result = await generateContentImage({ itemId: item.id });
+      setBusy(null);
+      if (!result.ok) {
+        toast.error({
+          title: "Nie powstała grafika",
+          description: result.error,
+        });
+        return;
+      }
+      setWithImage(true);
+      toast.success({ title: "Grafika gotowa" });
+      router.refresh();
+    });
+  }
+
+  return (
+    <article className="ui-section pub-card">
+      <div className="pub-card-media">
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- public R2 URL, domain set per environment
+          <img src={item.imageUrl} alt="" className="pub-card-image" />
+        ) : (
+          <div className="pub-card-placeholder">
+            <ImageIcon aria-hidden />
+            <p>
+              {withImage
+                ? "Grafika powstanie przy akceptacji"
+                : "Post bez grafiki"}
+            </p>
+            <button
+              type="button"
+              className="ui-btn ui-btn-white ui-btn-sm"
+              disabled={disabled}
+              onClick={makeImage}
+            >
+              {busy === "image" ? (
+                <Loader2 aria-hidden className="ui-btn-spinner" />
+              ) : (
+                <Sparkles aria-hidden />
+              )}
+              {busy === "image" ? "Tworzę grafikę…" : "Wygeneruj teraz"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="pub-card-main">
+        <div className="pub-card-meta">
+          <span className="ui-pill ui-pill-neutral">Post</span>
+          <span className="ui-pill ui-pill-info">Wygenerowane przez AI</span>
+          <span className="pub-card-date mono">
+            {formatDay(new Date(item.createdAt))}
+          </span>
+          {item.revisionCount > 0 ? (
+            <span className="pub-card-date">
+              Poprawiono w czacie:{" "}
+              <span className="mono">{item.revisionCount}</span>
+            </span>
+          ) : null}
+        </div>
+        <h3 className="pub-card-title">{item.title}</h3>
+        <p className="pub-card-body">{item.body}</p>
+
+        <ChannelPicker
+          channels={channels}
+          selected={selected}
+          onToggleChannel={(channel) =>
+            setSelected((list) => toggle(list, channel))
+          }
+          groupName={groupName}
+          groupSiblings={groupSiblings}
+          extraProfileIds={extraProfileIds}
+          onToggleProfile={(id) =>
+            setExtraProfileIds((list) => toggle(list, id))
+          }
+          disabled={disabled}
+        />
+
+        <div className="pub-card-options">
+          {!item.imageUrl ? (
+            <label className="pub-target-option">
+              <input
+                type="checkbox"
+                className="ui-check"
+                checked={withImage}
+                disabled={disabled}
+                onChange={() => setWithImage((v) => !v)}
+              />
+              <span>Dołącz grafikę AI</span>
+            </label>
+          ) : null}
+          <label className="pub-target-option">
+            <input
+              type="checkbox"
+              className="ui-check"
+              checked={schedule}
+              disabled={disabled}
+              onChange={() => setSchedule((v) => !v)}
+            />
+            <span>Zaplanuj na później</span>
+          </label>
+          {schedule ? (
+            <div className="pub-card-schedule">
+              <input
+                type="date"
+                className="ui-field"
+                aria-label="Dzień publikacji"
+                value={date}
+                disabled={disabled}
+                onChange={(event) => setDate(event.target.value)}
+              />
+              <TimeField
+                className="pub-card-time"
+                ariaLabel="Godzina publikacji"
+                value={time}
+                onChange={setTime}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        {local && (withImage || item.imageUrl) ? (
+          <p className="pub-card-note">
+            Na localhost Google nie pobierze grafiki - publikacja z grafiką
+            działa dopiero na wdrożonym środowisku.
+          </p>
+        ) : null}
+
+        <div className="pub-card-actions">
+          <RejectPopover pending={busy === "reject"} onConfirm={reject} />
+          <button
+            type="button"
+            className="ui-btn ui-btn-white"
+            disabled={disabled}
+            onClick={() => setChatOpen(true)}
+          >
+            <MessageSquareText aria-hidden />
+            Edytuj przez czat
+          </button>
+          <button
+            type="button"
+            className="ui-btn ui-btn-primary"
+            disabled={disabled}
+            onClick={accept}
+          >
+            {busy === "accept" ? (
+              <Loader2 aria-hidden className="ui-btn-spinner" />
+            ) : (
+              <Check aria-hidden />
+            )}
+            {schedule ? "Akceptuj i zaplanuj" : "Akceptuj i opublikuj"}
+          </button>
+        </div>
+      </div>
+
+      <ChatEditPanel item={item} open={chatOpen} onOpenChange={setChatOpen} />
+    </article>
+  );
+}

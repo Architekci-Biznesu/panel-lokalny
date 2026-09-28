@@ -15,15 +15,49 @@ export type GenerateBriefInput = {
   guidanceNote?: string | null;
 };
 
-export type GenerateTopicInput = {
+/**
+ * Everything the content loop knows about a profile. `avoid` and `outOfScope`
+ * are hard bans in the prompt; `recentTitles` stops repeating recent topics.
+ */
+export type ContentContext = {
   brief: BriefFields;
+  businessName: string;
+  serviceArea?: string | null;
+  avoid?: string | null;
+  outOfScope?: string | null;
+  /** Category names from the saved Google profile snapshot */
+  categories: string[];
+  /** Service names from the saved Google profile snapshot */
+  services: string[];
+  /** Titles of this profile's latest publications, newest first */
+  recentTitles: string[];
+};
+
+export type GenerateTopicInput = {
+  context: ContentContext;
   channel?: string;
+  /** What the customer asked to write about (manual request) */
+  request?: string | null;
 };
 
 export type GenerateContentInput = {
-  brief: BriefFields;
+  context: ContentContext;
   topic: string;
   channel?: string;
+  /** Chat edit: rewrite `previousBody` following `instruction` */
+  revision?: {
+    previousBody: string;
+    instruction: string;
+  } | null;
+};
+
+export type GeneratedContent = {
+  body: string;
+  /**
+   * Set only when the customer asked for a new image in a chat edit -
+   * a prompt for the image provider. Null keeps the current image.
+   */
+  newImagePrompt: string | null;
 };
 
 export type GenerateReviewReplyInput = {
@@ -97,7 +131,7 @@ export type GenerateGbpAuditInput = {
 export interface TextProvider {
   generateBrief(input: GenerateBriefInput): Promise<BriefFields>;
   generateTopic(input: GenerateTopicInput): Promise<string>;
-  generateContent(input: GenerateContentInput): Promise<string>;
+  generateContent(input: GenerateContentInput): Promise<GeneratedContent>;
   generateReviewReply(input: GenerateReviewReplyInput): Promise<string>;
   generateGbpAuditSuggestions(
     input: GenerateGbpAuditInput,

@@ -116,7 +116,7 @@ export function RejectPopover({
         ? createPortal(
             <div
               ref={panelRef}
-              className="wiz-reject-pop"
+              className="ui-reject-pop"
               role="dialog"
               aria-label="Odrzuć propozycję"
               style={style}
@@ -135,20 +135,20 @@ export function RejectPopover({
                 }
               }}
             >
-              <div className="wiz-reject-pop-head">
-                <p className="wiz-reject-pop-title">Odrzucić propozycję?</p>
-                <p className="wiz-reject-pop-desc">
+              <div className="ui-reject-pop-head">
+                <p className="ui-reject-pop-title">Odrzucić propozycję?</p>
+                <p className="ui-reject-pop-desc">
                   Powód jest opcjonalny - dopiszemy go do „czego unikać” w
                   kontekście, żeby AI nie proponowało tego ponownie.
                 </p>
               </div>
 
-              <div className="wiz-reject-pop-chips">
+              <div className="ui-reject-pop-chips">
                 {QUICK_REASONS.map((item) => (
                   <button
                     key={item}
                     type="button"
-                    className={`wiz-reject-pop-chip${reason === item ? " is-active" : ""}`}
+                    className={`ui-reject-pop-chip${reason === item ? " is-active" : ""}`}
                     onClick={() => {
                       setReason(item);
                       textareaRef.current?.focus();
@@ -165,14 +165,14 @@ export function RejectPopover({
               <textarea
                 ref={textareaRef}
                 id={fieldId}
-                className="ui-textarea wiz-reject-pop-field"
+                className="ui-textarea ui-reject-pop-field"
                 rows={3}
                 placeholder="Np. nie oferujemy wymiany oleju"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
               />
 
-              <div className="wiz-reject-pop-foot">
+              <div className="ui-reject-pop-foot">
                 <button
                   type="button"
                   className="ui-btn ui-btn-ghost ui-btn-sm"

@@ -109,26 +109,6 @@
     text-align: right;
   }
 
-  .wiz-subnav-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.25rem;
-    height: 1.25rem;
-    padding: 0 var(--space-2);
-    border-radius: 999px;
-    background: var(--brand);
-    color: var(--white);
-    font-size: var(--type-xs);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .wiz-subnav-link.active .wiz-subnav-badge {
-    background: var(--brand);
-    color: var(--white);
-  }
-
   .wiz-tab-body {
     min-width: 0;
   }
@@ -334,86 +314,9 @@
     stroke-width: 2.25;
     flex-shrink: 0;
   }
-
-  .wiz-compare-cols {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0;
-    align-items: stretch;
-  }
-
-  .wiz-compare-col {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-4) var(--space-5);
-  }
-
-  .wiz-compare-col-next {
-    border-left: 1px solid var(--border);
-  }
 }
 
 @layer components {
-  @media (max-width: 639px) {
-    .wiz-compare-cols {
-      grid-template-columns: 1fr;
-    }
-
-    .wiz-compare-col-next {
-      border-left: none;
-      border-top: 1px solid var(--border);
-    }
-  }
-}
-
-@layer components {
-  .wiz-compare-col-head {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
-    font-size: var(--type-badge);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
-  }
-
-  .wiz-compare-meter {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    flex-shrink: 0;
-  }
-
-  .wiz-compare-meter-track {
-    display: block;
-    width: 3.25rem;
-    height: 0.2rem;
-    border-radius: 999px;
-    background: var(--secondary);
-    overflow: hidden;
-  }
-
-  .wiz-compare-meter-fill {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-  }
-
-  .wiz-compare-count {
-    font-size: var(--type-xs);
-    font-weight: 500;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--muted-foreground);
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-
   .wiz-inline-old {
     margin: 0;
     color: var(--muted-foreground);
@@ -2622,8 +2525,7 @@
     stroke-width: 2.5;
   }
 
-  .wiz-proposals-badge,
-  .wiz-subnav-badge {
+  .wiz-proposals-badge {
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
@@ -2633,23 +2535,6 @@
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 500;
-  }
-
-  .wiz-subnav {
-    display: flex;
-    flex-wrap: wrap;
-    margin-top: var(--space-2);
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--border);
-    border-radius: 0;
-    gap: 28px;
-    padding: 0 4px;
-  }
-
-  .wiz-subnav-link:hover {
-    background: transparent;
-    color: var(--foreground);
   }
 
   .wiz-field-row:last-child {
@@ -2674,10 +2559,6 @@
     font-weight: 500;
   }
 
-  .wiz-compare-col-next .wiz-compare-col-head {
-    color: var(--brand-deep);
-  }
-
   .wiz-inline-rationale {
     display: flex;
     align-items: flex-start;
@@ -2689,14 +2570,6 @@
     border-top: 1px solid var(--border);
     border-top-color: var(--border);
     background: var(--brand-50);
-  }
-
-  .wiz-compare-meter-ok .wiz-compare-meter-fill {
-    background: var(--brand);
-  }
-
-  .wiz-compare-meter-warn .wiz-compare-meter-fill {
-    background: var(--warning);
   }
 
   .wiz-chip-added {
@@ -2841,44 +2714,6 @@
 
   .wiz-char-count[data-warn="true"] {
     color: var(--warning-foreground);
-  }
-
-  .wiz-subnav-link {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--type-base);
-    color: var(--muted-foreground);
-    border-radius: 0;
-    border-bottom: 2px solid transparent;
-    text-decoration: none;
-    margin-bottom: -1px;
-    font-weight: 400;
-    border-bottom-width: 1.5px;
-    padding: 10px 0;
-  }
-
-  .wiz-subnav-link.active {
-    background: transparent;
-    font-weight: 500;
-    color: var(--foreground);
-    border-bottom-color: var(--foreground);
-  }
-
-  .wiz-subnav-link .wiz-subnav-badge,
-  .wiz-subnav-link.active .wiz-subnav-badge {
-    background: var(--primary);
-    color: var(--primary-foreground);
-  }
-
-  .wiz-subnav-link:focus {
-    outline: none;
-  }
-
-  .wiz-subnav-link:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 4px;
-    border-radius: 6px;
   }
 
   .wiz-fields {
@@ -3248,14 +3083,14 @@
     border-radius: 0;
   }
 
-  .wiz-inline-suggestion .wiz-compare-cols {
+  .wiz-inline-suggestion .ui-compare-cols {
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 20px 20px 0 0;
     background: var(--card);
   }
 
-  .wiz-inline-suggestion .wiz-compare-cols:not(:has(+ .wiz-inline-rationale)) {
+  .wiz-inline-suggestion .ui-compare-cols:not(:has(+ .wiz-inline-rationale)) {
     border-radius: 20px;
   }
 
@@ -3329,17 +3164,6 @@
     font-size: 24px;
     font-weight: 400;
     letter-spacing: -0.02em;
-  }
-
-  .wiz-subnav-link:focus,
-  .wiz-subnav-link:focus-visible {
-    outline: none;
-    border-radius: 0;
-  }
-
-  .wiz-subnav-link:focus-visible span:first-child {
-    text-decoration: underline;
-    text-underline-offset: 4px;
   }
 
   #wiz-field-special-hours.wiz-hours-tile:has(.wiz-hours-tip) {
@@ -3560,193 +3384,6 @@
 }
 
 /* Dropdown "Odrzuć": powód (opcjonalny) + potwierdzenie; portal z pozycją fixed */
-@layer components {
-  .wiz-reject-pop {
-    position: fixed;
-    z-index: 60;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    width: min(360px, calc(100vw - 32px));
-    padding: var(--space-4);
-    border-radius: 20px;
-    background: var(--card);
-    box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.06),
-      0 24px 48px -16px rgb(0 0 0 / 0.22);
-    color: var(--foreground);
-    animation: wiz-reject-pop-in 0.16s ease-out;
-  }
-
-  .wiz-reject-pop-head {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .wiz-reject-pop-title {
-    margin: 0;
-    font-size: var(--type-md);
-    font-weight: 500;
-  }
-
-  .wiz-reject-pop-desc {
-    margin: 0;
-    font-size: var(--type-xs);
-    line-height: 1.45;
-    color: var(--muted-foreground);
-  }
-
-  .wiz-reject-pop-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .wiz-reject-pop-chip {
-    height: 28px;
-    padding: 0 12px;
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: var(--muted);
-    font: inherit;
-    font-size: var(--type-xs);
-    font-weight: 500;
-    color: var(--foreground);
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-  }
-
-  .wiz-reject-pop-chip:hover {
-    background: var(--canvas-strong);
-  }
-
-  .wiz-reject-pop-chip.is-active {
-    background: var(--primary);
-    color: var(--primary-foreground);
-  }
-
-  .wiz-reject-pop-field {
-    min-height: 76px;
-    resize: vertical;
-  }
-
-  .wiz-reject-pop-foot {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-2);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .wiz-reject-pop {
-      animation: none;
-    }
-  }
-}
-
-/* Pole godziny: przycisk jak ui-field + dropdown z kolumnami godzin i minut */
-@layer components {
-  .wiz-time-field {
-    display: inline-flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    color: var(--foreground);
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .wiz-time-field svg {
-    flex: none;
-    width: 1rem;
-    height: 1rem;
-    stroke-width: 2;
-    color: var(--muted-foreground);
-  }
-
-  .wiz-time-field.is-open {
-    border-color: var(--ring);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
-  }
-
-  .wiz-time-pop {
-    position: fixed;
-    z-index: 60;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-2);
-    width: 9.5rem;
-    padding: var(--space-2);
-    border-radius: 16px;
-    background: var(--card);
-    box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.06),
-      0 24px 48px -16px rgb(0 0 0 / 0.22);
-    animation: wiz-reject-pop-in 0.16s ease-out;
-  }
-
-  .wiz-time-col {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-
-  .wiz-time-col-label {
-    margin: 0;
-    padding: 2px 0;
-    font-size: var(--type-xs);
-    color: var(--muted-foreground);
-    text-align: center;
-  }
-
-  .wiz-time-list {
-    position: relative;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    height: 13rem;
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-
-  .wiz-time-list::-webkit-scrollbar {
-    display: none;
-  }
-
-  .wiz-time-opt {
-    display: block;
-    width: 100%;
-    height: 2rem;
-    border: 0;
-    border-radius: 10px;
-    background: none;
-    color: var(--foreground);
-    font-size: var(--type-base);
-    cursor: pointer;
-  }
-
-  .wiz-time-opt:hover {
-    background: var(--neutral-150);
-  }
-
-  .wiz-time-opt:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -2px;
-  }
-
-  .wiz-time-opt.is-active {
-    background: var(--brand);
-    color: var(--primary-foreground);
-  }
-}
-
-@keyframes wiz-reject-pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-}
 
 @keyframes wiz-analysis-fade {
   from {

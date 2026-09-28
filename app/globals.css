@@ -22,7 +22,8 @@
 @import "../styles/wizytowka.css";
 @import "../styles/raporty.css";
 @import "../styles/pulpit.css";
-/* nowe moduły tutaj: @import "../styles/publikacje.css"; */
+@import "../styles/publikacje.css";
+/* nowe moduły tutaj */
 @import "../styles/admin.css";
 @import "../styles/ustawienia.css";
 

@@ -595,13 +595,8 @@ async function listMediaCollection(
   return items;
 }
 
-export async function listGbpLocationMedia(
-  accessToken: string,
-  locationName: string,
-): Promise<{ owner: GbpMediaItem[]; customers: GbpMediaItem[] }> {
-  const locationId = locationName.replace(/^locations\//, "");
-  if (!locationId) return { owner: [], customers: [] };
-
+/** Account Management: `accounts/{id}` names the token can see (v4 APIs need them). */
+async function listGbpAccountNames(accessToken: string): Promise<string[]> {
   const accountsRes = await fetch(
     "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
     { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -611,10 +606,18 @@ export async function listGbpLocationMedia(
   }
 
   const accountsData = (await accountsRes.json()) as AccountsListResponse;
-  const accounts = accountsData.accounts ?? [];
+  return (accountsData.accounts ?? []).map((account) => account.name);
+}
 
-  for (const account of accounts) {
-    const parent = `https://mybusiness.googleapis.com/v4/${account.name}/locations/${locationId}/media`;
+export async function listGbpLocationMedia(
+  accessToken: string,
+  locationName: string,
+): Promise<{ owner: GbpMediaItem[]; customers: GbpMediaItem[] }> {
+  const locationId = locationName.replace(/^locations\//, "");
+  if (!locationId) return { owner: [], customers: [] };
+
+  for (const accountName of await listGbpAccountNames(accessToken)) {
+    const parent = `https://mybusiness.googleapis.com/v4/${accountName}/locations/${locationId}/media`;
     const owner = await listMediaCollection(accessToken, parent, 40);
     if (!owner) continue;
 
@@ -682,6 +685,90 @@ export function pickGbpCollageUrls(items: GbpMediaItem[], limit = 6): string[] {
 /** Prefer COVER, then PROFILE, then first photo with a usable URL. */
 export function pickGbpCoverUrl(items: GbpMediaItem[]): string | null {
   return pickGbpCollageUrls(items, 1)[0] ?? null;
+}
+
+/**
+ * v4 `accounts/{aid}/locations/{id}` for a v1 `locations/{id}` - same account
+ * probing as listGbpLocationMedia (the account that can list the location's posts owns it).
+ */
+async function resolveGbpV4LocationName(
+  accessToken: string,
+  locationName: string,
+): Promise<string | null> {
+  const locationId = locationName.replace(/^locations\//, "");
+  if (!locationId) return null;
+
+  for (const accountName of await listGbpAccountNames(accessToken)) {
+    const candidate = `${accountName}/locations/${locationId}`;
+    const url = new URL(
+      `https://mybusiness.googleapis.com/v4/${candidate}/localPosts`,
+    );
+    url.searchParams.set("pageSize", "1");
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (response.ok) return candidate;
+    if (response.status === 401) {
+      throw new Error(`GBP localPosts.list failed: ${await response.text()}`);
+    }
+  }
+  return null;
+}
+
+export type GbpCallToActionType =
+  "BOOK" | "ORDER" | "SHOP" | "LEARN_MORE" | "SIGN_UP" | "CALL";
+
+export type GbpLocalPostInput = {
+  summary: string;
+  /** Public HTTPS image URL - Google fetches it itself; bytes are not accepted. */
+  imageUrl?: string | null;
+  callToAction?: { actionType: GbpCallToActionType; url?: string } | null;
+};
+
+/** Publishes a STANDARD post (v4 localPosts). Returns the post `name`. */
+export async function createGbpLocalPost(
+  accessToken: string,
+  locationName: string,
+  input: GbpLocalPostInput,
+): Promise<{ name: string }> {
+  const parent = await resolveGbpV4LocationName(accessToken, locationName);
+  if (!parent) {
+    throw new Error(
+      "GBP localPosts.create failed: lokalizacja nie należy do żadnego konta tego połączenia",
+    );
+  }
+
+  const body: Record<string, unknown> = {
+    languageCode: "pl",
+    summary: input.summary,
+    topicType: "STANDARD",
+  };
+  if (input.callToAction) body.callToAction = input.callToAction;
+  if (input.imageUrl) {
+    body.media = [{ mediaFormat: "PHOTO", sourceUrl: input.imageUrl }];
+  }
+
+  const response = await fetch(
+    `https://mybusiness.googleapis.com/v4/${parent}/localPosts`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`GBP localPosts.create failed: ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as { name?: string };
+  if (!data.name) {
+    throw new Error("GBP localPosts.create failed: brak name w odpowiedzi");
+  }
+  return { name: data.name };
 }
 
 /** Hook point for Phase 3 - GBP analysis after connect (non-blocking). */
