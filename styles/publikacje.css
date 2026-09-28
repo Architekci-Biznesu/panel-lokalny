@@ -143,12 +143,6 @@
     width: 8rem;
   }
 
-  .pub-card-note {
-    margin: 0;
-    font-size: var(--type-sm);
-    color: var(--warning-strong);
-  }
-
   .pub-card-actions {
     display: flex;
     flex-wrap: wrap;

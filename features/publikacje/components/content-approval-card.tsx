@@ -8,7 +8,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { RejectPopover } from "@/components/ui/reject-popover";
 import type { ContentChannel } from "@/lib/db/schema";
@@ -28,15 +28,6 @@ import { TimeField } from "@/components/ui/time-field";
 
 const POLL_MS = 2000;
 const POLL_LIMIT = 30;
-
-const noopSubscribe = () => () => {};
-
-function isLocalHost(): boolean {
-  if (typeof window === "undefined") return false;
-  return /^(localhost|127\.0\.0\.1|\[::1\])$|\.localhost$|\.test$/.test(
-    window.location.hostname,
-  );
-}
 
 function formatDay(date: Date): string {
   return new Intl.DateTimeFormat("pl-PL", {
@@ -109,8 +100,6 @@ export function ContentApprovalCard({
   const [schedule, setSchedule] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("10:00");
-  // Hostname never changes while the page is open - no subscription needed.
-  const local = useSyncExternalStore(noopSubscribe, isLocalHost, () => false);
 
   const disabled = pending || busy !== null;
 
@@ -309,13 +298,6 @@ export function ContentApprovalCard({
             </div>
           ) : null}
         </div>
-
-        {local && (withImage || item.imageUrl) ? (
-          <p className="pub-card-note">
-            Na localhost Google nie pobierze grafiki - publikacja z grafiką
-            działa dopiero na wdrożonym środowisku.
-          </p>
-        ) : null}
 
         <div className="pub-card-actions">
           <RejectPopover pending={busy === "reject"} onConfirm={reject} />
