@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Check, Inbox, Loader2, Sparkles, SquarePen } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -54,25 +54,40 @@ function subscribeCollapsed(onChange: () => void) {
   };
 }
 
-function PostSkeleton({ label }: { label: string }) {
+function PostSkeleton({ label, sub }: { label: string; sub?: string }) {
   return (
-    <article className="ui-section pub-card pub-card-skeleton" aria-busy="true">
+    <article className="pub-card pub-card-skeleton" aria-busy="true">
       <span className="ui-skel pub-card-skel-media" />
-      <div className="ui-skel-stack">
+      <div className="pub-card-skel-body">
         <p className="pub-card-skel-label">
-          <Sparkles aria-hidden />
-          {label}
+          <span className="pub-card-skel-icon" aria-hidden>
+            <Sparkles />
+          </span>
+          <span className="pub-shimmer">{label}</span>
+          {sub ? <span className="pub-card-skel-sub">{sub}</span> : null}
         </p>
-        <span className="ui-skel" style={{ width: "60%", height: "1.25rem" }} />
+        <span
+          className="ui-skel"
+          style={{ width: "58%", height: "1.125rem" }}
+        />
         <span
           className="ui-skel"
           style={{ width: "100%", height: "0.75rem" }}
         />
-        <span className="ui-skel" style={{ width: "90%", height: "0.75rem" }} />
+        <span className="ui-skel" style={{ width: "92%", height: "0.75rem" }} />
         <span className="ui-skel" style={{ width: "70%", height: "0.75rem" }} />
       </div>
     </article>
   );
+}
+
+function topicsWord(count: number): string {
+  if (count === 1) return "temat";
+  const last = count % 10;
+  const lastTwo = count % 100;
+  return last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)
+    ? "tematy"
+    : "tematów";
 }
 
 /**
@@ -203,7 +218,11 @@ export function PostsWorkspace({
   return (
     <div className={`pub-workspace${collapsed ? " is-chat-collapsed" : ""}`}>
       <div className="pub-workspace-list">
-        <HistoryFilters status={status} channel={channel} />
+        <HistoryFilters
+          status={status}
+          channel={channel}
+          pendingCount={inbox.items.length}
+        />
 
         {topicsOpen ? (
           <TopicPicker
@@ -214,10 +233,24 @@ export function PostsWorkspace({
           />
         ) : topics.length || pendingTopics ? (
           <div className="pub-topics-banner" role="note">
+            <span className="pub-topics-banner-icon" aria-hidden>
+              {pendingTopics && !topics.length ? (
+                <Loader2 className="pub-spin" />
+              ) : (
+                <Sparkles />
+              )}
+            </span>
             <p>
-              {pendingTopics && !topics.length
-                ? "AI przygotowuje tematy postów…"
-                : `Masz ${topics.length} ${topics.length === 1 ? "temat" : topics.length < 5 ? "tematy" : "tematów"} do wyboru - AI napisze posty z tych, które zaznaczysz.`}
+              {pendingTopics && !topics.length ? (
+                "AI przygotowuje tematy postów…"
+              ) : (
+                <>
+                  <strong>
+                    Masz {topics.length} {topicsWord(topics.length)} do wyboru
+                  </strong>{" "}
+                  - AI napisze posty z tych, które zaznaczysz.
+                </>
+              )}
             </p>
             <Link
               href="/publikacje?tematy=1"
@@ -234,6 +267,11 @@ export function PostsWorkspace({
           <PostSkeleton
             key={`skeleton-${i}`}
             label={i === 0 ? "AI pisze post…" : "W kolejce"}
+            sub={
+              i === 0
+                ? "Czytam kontekst firmy · wybieram temat, którego jeszcze nie było"
+                : undefined
+            }
           />
         ))}
 
@@ -251,26 +289,39 @@ export function PostsWorkspace({
         ))}
 
         {status !== "pending" && history.length ? (
-          <section className="ui-section pub-history-section">
+          <section className="pub-history-section">
             <HistoryList items={history} />
           </section>
         ) : null}
 
         {isEmpty ? (
-          <section className="ui-section pub-empty">
+          <section className="pub-empty">
+            <span className="pub-empty-icon" aria-hidden>
+              {status === "pending" ? <Check /> : <Inbox />}
+            </span>
             <h2 className="pub-empty-title">
               {status === "pending"
-                ? "Nic nie czeka na akceptację"
+                ? "Wszystko zaakceptowane"
                 : "Brak postów dla tych filtrów"}
             </h2>
             <p className="pub-empty-text">
-              Wybierz tematy, z których AI napisze posty, albo poproś o nie w
-              czacie obok. Możesz też dodać własny post.
+              {status === "pending" ? "Nic nie czeka na Twoją decyzję. " : ""}
+              Wybierz tematy, z których AI napisze posty, poproś o nie w czacie
+              obok albo dodaj własny post.
             </p>
-            <Link href="/publikacje?tematy=1" className="ui-btn ui-btn-white">
-              <Sparkles aria-hidden />
-              Wybierz tematy
-            </Link>
+            <div className="pub-empty-actions">
+              <Link href="/publikacje?nowy=1" className="ui-btn ui-btn-outline">
+                <SquarePen aria-hidden />
+                Nowy post
+              </Link>
+              <Link
+                href="/publikacje?tematy=1"
+                className="ui-btn ui-btn-primary"
+              >
+                <Sparkles aria-hidden />
+                Wybierz tematy
+              </Link>
+            </div>
           </section>
         ) : null}
       </div>

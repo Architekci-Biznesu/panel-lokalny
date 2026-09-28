@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { Check, Loader2, SquarePen, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
@@ -59,12 +59,23 @@ export function ManualPostForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <section className="ui-section pub-manual" aria-label="Nowy post">
-      <header className="pub-manual-head">
-        <h2 className="pub-manual-title">Nowy post</h2>
+    <section className="pub-panel" aria-labelledby="pub-manual-title">
+      <header className="pub-panel-head">
+        <span className="pub-panel-icon is-neutral" aria-hidden>
+          <SquarePen />
+        </span>
+        <div className="pub-panel-titles">
+          <h2 id="pub-manual-title" className="pub-panel-title">
+            Nowy post
+          </h2>
+          <p className="pub-panel-sub">
+            Własna treść i zdjęcie - trafi na listę jako „Twój post” i przejdzie
+            tę samą akceptację
+          </p>
+        </div>
         <button
           type="button"
-          className="ui-btn ui-btn-ghost ui-btn-sm"
+          className="ui-btn ui-btn-ghost ui-btn-sm pub-panel-close"
           aria-label="Zamknij"
           onClick={onClose}
           disabled={pending}
@@ -74,6 +85,7 @@ export function ManualPostForm({ onClose }: { onClose: () => void }) {
       </header>
 
       <form
+        id="pub-manual-form"
         className="pub-manual-form"
         noValidate
         onSubmit={(event) => {
@@ -91,12 +103,12 @@ export function ManualPostForm({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="pub-manual-fields">
-          <label className="pub-manual-label" htmlFor="pub-manual-title">
+          <label className="pub-manual-label" htmlFor="pub-manual-title-field">
             Tytuł
           </label>
           <input
             ref={titleRef}
-            id="pub-manual-title"
+            id="pub-manual-title-field"
             className="ui-field"
             value={title}
             maxLength={MANUAL_TITLE_MAX}
@@ -118,37 +130,43 @@ export function ManualPostForm({ onClose }: { onClose: () => void }) {
           <textarea
             id="pub-manual-body"
             className="ui-textarea pub-manual-body"
-            rows={8}
+            rows={6}
             value={body}
             placeholder="Wklej albo napisz treść posta"
             disabled={pending}
             onChange={(event) => setBody(event.target.value)}
           />
-
-          <div className="pub-manual-actions">
-            <button
-              type="button"
-              className="ui-btn ui-btn-white"
-              onClick={onClose}
-              disabled={pending}
-            >
-              Anuluj
-            </button>
-            <button
-              type="submit"
-              className="ui-btn ui-btn-primary"
-              disabled={pending}
-            >
-              {pending ? (
-                <Loader2 aria-hidden className="ui-btn-spinner" />
-              ) : (
-                <ImagePlus aria-hidden />
-              )}
-              Dodaj do listy
-            </button>
-          </div>
         </div>
       </form>
+
+      <footer className="pub-panel-foot">
+        <span className="pub-panel-note">
+          Gdzie i kiedy wybierzesz na karcie, przy akceptacji
+        </span>
+        <div className="pub-panel-actions">
+          <button
+            type="button"
+            className="ui-btn ui-btn-secondary"
+            onClick={onClose}
+            disabled={pending}
+          >
+            Anuluj
+          </button>
+          <button
+            type="submit"
+            form="pub-manual-form"
+            className="ui-btn ui-btn-primary"
+            disabled={pending}
+          >
+            {pending ? (
+              <Loader2 aria-hidden className="ui-btn-spinner" />
+            ) : (
+              <Check aria-hidden />
+            )}
+            Dodaj do listy
+          </button>
+        </div>
+      </footer>
     </section>
   );
 }

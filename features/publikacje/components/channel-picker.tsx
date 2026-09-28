@@ -1,12 +1,50 @@
 "use client";
 
+import { Check } from "lucide-react";
 import type { ContentChannel } from "@/lib/db/schema";
 import { CHANNEL_LABELS } from "@/features/publikacje/content-status";
 import type { ChannelOption } from "@/features/publikacje/load-inbox";
 
+/** One toggle chip: a real checkbox styled as a pill. */
+function ChipToggle({
+  label,
+  checked,
+  disabled,
+  soon,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  disabled?: boolean;
+  soon?: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <label
+      className={`pub-chip${checked ? " is-on" : ""}${soon ? " is-soon" : ""}`}
+    >
+      <input
+        type="checkbox"
+        className="pub-chip-input"
+        checked={checked}
+        disabled={disabled}
+        onChange={onChange}
+      />
+      {soon ? null : (
+        <span className="pub-chip-mark" aria-hidden>
+          <Check />
+        </span>
+      )}
+      <span>{label}</span>
+      {soon ? <span className="pub-chip-soon">wkrótce</span> : null}
+    </label>
+  );
+}
+
 /**
- * Channels + group profiles for one publication. Unavailable channels stay
- * visible as "wkrótce"; extra group profiles are unchecked by default.
+ * Where to publish: channels + group profiles as chips. Unavailable channels
+ * stay visible as "wkrótce"; extra group profiles are unchecked by default.
+ * Rendered inside the card's publish bar (rows "Gdzie" / "Też w").
  */
 export function ChannelPicker({
   channels,
@@ -28,52 +66,42 @@ export function ChannelPicker({
   disabled?: boolean;
 }) {
   return (
-    <div className="pub-targets">
-      <div className="pub-targets-row">
-        <span className="pub-targets-label">Kanały</span>
-        <div className="pub-targets-options">
+    <>
+      <div className="pub-publish-row">
+        <span className="pub-publish-label">Gdzie</span>
+        <div className="pub-publish-options">
           {channels.map(({ channel, available }) => (
-            <label
+            <ChipToggle
               key={channel}
-              className={`pub-target-option${available ? "" : " is-soon"}`}
-            >
-              <input
-                type="checkbox"
-                className="ui-check"
-                checked={available && selected.includes(channel)}
-                disabled={!available || disabled}
-                onChange={() => onToggleChannel(channel)}
-              />
-              <span>{CHANNEL_LABELS[channel]}</span>
-              {available ? null : (
-                <span className="ui-pill ui-pill-neutral">wkrótce</span>
-              )}
-            </label>
+              label={CHANNEL_LABELS[channel]}
+              checked={available && selected.includes(channel)}
+              disabled={!available || disabled}
+              soon={!available}
+              onChange={() => onToggleChannel(channel)}
+            />
           ))}
         </div>
       </div>
 
       {groupSiblings.length ? (
-        <div className="pub-targets-row">
-          <span className="pub-targets-label">
-            Publikuj też w{groupName ? ` (${groupName})` : ""}:
-          </span>
-          <div className="pub-targets-options">
+        <div className="pub-publish-row">
+          <span className="pub-publish-label">Też w</span>
+          <div className="pub-publish-options">
             {groupSiblings.map((profile) => (
-              <label key={profile.id} className="pub-target-option">
-                <input
-                  type="checkbox"
-                  className="ui-check"
-                  checked={extraProfileIds.includes(profile.id)}
-                  disabled={disabled}
-                  onChange={() => onToggleProfile(profile.id)}
-                />
-                <span>{profile.name}</span>
-              </label>
+              <ChipToggle
+                key={profile.id}
+                label={profile.name}
+                checked={extraProfileIds.includes(profile.id)}
+                disabled={disabled}
+                onChange={() => onToggleProfile(profile.id)}
+              />
             ))}
+            {groupName ? (
+              <span className="pub-publish-hint">grupa {groupName}</span>
+            ) : null}
           </div>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

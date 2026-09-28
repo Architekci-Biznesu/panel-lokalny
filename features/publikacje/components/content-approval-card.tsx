@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, Loader2, MessageSquareText } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  MessageSquareText,
+  Sparkles,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "gooey-toast";
@@ -21,6 +28,7 @@ import type {
   ChannelOption,
   InboxItem,
 } from "@/features/publikacje/load-inbox";
+import { MANUAL_BODY_MAX } from "@/features/publikacje/manual-post-rules";
 import { TimeField } from "@/components/ui/time-field";
 
 const POLL_MS = 2000;
@@ -168,7 +176,10 @@ export function ContentApprovalCard({
         return;
       }
       toast.success({
-        title: "Propozycja odrzucona",
+        title:
+          item.origin === "manual"
+            ? "Post usunięty z listy"
+            : "Propozycja odrzucona",
         description: reason
           ? "Powód trafił do kontekstu firmy - AI nie zaproponuje tego ponownie."
           : undefined,
@@ -231,42 +242,70 @@ export function ContentApprovalCard({
     });
   }
 
+  const meta = (
+    <div className="pub-card-meta">
+      {item.origin === "manual" ? (
+        <span className="pub-origin is-manual">
+          <UserRound aria-hidden />
+          Twój post
+        </span>
+      ) : (
+        <span className="pub-origin">
+          <Sparkles aria-hidden />
+          Propozycja AI
+        </span>
+      )}
+      <span className="pub-card-meta-text">Post w Google</span>
+      <span className="pub-card-dot" aria-hidden />
+      <span className="pub-card-meta-text mono">
+        {formatDay(new Date(item.createdAt))}
+      </span>
+      {item.revisionCount > 0 ? (
+        <>
+          <span className="pub-card-dot" aria-hidden />
+          <span className="pub-card-meta-text">
+            zmiany: <span className="mono">{item.revisionCount}</span>
+          </span>
+        </>
+      ) : null}
+      <span className="pub-card-count mono">
+        {item.body.length} / {MANUAL_BODY_MAX} zn.
+      </span>
+    </div>
+  );
+
   return (
     <article
       id={`pub-post-${item.id}`}
-      className={`ui-section pub-card${isEditing ? " is-editing" : ""}`}
+      className={`pub-card${isEditing ? " is-editing" : ""}`}
     >
-      <div className="pub-card-media">
-        <PostImagePicker
-          previewUrl={item.imageUrl}
-          disabled={disabled}
-          busy={busy === "upload"}
-          onPick={uploadImage}
-          onRemove={removeImage}
-          onGenerate={makeImage}
-          generating={busy === "image"}
-        />
+      {isEditing ? (
+        <p className="pub-card-strip">
+          Ten post jest otwarty w czacie obok - zmiany zobaczysz tu po zapisaniu
+          wersji
+        </p>
+      ) : null}
+
+      <div className="pub-card-top">
+        <div className="pub-card-media">
+          <PostImagePicker
+            previewUrl={item.imageUrl}
+            disabled={disabled}
+            busy={busy === "upload"}
+            onPick={uploadImage}
+            onRemove={removeImage}
+            onGenerate={makeImage}
+            generating={busy === "image"}
+          />
+        </div>
+
+        <div className="pub-card-main">
+          {meta}
+          <PostTextEditor item={item} disabled={disabled} />
+        </div>
       </div>
 
-      <div className="pub-card-main">
-        <div className="pub-card-meta">
-          <span className="ui-pill ui-pill-neutral">Post</span>
-          {item.origin === "manual" ? (
-            <span className="ui-pill ui-pill-neutral">Twój post</span>
-          ) : (
-            <span className="ui-pill ui-pill-info">Wygenerowane przez AI</span>
-          )}
-          <span className="pub-card-date mono">
-            {formatDay(new Date(item.createdAt))}
-          </span>
-          {item.revisionCount > 0 ? (
-            <span className="pub-card-date">
-              Zmiany: <span className="mono">{item.revisionCount}</span>
-            </span>
-          ) : null}
-        </div>
-        <PostTextEditor item={item} disabled={disabled} />
-
+      <div className="pub-publish">
         <ChannelPicker
           channels={channels}
           selected={selected}
@@ -282,49 +321,84 @@ export function ContentApprovalCard({
           disabled={disabled}
         />
 
-        <div className="pub-card-options">
-          <label className="pub-target-option">
-            <input
-              type="checkbox"
-              className="ui-check"
-              checked={schedule}
-              disabled={disabled}
-              onChange={() => setSchedule((v) => !v)}
-            />
-            <span>Zaplanuj na później</span>
-          </label>
-          {schedule ? (
-            <div className="pub-card-schedule">
-              <input
-                type="date"
-                className="ui-field"
-                aria-label="Dzień publikacji"
-                value={date}
+        <div className="pub-publish-row">
+          <span className="pub-publish-label">Kiedy</span>
+          <div className="pub-publish-options">
+            <div
+              className="pub-when"
+              role="group"
+              aria-label="Kiedy opublikować"
+            >
+              <button
+                type="button"
+                className={`pub-when-option${schedule ? "" : " is-active"}`}
+                aria-pressed={!schedule}
                 disabled={disabled}
-                onChange={(event) => setDate(event.target.value)}
-              />
-              <TimeField
-                className="pub-card-time"
-                ariaLabel="Godzina publikacji"
-                value={time}
-                onChange={setTime}
-              />
+                onClick={() => setSchedule(false)}
+              >
+                Od razu
+              </button>
+              <button
+                type="button"
+                className={`pub-when-option${schedule ? " is-active" : ""}`}
+                aria-pressed={schedule}
+                disabled={disabled}
+                onClick={() => setSchedule(true)}
+              >
+                Zaplanuj
+              </button>
             </div>
-          ) : null}
+            {schedule ? (
+              <div className="pub-card-schedule">
+                <input
+                  type="date"
+                  className="ui-field pub-card-date-field"
+                  aria-label="Dzień publikacji"
+                  value={date}
+                  disabled={disabled}
+                  onChange={(event) => setDate(event.target.value)}
+                />
+                <TimeField
+                  className="pub-card-time"
+                  ariaLabel="Godzina publikacji"
+                  value={time}
+                  onChange={setTime}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
+      </div>
 
-        <div className="pub-card-actions">
-          <RejectPopover pending={busy === "reject"} onConfirm={reject} />
-          <button
-            type="button"
-            className="ui-btn ui-btn-white"
-            disabled={disabled}
-            aria-pressed={isEditing}
-            onClick={onEdit}
-          >
-            <MessageSquareText aria-hidden />
-            {isEditing ? "Edytujesz w czacie" : "Edytuj przez czat"}
-          </button>
+      <footer className="pub-card-actions">
+        <button
+          type="button"
+          className={`ui-btn pub-card-chat${isEditing ? " is-active" : ""}`}
+          disabled={disabled}
+          aria-pressed={isEditing}
+          onClick={onEdit}
+        >
+          <MessageSquareText aria-hidden />
+          {isEditing ? "Edytujesz w czacie" : "Edytuj przez czat"}
+        </button>
+        <div className="pub-card-decide">
+          {item.origin === "manual" ? (
+            <button
+              type="button"
+              className="ui-btn ui-btn-soft-danger"
+              disabled={disabled}
+              onClick={() => reject(undefined)}
+            >
+              {busy === "reject" ? (
+                <Loader2 aria-hidden className="ui-btn-spinner" />
+              ) : (
+                <Trash2 aria-hidden />
+              )}
+              Usuń
+            </button>
+          ) : (
+            <RejectPopover pending={busy === "reject"} onConfirm={reject} />
+          )}
           <button
             type="button"
             className="ui-btn ui-btn-primary"
@@ -339,7 +413,7 @@ export function ContentApprovalCard({
             {schedule ? "Akceptuj i zaplanuj" : "Akceptuj i opublikuj"}
           </button>
         </div>
-      </div>
+      </footer>
     </article>
   );
 }

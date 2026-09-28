@@ -10,6 +10,9 @@ import {
   MANUAL_TITLE_MAX,
 } from "@/features/publikacje/manual-post-rules";
 
+/** Longer posts show 4 lines with "Pokaż całość". */
+const CLAMP_FROM = 280;
+
 /**
  * Title and text of a proposal, editable in place: click (or the pencil) to
  * edit, Enter / "Zapisz" saves, Esc / "Anuluj" cancels. Every save goes to the
@@ -27,6 +30,8 @@ export function PostTextEditor({
   const [editing, setEditing] = useState<"title" | "body" | null>(null);
   const [title, setTitle] = useState(item.title);
   const [body, setBody] = useState(item.body);
+  const [expanded, setExpanded] = useState(false);
+  const long = item.body.length > CLAMP_FROM;
 
   function open(part: "title" | "body") {
     if (disabled || pending) return;
@@ -135,12 +140,16 @@ export function PostTextEditor({
             </span>
             {actions}
           </div>
+          <p className="pub-inline-hint">
+            Esc anuluje · zmiana trafia do historii wersji, „Cofnij” w czacie ją
+            wycofa
+          </p>
         </div>
       ) : (
         <div className="pub-editable">
           <button
             type="button"
-            className="pub-editable-trigger pub-card-body"
+            className={`pub-editable-trigger pub-card-body${long && !expanded ? " is-clamped" : ""}`}
             onClick={() => open("body")}
             disabled={disabled}
             aria-label="Edytuj treść posta"
@@ -148,6 +157,16 @@ export function PostTextEditor({
             {item.body}
             <Pencil aria-hidden className="pub-editable-icon" />
           </button>
+          {long ? (
+            <button
+              type="button"
+              className="pub-card-more"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? "Zwiń" : "Pokaż całość"}
+            </button>
+          ) : null}
         </div>
       )}
     </>

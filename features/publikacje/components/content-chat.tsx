@@ -16,6 +16,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   RotateCcw,
+  Sparkles,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -273,11 +274,19 @@ function GenerateThread({
   return (
     <>
       <div className="pub-chat-thread" ref={threadRef}>
-        <p className="pub-chat-hint">
-          Zapytaj o pomysły, poproś o nowe posty albo o zmianę w propozycji z
-          listy (np. „zaproponuj zdjęcie do posta o oponach”). Zmiany wprowadzam
-          dopiero, gdy o nie poprosisz.
-        </p>
+        {messages.length || sending ? null : (
+          <div className="pub-chat-intro">
+            <span className="pub-chat-intro-icon" aria-hidden>
+              <Sparkles />
+            </span>
+            <p className="pub-chat-intro-title">O czym napisać?</p>
+            <p className="pub-chat-hint">
+              Zapytaj o pomysły, poproś o nowe posty albo o zmianę w propozycji
+              z listy (np. „zaproponuj zdjęcie do posta o oponach”). Zmiany
+              wprowadzam dopiero, gdy o nie poprosisz.
+            </p>
+          </div>
+        )}
         {messages.map((message) => {
           if (message.role === "user") {
             return (
@@ -697,6 +706,42 @@ function EditThread({
 }
 
 /**
+ * Sticky dock that always reaches the bottom of the window: at the top of the
+ * page it starts where the list starts, after scrolling it sticks near the
+ * top - the composer never drops below the fold.
+ */
+function useDockHeight() {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const dock = ref.current;
+    if (!dock) return;
+    let frame = 0;
+    // The dock's own top in the window: its height never moves it (sticky),
+    // so there is no feedback loop.
+    function update() {
+      frame = 0;
+      const top = Math.max(0, dock!.getBoundingClientRect().top);
+      dock!.style.setProperty("--pub-dock-top", `${Math.round(top)}px`);
+    }
+    function schedule() {
+      if (!frame) frame = requestAnimationFrame(update);
+    }
+    update();
+    window.addEventListener("scroll", schedule, {
+      capture: true,
+      passive: true,
+    });
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule, { capture: true });
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
+  return ref;
+}
+
+/**
  * AI chat docked next to the post list. Without a selected post it writes new
  * proposals; with one it edits that post. Collapses to a slim rail (desktop)
  * or a bottom sheet (mobile).
@@ -728,10 +773,12 @@ export function ContentChat({
   const [generateMessages, setGenerateMessages] = useState<GenerateMessage[]>(
     [],
   );
+  const dockRef = useDockHeight();
 
   return (
     <>
       <aside
+        ref={dockRef}
         className={`pub-chat-dock${collapsed ? " is-collapsed" : ""}${mobileOpen ? " is-mobile-open" : ""}`}
         aria-label="Czat AI"
       >
@@ -748,6 +795,9 @@ export function ContentChat({
         ) : (
           <>
             <header className="pub-chat-head">
+              <span className="pub-chat-badge" aria-hidden>
+                <Sparkles />
+              </span>
               <div className="pub-chat-head-text">
                 <h2 className="pub-chat-title">Czat AI</h2>
                 <p className="pub-chat-sub">

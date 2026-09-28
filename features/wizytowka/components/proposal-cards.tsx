@@ -8,9 +8,9 @@ import {
   FileText,
   ImageIcon,
   ListChecks,
+  Sparkles,
   Tags,
   Type,
-  WandSparkles,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useTransition } from "react";
@@ -348,7 +348,7 @@ export function ProposalCards({
                         title="Propozycja AI"
                         aria-label="Propozycja AI"
                       >
-                        <WandSparkles aria-hidden />
+                        <Sparkles aria-hidden />
                       </span>
                     ) : null}
                     <span className="ui-pill ui-pill-neutral wiz-proposal-tab-pill">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { WandSparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 const STEPS = [
   "Pobieranie danych wizytówki",
@@ -87,7 +87,7 @@ export function AnalysisProgressOverlay({ active }: { active: boolean }) {
           <span className="wiz-analysis-wave" />
           <span className="wiz-analysis-wave" />
           <span className="wiz-analysis-core">
-            <WandSparkles />
+            <Sparkles />
           </span>
         </div>
 

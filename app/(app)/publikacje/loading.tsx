@@ -6,12 +6,17 @@ export default function PublikacjeLoading() {
       aria-busy="true"
       aria-label="Ładowanie publikacji"
     >
+      <span
+        className="ui-skel"
+        style={{ width: "26rem", maxWidth: "100%", height: "2.5rem" }}
+      />
       {[0, 1].map((i) => (
-        <div key={i} className="ui-section">
-          <div className="ui-skel-stack">
+        <div key={i} className="pub-card pub-card-skeleton">
+          <span className="ui-skel pub-card-skel-media" />
+          <div className="pub-card-skel-body">
             <span
               className="ui-skel"
-              style={{ width: "12rem", height: "1.25rem" }}
+              style={{ width: "40%", height: "1.25rem" }}
             />
             <span
               className="ui-skel"

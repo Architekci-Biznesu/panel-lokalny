@@ -25,7 +25,7 @@ import {
   Search,
   Store,
   Users,
-  WandSparkles,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "gooey-toast";
@@ -536,7 +536,7 @@ export function OnboardingWizard({
             {regenerating ? (
               <Loader2 aria-hidden className="ui-btn-spinner" />
             ) : (
-              <WandSparkles aria-hidden />
+              <Sparkles aria-hidden />
             )}
             {regenerating ? "Generuję…" : "Wygeneruj ponownie"}
           </button>
@@ -629,7 +629,7 @@ export function OnboardingWizard({
                       disabled={pending}
                       onClick={submitRegen}
                     >
-                      <WandSparkles aria-hidden />
+                      <Sparkles aria-hidden />
                       Wygeneruj ponownie
                     </button>
                   </div>

@@ -81,9 +81,10 @@ export function PostImagePicker({
             className="ui-btn ui-btn-white ui-btn-sm"
             disabled={disabled || busy}
             onClick={choose}
+            aria-label="Podmień zdjęcie"
           >
             <ImagePlus aria-hidden />
-            Podmień
+            <span className="pub-image-swap">Podmień</span>
           </button>
           <button
             type="button"
@@ -100,14 +101,19 @@ export function PostImagePicker({
   }
 
   return (
-    <div className="pub-card-placeholder">
+    <div className="pub-image-empty">
       {input}
-      {busy ? <Loader2 aria-hidden /> : <ImageIcon aria-hidden />}
-      <p>{busy ? "Wgrywam zdjęcie…" : "Post bez grafiki"}</p>
+      <span className="pub-image-empty-icon" aria-hidden>
+        {busy ? <Loader2 className="pub-spin" /> : <ImageIcon />}
+      </span>
+      <p className="pub-image-empty-text">
+        {busy ? "Wgrywam zdjęcie…" : "Post bez grafiki"}
+        <span>JPG, PNG, WEBP · do 8 MB</span>
+      </p>
       <div className="pub-image-empty-actions">
         <button
           type="button"
-          className="ui-btn ui-btn-white ui-btn-sm"
+          className="ui-btn ui-btn-outline ui-btn-sm"
           disabled={disabled || busy}
           onClick={choose}
         >
@@ -117,7 +123,7 @@ export function PostImagePicker({
         {onGenerate ? (
           <button
             type="button"
-            className="ui-btn ui-btn-white ui-btn-sm"
+            className="ui-btn ui-btn-ghost ui-btn-sm pub-image-ai"
             disabled={disabled || busy}
             onClick={onGenerate}
           >

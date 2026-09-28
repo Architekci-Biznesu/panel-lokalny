@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Plus, Sparkles, X } from "lucide-react";
+import { Loader2, Pencil, Plus, Sparkles, UserRound, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
@@ -170,18 +170,21 @@ export function TopicPicker({
   }
 
   return (
-    <section className="ui-section pub-topics" aria-label="Tematy postów">
-      <header className="pub-topics-head">
-        <div>
-          <h2 className="pub-topics-title">Tematy postów</h2>
-          <p className="pub-topics-sub">
+    <section className="pub-panel" aria-labelledby="pub-topics-title">
+      <header className="pub-panel-head">
+        <div className="pub-panel-titles">
+          <h2 id="pub-topics-title" className="pub-panel-title">
+            Tematy postów
+          </h2>
+          <p className="pub-panel-sub">
             Zaznacz tematy (maks. {MAX_TOPICS_TO_WRITE}), popraw je albo dopisz
-            własne - AI napisze posty tylko z wybranych.
+            własne - AI napisze posty tylko z wybranych. Niewybrane poczekają na
+            później.
           </p>
         </div>
         <button
           type="button"
-          className="ui-btn ui-btn-ghost ui-btn-sm"
+          className="ui-btn ui-btn-ghost ui-btn-sm pub-panel-close"
           aria-label="Zamknij"
           onClick={onClose}
         >
@@ -192,16 +195,17 @@ export function TopicPicker({
       <ul className="pub-topic-list">
         {topics.map((topic) => {
           const checked = chosen.includes(topic.id);
+          const locked = !checked && full;
           return (
             <li
               key={topic.id}
-              className={`pub-topic${checked ? " is-checked" : ""}`}
+              className={`pub-topic${checked ? " is-checked" : ""}${locked ? " is-locked" : ""}`}
             >
               <input
                 type="checkbox"
-                className="ui-check"
+                className="ui-check pub-topic-check"
                 checked={checked}
-                disabled={pending || (!checked && full)}
+                disabled={pending || locked}
                 aria-label={`Wybierz temat: ${topic.title}`}
                 onChange={() => toggle(topic.id)}
               />
@@ -234,15 +238,19 @@ export function TopicPicker({
                   }}
                   aria-label={`Edytuj temat: ${topic.title}`}
                 >
-                  {topic.title}
+                  <span className="pub-topic-title">{topic.title}</span>
                   {topic.origin === "manual" ? (
-                    <span className="ui-pill ui-pill-neutral">Twój</span>
+                    <span className="pub-origin is-manual">
+                      <UserRound aria-hidden />
+                      Twój
+                    </span>
                   ) : null}
+                  <Pencil aria-hidden className="pub-topic-pen" />
                 </button>
               )}
               <button
                 type="button"
-                className="ui-btn ui-btn-ghost ui-btn-sm pub-topic-remove"
+                className="pub-icon-btn"
                 aria-label={`Usuń temat: ${topic.title}`}
                 disabled={pending}
                 onClick={() => remove(topic)}
@@ -261,7 +269,7 @@ export function TopicPicker({
             <Sparkles aria-hidden />
             <span
               className="ui-skel"
-              style={{ width: `${60 + ((i * 13) % 30)}%`, height: "0.75rem" }}
+              style={{ width: `${48 + ((i * 13) % 30)}%`, height: "0.625rem" }}
             />
           </li>
         ))}
@@ -290,19 +298,17 @@ export function TopicPicker({
         />
         <button
           type="button"
-          className="ui-btn ui-btn-white"
+          className="ui-btn ui-btn-secondary"
           disabled={pending || !newTitle.trim()}
           onClick={add}
         >
           <Plus aria-hidden />
           Dodaj
         </button>
-      </div>
-
-      <div className="pub-topic-more">
+        <span className="pub-topic-add-sep" aria-hidden />
         <button
           type="button"
-          className="ui-btn ui-btn-white ui-btn-sm"
+          className="ui-btn pub-btn-brand"
           disabled={asking || pendingTopics > 0}
           onClick={askForMore}
         >
@@ -311,30 +317,49 @@ export function TopicPicker({
           ) : (
             <Sparkles aria-hidden />
           )}
-          Zaproponuj kolejne tematy
+          Zaproponuj kolejne
         </button>
       </div>
 
-      <footer className="pub-topics-foot">
-        <span className="pub-topics-count">
-          Wybrano{" "}
-          <span className="mono">
-            {chosen.length} / {MAX_TOPICS_TO_WRITE}
+      <footer className="pub-panel-foot">
+        <div className="pub-topics-count">
+          <span>
+            Wybrano{" "}
+            <span className="mono">
+              {chosen.length} / {MAX_TOPICS_TO_WRITE}
+            </span>
           </span>
-        </span>
-        <button
-          type="button"
-          className="ui-btn ui-btn-primary"
-          disabled={pending || !chosen.length}
-          onClick={write}
-        >
-          {pending ? (
-            <Loader2 aria-hidden className="ui-btn-spinner" />
-          ) : (
-            <Sparkles aria-hidden />
-          )}
-          Napisz posty{chosen.length ? ` (${chosen.length})` : ""}
-        </button>
+          <span className="pub-topics-meter" aria-hidden>
+            {Array.from({ length: MAX_TOPICS_TO_WRITE }, (_, i) => (
+              <span
+                key={i}
+                className={i < chosen.length ? "is-on" : undefined}
+              />
+            ))}
+          </span>
+        </div>
+        <div className="pub-panel-actions">
+          <button
+            type="button"
+            className="ui-btn ui-btn-secondary"
+            onClick={onClose}
+          >
+            Anuluj
+          </button>
+          <button
+            type="button"
+            className="ui-btn ui-btn-primary"
+            disabled={pending || !chosen.length}
+            onClick={write}
+          >
+            {pending ? (
+              <Loader2 aria-hidden className="ui-btn-spinner" />
+            ) : (
+              <Sparkles aria-hidden />
+            )}
+            Napisz posty{chosen.length ? ` (${chosen.length})` : ""}
+          </button>
+        </div>
       </footer>
     </section>
   );

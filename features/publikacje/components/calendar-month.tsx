@@ -56,26 +56,31 @@ export function CalendarMonth({
   const label = MONTH_FMT.format(new Date(month.year, month.month - 1, 1));
 
   return (
-    <section className="ui-section pub-cal">
+    <section className="pub-cal">
       <header className="pub-cal-head">
         <h2 className="pub-cal-title">{label}</h2>
+        <div className="pub-cal-legend">
+          <span className="pub-cal-key is-scheduled">Zaplanowane</span>
+          <span className="pub-cal-key is-published">Opublikowane</span>
+          <span className="pub-cal-key is-failed">Błąd</span>
+        </div>
         <div className="pub-cal-nav">
           <Link
             href={`/publikacje/kalendarz?m=${monthParam(shiftMonth(month, -1))}`}
-            className="ui-btn ui-btn-white ui-btn-sm"
+            className="ui-btn ui-btn-secondary ui-btn-sm"
             aria-label="Poprzedni miesiąc"
           >
             <ChevronLeft aria-hidden />
           </Link>
           <Link
             href="/publikacje/kalendarz"
-            className="ui-btn ui-btn-white ui-btn-sm"
+            className="ui-btn ui-btn-secondary ui-btn-sm"
           >
             Dziś
           </Link>
           <Link
             href={`/publikacje/kalendarz?m=${monthParam(shiftMonth(month, 1))}`}
-            className="ui-btn ui-btn-white ui-btn-sm"
+            className="ui-btn ui-btn-secondary ui-btn-sm"
             aria-label="Następny miesiąc"
           >
             <ChevronRight aria-hidden />
@@ -112,12 +117,6 @@ export function CalendarMonth({
             </div>
           );
         })}
-      </div>
-
-      <div className="pub-cal-legend">
-        <span className="pub-cal-key is-scheduled">Zaplanowane</span>
-        <span className="pub-cal-key is-published">Opublikowane</span>
-        <span className="pub-cal-key is-failed">Błąd</span>
       </div>
     </section>
   );

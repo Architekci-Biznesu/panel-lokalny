@@ -11,8 +11,8 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Sparkles,
   TrendingUp,
-  WandSparkles,
   X,
 } from "lucide-react";
 import { RankLocalPackTable } from "@/features/wizytowka/components/rank-local-pack-table";
@@ -801,7 +801,7 @@ export function RankPositionsSection({
               {showSuggested ? (
                 <>
                   <span className="rank-empty-badge is-ai" aria-hidden>
-                    <WandSparkles />
+                    <Sparkles />
                   </span>
                   <p className="rank-empty-title">Zacznij od fraz z analizy</p>
                   <p className="rank-empty-desc">

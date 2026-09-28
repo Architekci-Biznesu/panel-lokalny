@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Check, Loader2, Pencil, Star, WandSparkles } from "lucide-react";
+import { Check, Loader2, Pencil, Sparkles, Star } from "lucide-react";
 import { toast } from "gooey-toast";
 import { RejectPopover } from "@/components/ui/reject-popover";
 import {
@@ -135,7 +135,7 @@ export function CategoriesSuggestion({
       <div className="wiz-inline-rail">
         <span className="wiz-field-label">Kategorie</span>
         <span className="wiz-ai-pill">
-          <WandSparkles aria-hidden />
+          <Sparkles aria-hidden />
           Propozycja AI
         </span>
       </div>
@@ -255,7 +255,7 @@ export function CategoriesSuggestion({
         {!editing ? (
           <div className="wiz-inline-rationale">
             <span className="wiz-inline-rationale-icon-wrap" aria-hidden>
-              <WandSparkles className="wiz-inline-rationale-icon" />
+              <Sparkles className="wiz-inline-rationale-icon" />
             </span>
             <div className="wiz-inline-rationale-body">
               <span className="wiz-inline-rationale-label">
