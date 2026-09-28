@@ -14,6 +14,7 @@ import {
   GbpNotConnectedError,
 } from "@/lib/integrations/gbp/access";
 import { fetchGbpMultiDailyMetrics } from "@/lib/integrations/gbp/client";
+import { cachedGbpRead } from "@/lib/integrations/gbp/read-cache";
 
 export default async function RaportyPage({
   searchParams,
@@ -54,12 +55,18 @@ export default async function RaportyPage({
     let loadError = false;
 
     try {
-      const payload = await fetchGbpMultiDailyMetrics(
-        token,
-        profile.gbpLocationId!,
-        ALL_PERFORMANCE_METRICS,
-        start,
-        end,
+      const range = `${start.year}-${start.month}-${start.day}_${end.year}-${end.month}-${end.day}`;
+      const payload = await cachedGbpRead(
+        profile.id,
+        `metrics:${profile.gbpLocationId}:${range}`,
+        () =>
+          fetchGbpMultiDailyMetrics(
+            token,
+            profile.gbpLocationId!,
+            ALL_PERFORMANCE_METRICS,
+            start,
+            end,
+          ),
       );
       const parsed = parsePerformancePayload(payload);
       if (parsed.length > 0) {

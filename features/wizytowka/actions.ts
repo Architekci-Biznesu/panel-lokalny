@@ -2,6 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { invalidateGbpReads } from "@/lib/integrations/gbp/read-cache";
 import { z } from "zod";
 import { startGbpAudit } from "@/features/wizytowka/audit";
 import { buildAttributeUpdateBody } from "@/features/wizytowka/attributes";
@@ -49,6 +50,7 @@ async function withGbpPatch(
     const profile = await getActiveGbpProfile();
     const token = await getGbpAccessTokenForProfile(profile);
     await patchGbpLocation(token, profile.gbpLocationId!, body, updateMask);
+    invalidateGbpReads();
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
@@ -147,6 +149,7 @@ export async function updateGbpServices(input: unknown): Promise<ActionResult> {
       { serviceItems: draftsToServiceItems(drafts) },
       ["serviceItems"],
     );
+    invalidateGbpReads();
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
@@ -422,6 +425,7 @@ export async function updateGbpAttribute(
       body.attributes,
       body.attributeMask,
     );
+    invalidateGbpReads();
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
@@ -455,6 +459,7 @@ export async function updateGbpAttributesBatch(
       attributes,
       attributeMask,
     );
+    invalidateGbpReads();
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
@@ -464,6 +469,7 @@ export async function updateGbpAttributesBatch(
 
 export async function reanalyzeGbpAction(): Promise<ActionResult> {
   const result = await startGbpAudit();
+  invalidateGbpReads();
   revalidatePath("/wizytowka", "layout");
   return result.ok
     ? { ok: true }
@@ -509,6 +515,8 @@ export async function rejectGbpSuggestion(
       .where(eq(gbpSuggestions.id, suggestion.id));
 
     await appendBriefAvoid(profile.id, parsed.data.reason);
+
+    invalidateGbpReads();
 
     revalidatePath("/wizytowka", "layout");
     revalidatePath("/ustawienia/kontekst");
@@ -675,6 +683,8 @@ export async function acceptGbpSuggestion(
       })
       .where(eq(gbpSuggestions.id, suggestion.id));
 
+    invalidateGbpReads();
+
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
@@ -721,6 +731,8 @@ export async function acceptAllGbpSuggestions(): Promise<
       }
       accepted += 1;
     }
+
+    invalidateGbpReads();
 
     revalidatePath("/wizytowka", "layout");
     return { ok: true, accepted, skippedHighRiskTitle };

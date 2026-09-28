@@ -29,6 +29,7 @@ import {
   undoContentRevision,
   type GenerationStatus,
 } from "@/features/publikacje/actions";
+import { ChatText } from "@/features/publikacje/components/chat-text";
 import { ThinkingTrace } from "@/features/publikacje/components/thinking-trace";
 import type { ChatTurn } from "@/lib/ai";
 
@@ -304,9 +305,11 @@ function GenerateThread({
           }
           if (message.role === "reply") {
             return (
-              <p key={message.id} className="pub-chat-reply">
-                {message.text}
-              </p>
+              <ChatText
+                key={message.id}
+                className="pub-chat-reply"
+                text={message.text}
+              />
             );
           }
           const run = runs.get(message.runId);
@@ -562,9 +565,11 @@ function EditThread({
           }
           if (message.role === "reply") {
             return (
-              <p key={message.id} className="pub-chat-reply">
-                {message.text}
-              </p>
+              <ChatText
+                key={message.id}
+                className="pub-chat-reply"
+                text={message.text}
+              />
             );
           }
           const textChanged =
@@ -710,23 +715,50 @@ function EditThread({
  * page it starts where the list starts, after scrolling it sticks near the
  * top - the composer never drops below the fold.
  */
+/** Space between the dock and the bottom of the window (--space-4). */
+const DOCK_GAP = 16;
+
 function useDockHeight() {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const dock = ref.current;
     if (!dock) return;
+    const scroller = dock.closest<HTMLElement>(".app-content");
+    const list = dock.parentElement?.querySelector<HTMLElement>(
+      ".pub-workspace-list",
+    );
     let frame = 0;
-    // The dock's own top in the window: its height never moves it (sticky),
-    // so there is no feedback loop.
+    // Height = from the dock's top to the bottom of the window. At the end of
+    // the page it stops where the list ends (the content's bottom padding),
+    // so the dock is never pushed up under the navbar - and its top never
+    // counts above the place where it sticks (no grow-and-push loop).
     function update() {
       frame = 0;
-      const top = Math.max(0, dock!.getBoundingClientRect().top);
-      dock!.style.setProperty("--pub-dock-top", `${Math.round(top)}px`);
+      const view = window.innerHeight;
+      const area = scroller?.getBoundingClientRect();
+      const stickTop =
+        (area?.top ?? 0) + (parseFloat(getComputedStyle(dock!).top) || 0);
+      const top = Math.max(stickTop, dock!.getBoundingClientRect().top);
+      const pagePad = scroller
+        ? parseFloat(getComputedStyle(scroller).paddingBottom)
+        : 0;
+      const listBottom = list?.getBoundingClientRect().bottom ?? view;
+      const bottom = Math.min(
+        view - DOCK_GAP,
+        Math.max(listBottom, view - pagePad),
+      );
+      dock!.style.setProperty(
+        "--pub-dock-height",
+        `${Math.round(bottom - top)}px`,
+      );
     }
     function schedule() {
       if (!frame) frame = requestAnimationFrame(update);
     }
     update();
+    // New posts or an open panel change the list height without scrolling.
+    const resize = new ResizeObserver(schedule);
+    if (list) resize.observe(list);
     window.addEventListener("scroll", schedule, {
       capture: true,
       passive: true,
@@ -734,6 +766,7 @@ function useDockHeight() {
     window.addEventListener("resize", schedule);
     return () => {
       cancelAnimationFrame(frame);
+      resize.disconnect();
       window.removeEventListener("scroll", schedule, { capture: true });
       window.removeEventListener("resize", schedule);
     };
@@ -795,11 +828,10 @@ export function ContentChat({
         ) : (
           <>
             <header className="pub-chat-head">
-              <span className="pub-chat-badge" aria-hidden>
-                <Sparkles />
-              </span>
               <div className="pub-chat-head-text">
-                <h2 className="pub-chat-title">Czat AI</h2>
+                <h2 className="pub-chat-title">
+                  Czat <span className="pub-ai-text">AI</span>
+                </h2>
                 <p className="pub-chat-sub">
                   {editing ? "Edycja propozycji" : "Nowe propozycje postów"}
                 </p>

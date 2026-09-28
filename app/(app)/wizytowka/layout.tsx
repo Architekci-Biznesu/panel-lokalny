@@ -21,6 +21,7 @@ import {
   listGbpLocationMedia,
   pickGbpCollageUrls,
 } from "@/lib/integrations/gbp/client";
+import { cachedGbpRead } from "@/lib/integrations/gbp/read-cache";
 import { AuthError } from "@/lib/session";
 import type { GbpSuggestion } from "@/lib/db/schema";
 import Link from "next/link";
@@ -69,9 +70,10 @@ export default async function WizytowkaLayout({
 
     let photoCount = 0;
     try {
-      const media = await listGbpLocationMedia(
-        bundle.accessToken,
-        bundle.locationName,
+      const media = await cachedGbpRead(
+        bundle.profile.id,
+        `media:${bundle.locationName}`,
+        () => listGbpLocationMedia(bundle.accessToken, bundle.locationName),
       );
       photoCount = countGbpOwnerPhotos(media.owner);
       photoUrls = pickGbpCollageUrls([...media.owner, ...media.customers], 6);

@@ -73,7 +73,7 @@ export function UiSelect({
 
       {open ? (
         <ul
-          className="ui-select-menu"
+          className="ui-menu ui-select-menu"
           role="listbox"
           aria-labelledby={selectId}
         >
@@ -85,14 +85,16 @@ export function UiSelect({
                   type="button"
                   role="option"
                   aria-selected={isSelected}
-                  className={`ui-select-option${isSelected ? " is-selected" : ""}`}
+                  className={`ui-menu-item${isSelected ? " is-selected" : ""}`}
                   onClick={() => {
                     onChange(option.value);
                     setOpen(false);
                   }}
                 >
                   <span>{option.label}</span>
-                  {isSelected ? <Check aria-hidden /> : null}
+                  {isSelected ? (
+                    <Check aria-hidden className="ui-menu-check" />
+                  ) : null}
                 </button>
               </li>
             );

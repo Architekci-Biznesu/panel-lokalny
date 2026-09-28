@@ -5,6 +5,7 @@ import {
   resolvePostChat,
 } from "../../lib/ai/chat-intent";
 import { normalizeTopics, TOPIC_MAX } from "../../lib/ai/topic-list";
+import { parseChatText, parseInline } from "./chat-format";
 import {
   checkTopicSelection,
   MAX_TOPICS_TO_WRITE,
@@ -215,6 +216,63 @@ import {
     "stary",
   ]);
   assert.deepEqual(withRunTitles(["stary"], []), ["stary"]);
+}
+
+/** Chat reply formatting: paragraphs, lists, bold - and inline lists split. */
+{
+  assert.deepEqual(parseInline("To **ważne** i **to**"), [
+    { text: "To ", bold: false },
+    { text: "ważne", bold: true },
+    { text: " i ", bold: false },
+    { text: "to", bold: true },
+  ]);
+  assert.deepEqual(parseInline("bez **pary"), [
+    { text: "bez pary", bold: false },
+  ]);
+
+  const blocks = parseChatText(
+    "Warto pisać o:\n\n1. **Trendach** w AI\n2. Case study\n\nCzy przygotować posty?",
+  );
+  assert.deepEqual(
+    blocks.map((b) => b.kind),
+    ["p", "ol", "p"],
+  );
+  const list = blocks[1];
+  assert.ok(list.kind === "ol" && list.items.length === 2 && list.start === 1);
+
+  // Old one-line replies: "wyróżniki: 1. A. 2. B. 3. C." become a list.
+  const inline = parseChatText(
+    "Tematy: 1. Nowe trendy w AI. 2. Case study SEO. 3. Wskazówki po zmianach w Google.",
+  );
+  assert.deepEqual(
+    inline.map((b) => b.kind),
+    ["p", "ol"],
+  );
+  assert.equal(inline[1].kind === "ol" && inline[1].items.length, 3);
+  // A lone "1." or a date is not a list.
+  assert.deepEqual(
+    parseChatText("Od 1. października 2026 r. działamy dłużej.").map(
+      (b) => b.kind,
+    ),
+    ["p"],
+  );
+  assert.deepEqual(
+    parseChatText("- jeden\n- dwa").map((b) => b.kind),
+    ["ul"],
+  );
+}
+
+/** Reply text keeps line breaks and letters next to long dashes. */
+{
+  const reply = resolveChatIntent(
+    { kind: "reply", text: "Usługi — sprzedaż\n\n1. Opony – serwis" },
+    "o czym pisać?",
+    [],
+  );
+  assert.deepEqual(reply, {
+    kind: "reply",
+    text: "Usługi - sprzedaż\n\n1. Opony - serwis",
+  });
 }
 
 console.log("content generation tests passed");

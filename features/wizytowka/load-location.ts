@@ -14,6 +14,7 @@ import {
   type GbpAttributeMetadata,
   type GbpCategory,
 } from "@/lib/integrations/gbp/client";
+import { cachedGbpRead } from "@/lib/integrations/gbp/read-cache";
 import { db } from "@/lib/db";
 import {
   gbpAuditRuns,
@@ -37,10 +38,21 @@ export type LoadedGbpBundle = {
   latestAuditRun: GbpAuditRun | null;
 };
 
-export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
-  const profile = await getActiveGbpProfile();
+type GoogleLocationData = Pick<
+  LoadedGbpBundle,
+  | "location"
+  | "accessToken"
+  | "attributes"
+  | "attributeMetadata"
+  | "categoryDetails"
+>;
+
+/** Listing, categories and attributes straight from Google (no cache). */
+async function fetchGoogleLocationData(
+  profile: Profile,
+  locationName: string,
+): Promise<GoogleLocationData> {
   let accessToken = await getGbpAccessTokenForProfile(profile);
-  const locationName = profile.gbpLocationId!;
 
   let raw: Record<string, unknown>;
   try {
@@ -70,13 +82,7 @@ export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
     (n): n is string => Boolean(n),
   );
 
-  const [
-    categoryDetails,
-    attrPayload,
-    attributeMetadata,
-    pendingSuggestions,
-    latestRuns,
-  ] = await Promise.all([
+  const [categoryDetails, attrPayload, attributeMetadata] = await Promise.all([
     batchGetGbpCategories(accessToken, categoryNames),
     getGbpLocationAttributes(accessToken, locationName).catch(() => ({
       attributes: [] as Array<Record<string, unknown>>,
@@ -87,6 +93,30 @@ export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
             () => [] as GbpAttributeMetadata[],
           )
         : Promise.resolve([] as GbpAttributeMetadata[]),
+    ),
+  ]);
+
+  return {
+    location,
+    accessToken,
+    attributes: attrPayload.attributes ?? [],
+    attributeMetadata,
+    categoryDetails,
+  };
+}
+
+/**
+ * Active profile's listing for the panel pages. Google data comes from the
+ * short read cache (see read-cache.ts); suggestions and audit runs always
+ * from the database, in parallel with Google.
+ */
+export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
+  const profile = await getActiveGbpProfile();
+  const locationName = profile.gbpLocationId!;
+
+  const [google, pendingSuggestions, latestRuns] = await Promise.all([
+    cachedGbpRead(profile.id, `location:${locationName}`, () =>
+      fetchGoogleLocationData(profile, locationName),
     ),
     db
       .select()
@@ -107,13 +137,9 @@ export async function loadActiveGbpBundle(): Promise<LoadedGbpBundle> {
   ]);
 
   return {
+    ...google,
     profile,
-    location,
     locationName,
-    accessToken,
-    attributes: attrPayload.attributes ?? [],
-    attributeMetadata,
-    categoryDetails,
     pendingSuggestions: pendingSuggestions.map((s) =>
       s.field === "description"
         ? {

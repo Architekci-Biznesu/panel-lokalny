@@ -29,7 +29,10 @@ type ShellProps = {
   ownerEmail?: string | null;
 };
 
-function isActive(pathname: string, item: { href: string; activeMatch?: string }): boolean {
+function isActive(
+  pathname: string,
+  item: { href: string; activeMatch?: string },
+): boolean {
   const match = item.activeMatch ?? item.href;
   return pathname === match || pathname.startsWith(`${match}/`);
 }
@@ -118,9 +121,7 @@ export function AppShell({
                 href={item.href}
                 onClick={closeAll}
                 className={`topnav-link ${isActive(pathname, item) ? "active" : ""}`}
-                aria-current={
-                  isActive(pathname, item) ? "page" : undefined
-                }
+                aria-current={isActive(pathname, item) ? "page" : undefined}
               >
                 {item.shortLabel ?? item.label}
               </Link>
@@ -138,7 +139,7 @@ export function AppShell({
                   <ChevronDown aria-hidden className="topnav-chevron" />
                 </button>
                 {moreOpen ? (
-                  <div className="topnav-menu" role="menu">
+                  <div className="ui-menu topnav-menu" role="menu">
                     {topNavMore.map((item) => {
                       const Icon = item.icon;
                       return (
@@ -147,7 +148,7 @@ export function AppShell({
                           href={item.href}
                           onClick={closeAll}
                           role="menuitem"
-                          className={`topnav-menu-item ${isActive(pathname, item) ? "active" : ""}`}
+                          className={`ui-menu-item${isActive(pathname, item) ? " is-selected" : ""}`}
                         >
                           <Icon aria-hidden />
                           {item.label}
@@ -183,7 +184,7 @@ export function AppShell({
               {initials(userName)}
             </button>
             {accountOpen ? (
-              <div className="topnav-menu topnav-menu-end" role="menu">
+              <div className="ui-menu topnav-menu topnav-menu-end" role="menu">
                 <div className="topnav-menu-user">
                   <span className="topnav-menu-user-name">{userName}</span>
                   {userEmail ? (
@@ -194,7 +195,7 @@ export function AppShell({
                   href="/ustawienia"
                   onClick={closeAll}
                   role="menuitem"
-                  className="topnav-menu-item"
+                  className="ui-menu-item"
                 >
                   <Settings aria-hidden />
                   Ustawienia i plan
@@ -203,7 +204,7 @@ export function AppShell({
                   <button
                     type="submit"
                     role="menuitem"
-                    className="topnav-menu-item"
+                    className="ui-menu-item"
                   >
                     <LogOut aria-hidden />
                     Wyloguj
@@ -234,7 +235,7 @@ export function AppShell({
                       key={item.href}
                       href={item.href}
                       onClick={closeAll}
-                      className={`topnav-menu-item ${isActive(pathname, item) ? "active" : ""}`}
+                      className={`ui-menu-item${isActive(pathname, item) ? " is-selected" : ""}`}
                     >
                       <Icon aria-hidden />
                       {item.label}

@@ -106,7 +106,7 @@ export function computeCompleteness(input: {
       id: "photos",
       label: "Zdjęcia",
       filled: photoCount >= GBP_PHOTO_MIN,
-      href: "/wizytowka",
+      href: "/wizytowka/raporty",
     },
   ];
 

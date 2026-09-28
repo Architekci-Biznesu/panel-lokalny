@@ -526,15 +526,19 @@ function ServiceAreaPlacePicker({
         ) : null}
       </div>
       {open && query.trim().length >= 2 ? (
-        <ul id={listId} className="wiz-service-area-menu" role="listbox">
+        <ul
+          id={listId}
+          className="ui-menu wiz-service-area-menu"
+          role="listbox"
+        >
           {visible.length === 0 && !searching ? (
-            <li className="wiz-service-area-empty">Brak wyników</li>
+            <li className="ui-menu-empty">Brak wyników</li>
           ) : (
             visible.map((place) => (
               <li key={place.placeId}>
                 <button
                   type="button"
-                  className="wiz-service-area-option"
+                  className="ui-menu-item"
                   role="option"
                   aria-selected={false}
                   onClick={() => {

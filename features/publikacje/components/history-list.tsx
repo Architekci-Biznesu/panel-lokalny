@@ -91,12 +91,12 @@ export function HistoryFilters({
           {channelLabel}
           <ChevronDown aria-hidden />
         </summary>
-        <div className="pub-channel-menu">
+        <div className="ui-menu pub-channel-menu">
           {CHANNEL_FILTERS.map((filter) => (
             <Link
               key={filter.value}
               href={filterHref(status, filter.value)}
-              className={`pub-channel-option${channel === filter.value ? " is-active" : ""}`}
+              className={`ui-menu-item${channel === filter.value ? " is-selected" : ""}`}
               aria-current={channel === filter.value ? "true" : undefined}
             >
               {filter.value === "all" ? "Wszystkie kanały" : filter.label}

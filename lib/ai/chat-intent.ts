@@ -9,7 +9,8 @@ const PARTS: readonly PostPart[] = ["title", "body", "image"];
 
 /** UI copy uses a plain hyphen - AI likes en and em dashes. */
 function plainDashes(text: string): string {
-  return text.replace(/s*[–—]s*/g, " - ");
+  // Spaces/tabs only - line breaks (paragraphs, list items) stay.
+  return text.replace(/[ \t]*[–—][ \t]*/g, " - ");
 }
 
 const MAX_CREATE = 3;

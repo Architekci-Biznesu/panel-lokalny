@@ -249,9 +249,10 @@
     transition: background-color 0.12s ease;
   }
 
+  /* Kolory jak .ui-menu-item: najechanie i wybrany szare, wybrany po najechaniu ciemniejszy */
   .profile-menu-panel button.profile-menu-option:hover,
   .profile-menu-panel button.profile-menu-add:hover {
-    background: var(--neutral-50);
+    background: var(--muted);
   }
 
   .profile-menu-panel button.profile-menu-option:focus-visible,
@@ -262,6 +263,10 @@
 
   .profile-menu-panel button.profile-menu-option.active {
     background: var(--muted);
+  }
+
+  .profile-menu-panel button.profile-menu-option.active:hover {
+    background: var(--canvas-strong);
   }
 
   .profile-menu-panel button:disabled {
@@ -632,49 +637,13 @@
     position: absolute;
     top: calc(100% + 10px);
     left: 0;
-    min-width: 220px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 6px;
-    background: var(--card);
-    border: 0;
-    border-radius: var(--radius-block);
-    box-shadow: var(--shadow-pop);
     z-index: 40;
+    min-width: 220px;
   }
 
   .topnav-menu-end {
     left: auto;
     right: 0;
-  }
-
-  .topnav-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 8px 10px;
-    border: 0;
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--foreground);
-    font: inherit;
-    font-size: var(--type-base);
-    text-align: left;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .topnav-menu-item svg {
-    width: 16px;
-    height: 16px;
-    color: var(--muted-foreground);
-  }
-
-  .topnav-menu-item:hover,
-  .topnav-menu-item.active {
-    background: var(--muted);
   }
 
   .topnav-menu-user {

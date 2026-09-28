@@ -29,10 +29,17 @@ import type {
   InboxItem,
 } from "@/features/publikacje/load-inbox";
 import { MANUAL_BODY_MAX } from "@/features/publikacje/manual-post-rules";
+import { DateField } from "@/components/ui/date-field";
 import { TimeField } from "@/components/ui/time-field";
 
 const POLL_MS = 2000;
 const POLL_LIMIT = 30;
+
+/** Today as "YYYY-MM-DD" - posts cannot be scheduled in the past. */
+function todayValue(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
 
 function formatDay(date: Date): string {
   return new Intl.DateTimeFormat("pl-PL", {
@@ -350,13 +357,13 @@ export function ContentApprovalCard({
             </div>
             {schedule ? (
               <div className="pub-card-schedule">
-                <input
-                  type="date"
-                  className="ui-field pub-card-date-field"
-                  aria-label="Dzień publikacji"
+                <DateField
+                  className="pub-card-date-field"
+                  ariaLabel="Dzień publikacji"
                   value={date}
+                  min={todayValue()}
                   disabled={disabled}
-                  onChange={(event) => setDate(event.target.value)}
+                  onChange={setDate}
                 />
                 <TimeField
                   className="pub-card-time"

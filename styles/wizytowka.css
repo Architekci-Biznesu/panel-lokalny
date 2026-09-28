@@ -747,40 +747,8 @@
     left: 0;
     right: 0;
     top: calc(100% + 0.25rem);
-    margin: 0;
-    padding: 0.35rem;
-    list-style: none;
     max-height: 14rem;
     overflow: auto;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 8%, transparent);
-  }
-
-  .wiz-service-area-option {
-    display: block;
-    width: 100%;
-    text-align: left;
-    border: 0;
-    border-radius: calc(var(--radius) - 2px);
-    background: transparent;
-    padding: 0.55rem 0.65rem;
-    font: inherit;
-    font-size: var(--type-base);
-    color: var(--foreground);
-    cursor: pointer;
-  }
-
-  .wiz-service-area-option:hover {
-    background: var(--accent);
-    color: var(--brand-deep);
-  }
-
-  .wiz-service-area-empty {
-    padding: 0.65rem;
-    font-size: var(--type-base);
-    color: var(--muted-foreground);
   }
 
   .wiz-suggestion-warn {

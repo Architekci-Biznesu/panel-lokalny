@@ -15,6 +15,8 @@ export type CalendarEntry = {
   channel: ContentChannel;
   status: ContentTargetStatus;
   date: Date;
+  /** Post image (the "Tygodnie" view shows it; the month view does not) */
+  imageUrl: string | null;
 };
 
 export type CalendarMonth = { year: number; month: number };
@@ -45,8 +47,8 @@ export function monthParam(value: CalendarMonth): string {
 }
 
 /**
- * 6x7 grid of days (Monday first) covering the month.
- * `inMonth` marks days belonging to the displayed month.
+ * Grid of days (Monday first) covering the month - 5 or 6 full weeks, only as
+ * many as the month needs. `inMonth` marks days of the displayed month.
  */
 export function monthGrid(
   value: CalendarMonth,
@@ -54,7 +56,9 @@ export function monthGrid(
   const first = new Date(value.year, value.month - 1, 1);
   const offset = (first.getDay() + 6) % 7;
   const start = new Date(value.year, value.month - 1, 1 - offset);
-  return Array.from({ length: 42 }, (_, i) => {
+  const days = new Date(value.year, value.month, 0).getDate();
+  const weeks = Math.ceil((offset + days) / 7);
+  return Array.from({ length: weeks * 7 }, (_, i) => {
     const date = new Date(
       start.getFullYear(),
       start.getMonth(),
@@ -64,18 +68,61 @@ export function monthGrid(
   });
 }
 
-/**
- * Targets of the active profile in the month, by scheduled_at (published
- * posts without a schedule fall back to published_at, so the month is not empty).
- */
-export async function loadCalendar(
+/** Monday (local midnight) of the week that contains `date`. */
+export function weekStart(date: Date): Date {
+  const offset = (date.getDay() + 6) % 7;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - offset);
+}
+
+export function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+/** `?t=2026-09-28` -> Monday of that week, defaulting to the current week. */
+export function parseWeekParam(value: unknown, now: Date = new Date()): Date {
+  const match =
+    typeof value === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (match) {
+    const date = new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+    );
+    if (!Number.isNaN(date.getTime()) && date.getFullYear() >= 2020) {
+      return weekStart(date);
+    }
+  }
+  return weekStart(now);
+}
+
+export function dayParam(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+/** Targets of the active profile in the month (see loadCalendarRange). */
+export function loadCalendar(
   profile: Profile,
   value: CalendarMonth,
 ): Promise<CalendarEntry[]> {
-  // Month bounds as Warsaw calendar days, compared in the database: a raw SQL
+  return loadCalendarRange(
+    profile,
+    `${monthParam(value)}-01`,
+    `${monthParam(shiftMonth(value, 1))}-01`,
+  );
+}
+
+/**
+ * Targets of the active profile between two Warsaw calendar days
+ * ("YYYY-MM-DD", `to` exclusive), by scheduled_at (published posts without a
+ * schedule fall back to published_at, so the view is not empty).
+ */
+export async function loadCalendarRange(
+  profile: Profile,
+  from: string,
+  to: string,
+): Promise<CalendarEntry[]> {
+  // Bounds as Warsaw calendar days, compared in the database: a raw SQL
   // expression has no column type, so JS Dates would be sent as unreadable text.
-  const from = monthParam(value);
-  const to = monthParam(shiftMonth(value, 1));
   const day = sql<Date>`coalesce(${contentTargets.scheduledAt}, ${contentTargets.publishedAt})`;
   const warsawDay = sql`(${day} at time zone 'Europe/Warsaw')`;
 
@@ -87,14 +134,15 @@ export async function loadCalendar(
       channel: contentTargets.channel,
       status: contentTargets.status,
       date: day,
+      imageUrl: contentItems.imageUrl,
     })
     .from(contentTargets)
     .innerJoin(contentItems, eq(contentItems.id, contentTargets.contentItemId))
     .where(
       and(
         eq(contentTargets.profileId, profile.id),
-        sql`${warsawDay} >= ${`${from}-01`}::timestamp`,
-        sql`${warsawDay} < ${`${to}-01`}::timestamp`,
+        sql`${warsawDay} >= ${from}::timestamp`,
+        sql`${warsawDay} < ${to}::timestamp`,
       ),
     )
     .orderBy(day);

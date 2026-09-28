@@ -325,15 +325,11 @@
     cursor: not-allowed;
   }
 
-  .ui-select-menu {
-    position: absolute;
-    top: calc(100% + 0.25rem);
-    left: 0;
-    right: 0;
-    z-index: 40;
+  /* Panel listy rozwijanej: wspólny dla ui-select, menu w pasku, filtrów i podpowiedzi */
+  .ui-menu {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
+    gap: 2px;
     margin: 0;
     padding: 6px;
     list-style: none;
@@ -341,15 +337,12 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-block);
     box-shadow: var(--shadow-pop);
-    max-height: 16rem;
-    overflow: auto;
   }
 
-  .ui-select-option {
+  .ui-menu-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+    gap: 10px;
     width: 100%;
     margin: 0;
     padding: 8px 10px;
@@ -362,45 +355,63 @@
     font-weight: 500;
     line-height: 1.25rem;
     text-align: left;
+    text-decoration: none;
     cursor: pointer;
   }
 
-  .ui-select-option:hover,
-  .ui-select-option:focus-visible {
+  .ui-menu-item:hover,
+  .ui-menu-item:focus-visible {
     outline: none;
     background: var(--muted);
     color: var(--foreground);
   }
 
-  .ui-select-option.is-selected {
+  .ui-menu-item.is-selected {
     background: var(--muted);
     color: var(--foreground);
   }
 
-  .ui-select-option.is-selected:hover,
-  .ui-select-option.is-selected:focus-visible {
+  .ui-menu-item.is-selected:hover,
+  .ui-menu-item.is-selected:focus-visible {
     background: var(--canvas-strong);
   }
 
-  .ui-select-option svg {
+  .ui-menu-item svg {
     width: 1rem;
     height: 1rem;
     flex-shrink: 0;
     stroke-width: 2;
+    color: var(--muted-foreground);
   }
 
-  .ui-select-empty,
-  .ui-select-group-label {
+  /* Ptaszek przy wybranej pozycji, po prawej */
+  .ui-menu-item .ui-menu-check {
+    margin-left: auto;
+    color: var(--foreground);
+  }
+
+  .ui-menu-empty,
+  .ui-menu-label {
     padding: 0.5rem 0.5rem 0.25rem;
     font-size: var(--type-base);
     color: var(--muted-foreground);
   }
 
-  .ui-select-group-label {
+  .ui-menu-label {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     font-size: var(--type-badge);
+  }
+
+  .ui-select-menu {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    z-index: 40;
+    max-height: 16rem;
+    overflow: auto;
   }
 
   .ui-check {
@@ -906,6 +917,8 @@
     gap: var(--space-3);
     width: min(360px, calc(100vw - 32px));
     padding: var(--space-4);
+    /* Cienka ramka jak w listach rozwijanych (.ui-menu) */
+    border: 1px solid var(--border);
     border-radius: 20px;
     background: var(--card);
     box-shadow:
@@ -1077,6 +1090,174 @@
   .ui-time-opt.is-active {
     background: var(--brand);
     color: var(--primary-foreground);
+  }
+}
+
+/* Pole daty (DateField): przycisk jak ui-field + kalendarz miesiąca w dropdownie */
+@layer components {
+  .ui-date-field {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: var(--foreground);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .ui-date-field.is-empty {
+    color: var(--muted-foreground);
+  }
+
+  .ui-date-field svg {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 2;
+    color: var(--muted-foreground);
+  }
+
+  .ui-date-field.is-open {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
+  }
+
+  .ui-date-pop {
+    position: fixed;
+    z-index: 60;
+    width: 17rem;
+    padding: var(--space-3);
+    border-radius: 16px;
+    background: var(--card);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.06),
+      0 24px 48px -16px rgb(0 0 0 / 0.22);
+    animation: ui-pop-in 0.16s ease-out;
+  }
+
+  .ui-date-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+
+  .ui-date-month {
+    margin: 0;
+    font-size: var(--type-sm);
+    font-weight: 500;
+  }
+
+  .ui-date-month::first-letter {
+    text-transform: uppercase;
+  }
+
+  .ui-date-nav {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--foreground);
+    cursor: pointer;
+  }
+
+  .ui-date-nav:hover:not(:disabled) {
+    background: var(--neutral-150);
+  }
+
+  .ui-date-nav:disabled {
+    color: var(--neutral-300);
+    cursor: default;
+  }
+
+  .ui-date-nav svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .ui-date-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .ui-date-weekday {
+    padding: 2px 0 6px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+    text-align: center;
+  }
+
+  .ui-date-day {
+    height: 2.125rem;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--foreground);
+    font-size: var(--type-sm);
+    cursor: pointer;
+  }
+
+  .ui-date-day:hover:not(:disabled) {
+    background: var(--neutral-150);
+  }
+
+  .ui-date-day:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+
+  .ui-date-day.is-out {
+    color: var(--neutral-400);
+  }
+
+  .ui-date-day.is-today {
+    box-shadow: inset 0 0 0 1px var(--brand-soft);
+    color: var(--brand-deep);
+  }
+
+  .ui-date-day:disabled {
+    color: var(--neutral-300);
+    cursor: default;
+  }
+
+  .ui-date-day.is-active {
+    background: var(--brand);
+    color: var(--primary-foreground);
+    box-shadow: none;
+  }
+
+  .ui-date-foot {
+    display: flex;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--neutral-150);
+  }
+
+  .ui-date-link {
+    height: 1.75rem;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--canvas);
+    color: var(--foreground);
+    font-size: var(--type-xs);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .ui-date-link:hover:not(:disabled) {
+    background: var(--neutral-150);
+  }
+
+  .ui-date-link:disabled {
+    color: var(--neutral-300);
+    cursor: default;
   }
 }
 

@@ -84,7 +84,7 @@ function cardHref(item: ProposalCardItem, mapsUri?: string | null): string {
     return ATTRIBUTES_HREF;
   }
   if (item.kind === "photos") {
-    return mapsUri?.trim() || "/wizytowka";
+    return mapsUri?.trim() || "/wizytowka/raporty";
   }
   return PROPOSAL_META[item.suggestion.field as keyof typeof PROPOSAL_META]
     .href;

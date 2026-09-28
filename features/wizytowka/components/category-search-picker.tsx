@@ -127,16 +127,16 @@ export function CategorySearchPicker({
         </div>
 
         {open ? (
-          <ul id={listId} className="ui-select-menu" role="listbox">
+          <ul id={listId} className="ui-menu ui-select-menu" role="listbox">
             {!q && filtered.length === 0 ? (
-              <li className="ui-select-empty">
+              <li className="ui-menu-empty">
                 Wpisz nazwę, aby wyszukać w katalogu Google
               </li>
             ) : filtered.length === 0 ? (
-              <li className="ui-select-empty">Brak wyników</li>
+              <li className="ui-menu-empty">Brak wyników</li>
             ) : (
               <>
-                {!q ? <li className="ui-select-group-label">Wybrane</li> : null}
+                {!q ? <li className="ui-menu-label">Wybrane</li> : null}
                 {filtered.map((option) => {
                   const isSelected = selected.has(option.name);
                   return (
@@ -145,17 +145,19 @@ export function CategorySearchPicker({
                         type="button"
                         role="option"
                         aria-selected={isSelected}
-                        className={`ui-select-option${isSelected ? " is-selected" : ""}`}
+                        className={`ui-menu-item${isSelected ? " is-selected" : ""}`}
                         onClick={() => pick(option.name)}
                       >
                         <span>{option.displayName}</span>
-                        {isSelected ? <Check aria-hidden /> : null}
+                        {isSelected ? (
+                          <Check aria-hidden className="ui-menu-check" />
+                        ) : null}
                       </button>
                     </li>
                   );
                 })}
                 {!q ? (
-                  <li className="ui-select-empty">
+                  <li className="ui-menu-empty">
                     Zacznij pisać, aby dodać kolejne
                   </li>
                 ) : null}
