@@ -1,6 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ContentChannel } from "@/lib/db/schema";
@@ -13,18 +14,17 @@ import {
   ContentChat,
   type EditRequest,
 } from "@/features/publikacje/components/content-chat";
-import { GenerateProposalButton } from "@/features/publikacje/components/generate-proposal-button";
 import { ManualPostForm } from "@/features/publikacje/components/manual-post-form";
 import {
   HistoryFilters,
   HistoryList,
 } from "@/features/publikacje/components/history-list";
 import type { HistoryStatusFilter } from "@/features/publikacje/content-status";
-import { GENERATION_STARTED_EVENT } from "@/features/publikacje/generation-rules";
+import { TopicPicker } from "@/features/publikacje/components/topic-picker";
 import type { HistoryItem } from "@/features/publikacje/load-history";
-import type { InboxData } from "@/features/publikacje/load-inbox";
+import type { InboxData, TopicItem } from "@/features/publikacje/load-inbox";
 
-const POLL_MS = 3000;
+const POLL_MS = 2000;
 const COLLAPSED_KEY = "pub-chat-collapsed";
 const COLLAPSED_EVENT = "pub-chat-collapsed-change";
 
@@ -88,6 +88,8 @@ export function PostsWorkspace({
   activeProfile,
   initialRuns,
   newPostOpen,
+  topics,
+  topicsOpen,
 }: {
   inbox: InboxData;
   history: HistoryItem[];
@@ -97,14 +99,24 @@ export function PostsWorkspace({
   initialRuns: GenerationStatus[];
   /** "Nowy post" form open (?nowy=1) */
   newPostOpen: boolean;
+  /** Topics waiting to be chosen */
+  topics: TopicItem[];
+  /** "Tematy postów" panel open (?tematy=1) */
+  topicsOpen: boolean;
 }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRequest, setEditRequest] = useState<EditRequest | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [runs, setRuns] = useState(
-    () => new Map(initialRuns.map((run) => [run.id, run])),
+  // Runs from the server (e.g. topics after onboarding) + ones started here;
+  // the tracked state (polled) wins.
+  const [tracked, setTracked] = useState<Map<string, GenerationStatus>>(
+    () => new Map(),
   );
+  const runs = new Map([
+    ...initialRuns.map((run) => [run.id, run] as const),
+    ...tracked,
+  ]);
   const collapsed = useSyncExternalStore(
     subscribeCollapsed,
     readCollapsed,
@@ -115,10 +127,15 @@ export function PostsWorkspace({
   const running = [...runs.values()].filter((run) => run.status === "running");
   const runningKey = running.map((run) => run.id).join(",");
 
-  function trackRun(runId: string, count: number) {
-    setRuns((current) =>
+  function trackRun(
+    runId: string,
+    count: number,
+    kind: "posts" | "topics" = "posts",
+  ) {
+    setTracked((current) =>
       new Map(current).set(runId, {
         id: runId,
+        kind,
         status: "running",
         requested: count,
         created: 0,
@@ -127,39 +144,33 @@ export function PostsWorkspace({
     );
   }
 
-  // Header "Wygeneruj kolejne" lives outside this component.
-  useEffect(() => {
-    function onStarted(event: Event) {
-      const detail = (event as CustomEvent<{ runId: string; count: number }>)
-        .detail;
-      trackRun(detail.runId, detail.count);
-    }
-    window.addEventListener(GENERATION_STARTED_EVENT, onStarted);
-    return () =>
-      window.removeEventListener(GENERATION_STARTED_EVENT, onStarted);
-  }, []);
+  /** Closes a panel opened through the URL (?nowy=1 / ?tematy=1), keeping filters. */
+  function closePanel(nextStatus: HistoryStatusFilter = status) {
+    const params = new URLSearchParams({ status: nextStatus });
+    if (channel !== "all") params.set("kanal", channel);
+    router.replace(`/publikacje?${params.toString()}`);
+  }
 
-  // Poll running batches; refresh the list whenever a post lands.
+  // Poll running batches; refresh the list as soon as a post or topic lands
+  // (and once more when a batch finishes). Progress seen so far lives in the
+  // effect - comparing inside a setState updater would run too late.
   useEffect(() => {
     if (!runningKey) return;
     const runIds = runningKey.split(",");
+    const seen = new Map<string, string>();
     const timer = setInterval(async () => {
       const result = await getGenerationStatus({ runIds });
       if (!result.ok) return;
       let changed = false;
-      setRuns((current) => {
+      for (const run of result.runs) {
+        const progress = `${run.created}:${run.status}`;
+        const before = seen.get(run.id) ?? "0:running";
+        if (progress !== before) changed = true;
+        seen.set(run.id, progress);
+      }
+      setTracked((current) => {
         const next = new Map(current);
-        for (const run of result.runs) {
-          const before = current.get(run.id);
-          if (
-            !before ||
-            before.created !== run.created ||
-            before.status !== run.status
-          ) {
-            changed = true;
-          }
-          next.set(run.id, run);
-        }
+        for (const run of result.runs) next.set(run.id, run);
         return next;
       });
       if (changed) router.refresh();
@@ -167,14 +178,17 @@ export function PostsWorkspace({
     return () => clearInterval(timer);
   }, [runningKey, router]);
 
-  const pendingSlots = running.reduce(
-    (sum, run) => sum + Math.max(0, run.requested - run.created),
-    0,
-  );
+  const slots = (kind: "posts" | "topics") =>
+    running
+      .filter((run) => run.kind === kind)
+      .reduce((sum, run) => sum + Math.max(0, run.requested - run.created), 0);
+  const pendingSlots = slots("posts");
+  const pendingTopics = slots("topics");
   const showPending = status === "pending" || status === "all";
   const pendingItems = showPending ? inbox.items : [];
   const isEmpty =
     !newPostOpen &&
+    !topicsOpen &&
     pendingSlots === 0 &&
     pendingItems.length === 0 &&
     history.length === 0;
@@ -191,15 +205,30 @@ export function PostsWorkspace({
       <div className="pub-workspace-list">
         <HistoryFilters status={status} channel={channel} />
 
-        {newPostOpen ? (
-          <ManualPostForm
-            onClose={() => {
-              const params = new URLSearchParams({ status });
-              if (channel !== "all") params.set("kanal", channel);
-              router.replace(`/publikacje?${params.toString()}`);
-            }}
+        {topicsOpen ? (
+          <TopicPicker
+            topics={topics}
+            pendingTopics={pendingTopics}
+            onRunStarted={trackRun}
+            onClose={() => closePanel("pending")}
           />
+        ) : topics.length || pendingTopics ? (
+          <div className="pub-topics-banner" role="note">
+            <p>
+              {pendingTopics && !topics.length
+                ? "AI przygotowuje tematy postów…"
+                : `Masz ${topics.length} ${topics.length === 1 ? "temat" : topics.length < 5 ? "tematy" : "tematów"} do wyboru - AI napisze posty z tych, które zaznaczysz.`}
+            </p>
+            <Link
+              href="/publikacje?tematy=1"
+              className="ui-btn ui-btn-primary ui-btn-sm"
+            >
+              Wybierz tematy
+            </Link>
+          </div>
         ) : null}
+
+        {newPostOpen ? <ManualPostForm onClose={() => closePanel()} /> : null}
 
         {Array.from({ length: pendingSlots }, (_, i) => (
           <PostSkeleton
@@ -235,10 +264,13 @@ export function PostsWorkspace({
                 : "Brak postów dla tych filtrów"}
             </h2>
             <p className="pub-empty-text">
-              Poproś AI o nowe propozycje przyciskiem albo w czacie obok -
-              uwzględni kontekst firmy i nie powtórzy ostatnich tematów.
+              Wybierz tematy, z których AI napisze posty, albo poproś o nie w
+              czacie obok. Możesz też dodać własny post.
             </p>
-            <GenerateProposalButton variant="white" />
+            <Link href="/publikacje?tematy=1" className="ui-btn ui-btn-white">
+              <Sparkles aria-hidden />
+              Wybierz tematy
+            </Link>
           </section>
         ) : null}
       </div>
@@ -258,7 +290,7 @@ export function PostsWorkspace({
           setEditingId(null);
         }}
         runs={runs}
-        onRunStarted={trackRun}
+        onRunStarted={(runId, count) => trackRun(runId, count)}
         collapsed={collapsed}
         onToggleCollapsed={() => writeCollapsed(!collapsed)}
         mobileOpen={mobileOpen}

@@ -4,7 +4,10 @@ import {
   resolveChatIntent,
   resolvePostChat,
 } from "../../lib/ai/chat-intent";
+import { normalizeTopics, TOPIC_MAX } from "../../lib/ai/topic-list";
 import {
+  checkTopicSelection,
+  MAX_TOPICS_TO_WRITE,
   MAX_POSTS_PER_REQUEST,
   planOnboardingGeneration,
   withRunTitles,
@@ -139,6 +142,49 @@ import {
     "reply",
     "unknown answer never changes the post",
   );
+}
+
+/** Topics from AI: cleaned, no duplicates, nothing already used. */
+{
+  assert.deepEqual(
+    normalizeTopics(
+      {
+        topics: [
+          "1. Jak dbać o opony zimą.",
+          "„Przegląd klimatyzacji przed latem”",
+          "jak dbać o opony zimą",
+          "",
+          42,
+          "Kiedy zmienić opony na zimowe",
+          "Serwis hamulców – na co uważać",
+        ],
+      },
+      5,
+      ["Kiedy zmienić opony na zimowe"],
+    ),
+    [
+      "Jak dbać o opony zimą",
+      "Przegląd klimatyzacji przed latem",
+      "Serwis hamulców - na co uważać",
+    ],
+  );
+  assert.equal(normalizeTopics(["a", "b", "c"], 2, []).length, 2);
+  assert.deepEqual(normalizeTopics("nie lista", 5, []), []);
+  assert.equal(normalizeTopics(["x".repeat(300)], 1, [])[0].length, TOPIC_MAX);
+}
+
+/** Writing posts: 1-10 distinct topics. */
+{
+  assert.deepEqual(checkTopicSelection(["a", "a", "b"]), {
+    ok: true,
+    ids: ["a", "b"],
+  });
+  assert.equal(checkTopicSelection([]).ok, false);
+  const tooMany = Array.from(
+    { length: MAX_TOPICS_TO_WRITE + 1 },
+    (_, i) => `t${i}`,
+  );
+  assert.equal(checkTopicSelection(tooMany).ok, false);
 }
 
 /** Onboarding: one run per new group, one per ungrouped profile. */

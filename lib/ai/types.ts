@@ -40,6 +40,13 @@ export type GenerateTopicInput = {
   request?: string | null;
 };
 
+export type GenerateTopicsInput = {
+  context: ContentContext;
+  count: number;
+  /** Topics already used or waiting on the list - never propose them again */
+  exclude: string[];
+};
+
 export type GenerateContentInput = {
   context: ContentContext;
   topic: string;
@@ -181,6 +188,8 @@ export type PostChatResult =
 export interface TextProvider {
   generateBrief(input: GenerateBriefInput): Promise<BriefFields>;
   generateTopic(input: GenerateTopicInput): Promise<string>;
+  /** A list of distinct post topics for the customer to choose from. */
+  generateTopics(input: GenerateTopicsInput): Promise<string[]>;
   generateContent(input: GenerateContentInput): Promise<GeneratedContent>;
   /** Decides whether a chat message creates new posts or edits an existing one. */
   routeContentChat(input: RouteContentChatInput): Promise<ChatIntent>;

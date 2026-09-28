@@ -1,0 +1,1 @@
+ALTER TABLE "content_generation_runs" DROP COLUMN "with_image";

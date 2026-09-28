@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import {
   contentGenerationRuns,
   contentItems,
+  contentTopics,
   contentRevisions,
   contentChannelEnum,
   type ContentChannel,
@@ -16,6 +17,7 @@ import {
   loadContentScope,
   ownedByScope,
   runsInScope,
+  topicsInScope,
 } from "@/features/publikacje/scope";
 
 export type InboxItem = {
@@ -123,6 +125,7 @@ export async function loadActiveRuns(
   return db
     .select({
       id: contentGenerationRuns.id,
+      kind: contentGenerationRuns.kind,
       status: contentGenerationRuns.status,
       requested: contentGenerationRuns.requested,
       created: contentGenerationRuns.created,
@@ -136,4 +139,20 @@ export async function loadActiveRuns(
         gte(contentGenerationRuns.startedAt, new Date(Date.now() - 3_600_000)),
       ),
     );
+}
+
+export type TopicItem = { id: string; title: string; origin: "ai" | "manual" };
+
+/** Topics waiting to be chosen (profile or its group), oldest first. */
+export async function loadTopics(profile: Profile): Promise<TopicItem[]> {
+  const scope = await loadContentScope(profile);
+  return db
+    .select({
+      id: contentTopics.id,
+      title: contentTopics.title,
+      origin: contentTopics.origin,
+    })
+    .from(contentTopics)
+    .where(and(topicsInScope(scope), eq(contentTopics.status, "open")))
+    .orderBy(asc(contentTopics.createdAt));
 }

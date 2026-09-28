@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { SquarePen } from "lucide-react";
-import { GenerateProposalButton } from "@/features/publikacje/components/generate-proposal-button";
+import { Sparkles, SquarePen } from "lucide-react";
 import { PublikacjeSubnav } from "@/features/publikacje/components/publikacje-subnav";
 import { countPendingContent } from "@/features/publikacje/load-inbox";
 import { getActiveProfile } from "@/lib/session";
@@ -28,7 +27,10 @@ export default async function PublikacjeLayout({
             <SquarePen aria-hidden />
             Nowy post
           </Link>
-          <GenerateProposalButton />
+          <Link href="/publikacje?tematy=1" className="ui-btn ui-btn-primary">
+            <Sparkles aria-hidden />
+            Wygeneruj posty
+          </Link>
         </div>
       </div>
       <PublikacjeSubnav pendingCount={pendingCount} />

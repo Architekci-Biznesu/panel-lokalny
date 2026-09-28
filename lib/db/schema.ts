@@ -587,6 +587,11 @@ export const contentRevisions = pgTable(
   ],
 );
 
+export const contentGenerationKindEnum = pgEnum("content_generation_kind", [
+  "posts",
+  "topics",
+]);
+
 export const contentGenerationStatusEnum = pgEnum("content_generation_status", [
   "running",
   "done",
@@ -604,10 +609,12 @@ export const contentGenerationRuns = pgTable(
     groupId: uuid("group_id").references(() => publishGroups.id, {
       onDelete: "set null",
     }),
+    kind: contentGenerationKindEnum("kind").notNull().default("posts"),
     status: contentGenerationStatusEnum("status").notNull().default("running"),
+    /** Topics a "posts" run writes from (ids of content_topics) */
+    topicIds: jsonb("topic_ids").$type<string[] | null>(),
     requested: integer("requested").notNull(),
     created: integer("created").notNull().default(0),
-    withImage: integer("with_image").notNull().default(0),
     request: text("request"),
     error: text("error"),
     startedAt: timestamp("started_at", { withTimezone: true })
@@ -621,6 +628,44 @@ export const contentGenerationRuns = pgTable(
   ],
 );
 
+export const contentTopicStatusEnum = pgEnum("content_topic_status", [
+  "open",
+  "used",
+  "dismissed",
+]);
+
+/** Post topics to choose from before AI writes posts (kept for later). */
+export const contentTopics = pgTable(
+  "content_topics",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    /** Shared topic of a publish group - visible from every profile in it. */
+    groupId: uuid("group_id").references(() => publishGroups.id, {
+      onDelete: "set null",
+    }),
+    title: text("title").notNull(),
+    origin: contentOriginEnum("origin").notNull().default("ai"),
+    status: contentTopicStatusEnum("status").notNull().default("open"),
+    /** Post written from this topic */
+    contentItemId: uuid("content_item_id").references(() => contentItems.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("content_topics_profile_id_idx").on(table.profileId),
+    index("content_topics_group_id_idx").on(table.groupId),
+    index("content_topics_status_idx").on(table.status),
+  ],
+);
+
+export type ContentTopic = typeof contentTopics.$inferSelect;
 export type ContentItem = typeof contentItems.$inferSelect;
 export type ContentGenerationRun = typeof contentGenerationRuns.$inferSelect;
 export type ContentTarget = typeof contentTargets.$inferSelect;

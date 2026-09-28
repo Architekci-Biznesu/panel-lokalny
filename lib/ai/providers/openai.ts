@@ -4,9 +4,12 @@ import { GBP_AUDIT_SYSTEM_PROMPT } from "@/lib/ai/gbp-audit-guidelines";
 import { GBP_DESCRIPTION_MAX, clampTextToLimit } from "@/lib/ai/gbp-limits";
 import { resolveChatIntent, resolvePostChat } from "@/lib/ai/chat-intent";
 import { mergeGeneratedContent } from "@/lib/ai/content-revision";
+import { normalizeTopics } from "@/lib/ai/topic-list";
 import {
   CHAT_ROUTER_SYSTEM_PROMPT,
   CONTENT_SYSTEM_PROMPT,
+  TOPICS_SYSTEM_PROMPT,
+  topicsUserPrompt,
   POST_CHAT_SYSTEM_PROMPT,
   postChatUserPrompt,
   GBP_POST_MAX,
@@ -26,6 +29,7 @@ import type {
   GenerateImageInput,
   GenerateReviewReplyInput,
   GenerateTopicInput,
+  GenerateTopicsInput,
   GeneratedContent,
   PostChatInput,
   PostChatResult,
@@ -151,6 +155,14 @@ Bez markdownu, bez dodatkowych kluczy.`;
       topicUserPrompt(input),
     );
     return topic.replace(/^["„”]+|["„”.]+$/g, "").trim();
+  },
+
+  async generateTopics(input: GenerateTopicsInput): Promise<string[]> {
+    const raw = await completeJson(
+      TOPICS_SYSTEM_PROMPT,
+      topicsUserPrompt(input),
+    );
+    return normalizeTopics(JSON.parse(raw), input.count, input.exclude);
   },
 
   async generateContent(

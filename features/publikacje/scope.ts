@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import {
   contentGenerationRuns,
   contentItems,
+  contentTopics,
   contentTargets,
   profileGroups,
   publishGroups,
@@ -59,4 +60,14 @@ export function runsInScope(scope: ContentScope): SQL {
         eq(contentGenerationRuns.groupId, scope.groupId),
       )!
     : eq(contentGenerationRuns.profileId, scope.profileId);
+}
+
+/** Topics of the profile or its group (shared list, like posts). */
+export function topicsInScope(scope: ContentScope): SQL {
+  return scope.groupId
+    ? or(
+        eq(contentTopics.profileId, scope.profileId),
+        eq(contentTopics.groupId, scope.groupId),
+      )!
+    : eq(contentTopics.profileId, scope.profileId);
 }

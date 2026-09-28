@@ -100,7 +100,6 @@ export function ContentApprovalCard({
     channels.filter((c) => c.available).map((c) => c.channel),
   );
   const [extraProfileIds, setExtraProfileIds] = useState<string[]>([]);
-  const [withImage, setWithImage] = useState(Boolean(item.imageUrl));
   const [schedule, setSchedule] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("10:00");
@@ -139,7 +138,6 @@ export function ContentApprovalCard({
         channels: selected,
         extraProfileIds,
         scheduledAt,
-        withImage,
       });
       if (!result.ok) {
         setBusy(null);
@@ -208,7 +206,6 @@ export function ContentApprovalCard({
         });
         return;
       }
-      setWithImage(false);
       toast.success({
         title: "Usunięto zdjęcie",
         description: "Możesz je przywrócić w czacie: „Cofnij ostatnią zmianę”.",
@@ -229,7 +226,6 @@ export function ContentApprovalCard({
         });
         return;
       }
-      setWithImage(true);
       toast.success({ title: "Grafika gotowa" });
       router.refresh();
     });
@@ -243,9 +239,6 @@ export function ContentApprovalCard({
       <div className="pub-card-media">
         <PostImagePicker
           previewUrl={item.imageUrl}
-          emptyLabel={
-            withImage ? "Grafika AI powstanie przy akceptacji" : undefined
-          }
           disabled={disabled}
           busy={busy === "upload"}
           onPick={uploadImage}
@@ -290,18 +283,6 @@ export function ContentApprovalCard({
         />
 
         <div className="pub-card-options">
-          {!item.imageUrl ? (
-            <label className="pub-target-option">
-              <input
-                type="checkbox"
-                className="ui-check"
-                checked={withImage}
-                disabled={disabled}
-                onChange={() => setWithImage((v) => !v)}
-              />
-              <span>Dołącz grafikę AI</span>
-            </label>
-          ) : null}
           <label className="pub-target-option">
             <input
               type="checkbox"

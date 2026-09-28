@@ -1,25 +1,26 @@
 import { after } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { getImageProvider, getTextProvider } from "@/lib/ai";
-import { defaultImagePrompt } from "@/lib/ai/content-prompts";
 import { db } from "@/lib/db";
 import {
   contentGenerationRuns,
   contentItems,
+  contentTopics,
   profiles,
+  type ContentGenerationRun,
   type Profile,
 } from "@/lib/db/schema";
 import { putPublicImage } from "@/lib/storage";
 import { loadContentContext } from "@/features/publikacje/content-context";
 import {
   MAX_POSTS_PER_REQUEST,
-  ONBOARDING_IMAGES,
-  ONBOARDING_POSTS,
+  MAX_TOPICS_TO_WRITE,
+  TOPICS_BATCH,
   planOnboardingGeneration,
   withRunTitles,
   type OnboardingProfile,
 } from "@/features/publikacje/generation-rules";
-import type { ContentScope } from "@/features/publikacje/scope";
+import { topicsInScope, type ContentScope } from "@/features/publikacje/scope";
 
 const CHANNEL_LABEL = "wizytówka Google";
 
@@ -38,25 +39,37 @@ export async function createPostImage(
 }
 
 /**
- * Starts a background batch of proposals. Caller must have verified the
- * profile and its scope (active account). Returns the run id for polling.
+ * Starts a background run. Caller must have verified the profile, its scope
+ * and (for `topicIds`) that the topics belong to it. Returns the run id.
+ * - kind "topics": AI proposes `count` topics to choose from
+ * - kind "posts" + topicIds: one post per chosen topic
+ * - kind "posts" without topicIds: AI picks topics itself (chat request)
  */
 export async function enqueueContentGeneration(input: {
   profile: Profile;
   scope: ContentScope;
-  count: number;
-  imageCount?: number;
+  kind?: "posts" | "topics";
+  count?: number;
+  topicIds?: string[];
   request?: string | null;
 }): Promise<string> {
-  const count = Math.min(MAX_POSTS_PER_REQUEST, Math.max(1, input.count));
+  const kind = input.kind ?? "posts";
+  const count =
+    kind === "topics"
+      ? Math.min(MAX_TOPICS_TO_WRITE, Math.max(1, input.count ?? TOPICS_BATCH))
+      : input.topicIds?.length
+        ? Math.min(MAX_TOPICS_TO_WRITE, input.topicIds.length)
+        : Math.min(MAX_POSTS_PER_REQUEST, Math.max(1, input.count ?? 1));
+
   const [run] = await db
     .insert(contentGenerationRuns)
     .values({
       profileId: input.profile.id,
       groupId: input.scope.groupId,
+      kind,
       status: "running",
       requested: count,
-      withImage: Math.min(count, Math.max(0, input.imageCount ?? 0)),
+      topicIds: input.topicIds?.slice(0, count) ?? null,
       request: input.request?.trim() || null,
     })
     .returning({ id: contentGenerationRuns.id });
@@ -69,9 +82,109 @@ export async function enqueueContentGeneration(input: {
   return runId;
 }
 
+async function markCreated(runId: string, created: number) {
+  await db
+    .update(contentGenerationRuns)
+    .set({ created })
+    .where(eq(contentGenerationRuns.id, runId));
+}
+
+/** AI topics for the customer to choose from (never repeats posts or open topics). */
+async function runTopics(run: ContentGenerationRun, profile: Profile) {
+  const context = await loadContentContext(profile);
+  const waiting = await db
+    .select({ title: contentTopics.title })
+    .from(contentTopics)
+    .where(
+      and(
+        topicsInScope({ profileId: profile.id, groupId: run.groupId }),
+        eq(contentTopics.status, "open"),
+      ),
+    );
+  const topics = await getTextProvider().generateTopics({
+    context,
+    count: run.requested,
+    exclude: [...context.recentTitles, ...waiting.map((t) => t.title)],
+  });
+  if (topics.length) {
+    await db.insert(contentTopics).values(
+      topics.map((title) => ({
+        profileId: profile.id,
+        groupId: run.groupId,
+        title,
+        origin: "ai" as const,
+      })),
+    );
+  }
+  await markCreated(run.id, topics.length);
+}
+
+/** Posts: from chosen topics, or on topics AI picks (chat request). */
+async function runPosts(run: ContentGenerationRun, profile: Profile) {
+  const context = await loadContentContext(profile);
+  const ai = getTextProvider();
+  const runTitles: string[] = [];
+
+  const chosen = run.topicIds?.length
+    ? await db
+        .select()
+        .from(contentTopics)
+        .where(
+          and(
+            inArray(contentTopics.id, run.topicIds),
+            topicsInScope({ profileId: profile.id, groupId: run.groupId }),
+            eq(contentTopics.status, "open"),
+          ),
+        )
+    : null;
+  const total = chosen ? chosen.length : run.requested;
+
+  for (let index = 0; index < total; index++) {
+    const postContext = {
+      ...context,
+      recentTitles: withRunTitles(context.recentTitles, runTitles),
+    };
+    const chosenTopic = chosen?.[index] ?? null;
+    const topic =
+      chosenTopic?.title ??
+      (await ai.generateTopic({
+        context: postContext,
+        channel: CHANNEL_LABEL,
+        request: run.request,
+      }));
+    const content = await ai.generateContent({
+      context: postContext,
+      topic,
+      channel: CHANNEL_LABEL,
+    });
+
+    const [item] = await db
+      .insert(contentItems)
+      .values({
+        profileId: profile.id,
+        groupId: run.groupId,
+        type: "post",
+        status: "pending",
+        topic: run.request || topic,
+        title: topic,
+        body: content.body,
+      })
+      .returning({ id: contentItems.id });
+
+    if (chosenTopic) {
+      await db
+        .update(contentTopics)
+        .set({ status: "used", contentItemId: item.id, usedAt: new Date() })
+        .where(eq(contentTopics.id, chosenTopic.id));
+    }
+    runTitles.push(topic);
+    await markCreated(run.id, index + 1);
+  }
+}
+
 /**
- * Writes the run's posts one by one (no session - safe for after() or a
- * worker). An image failure keeps the post without an image.
+ * Runs a background batch (no session - safe for after() or a worker).
+ * The profile is loaded by id; the run was validated when it was queued.
  */
 export async function runContentGeneration(runId: string): Promise<void> {
   const [run] = await db
@@ -89,55 +202,8 @@ export async function runContentGeneration(runId: string): Promise<void> {
       .limit(1);
     if (!profile) throw new Error("Profil nie istnieje");
 
-    const context = await loadContentContext(profile);
-    const ai = getTextProvider();
-    const runTitles: string[] = [];
-
-    for (let index = 0; index < run.requested; index++) {
-      const postContext = {
-        ...context,
-        recentTitles: withRunTitles(context.recentTitles, runTitles),
-      };
-      const topic = await ai.generateTopic({
-        context: postContext,
-        channel: CHANNEL_LABEL,
-        request: run.request,
-      });
-      const content = await ai.generateContent({
-        context: postContext,
-        topic,
-        channel: CHANNEL_LABEL,
-      });
-
-      let image: { url: string; key: string } | null = null;
-      if (index < run.withImage) {
-        try {
-          image = await createPostImage(
-            profile.id,
-            defaultImagePrompt(context, topic),
-          );
-        } catch (error) {
-          console.error("Proposal image failed:", error);
-        }
-      }
-
-      await db.insert(contentItems).values({
-        profileId: profile.id,
-        groupId: run.groupId,
-        type: "post",
-        status: "pending",
-        topic: run.request || topic,
-        title: topic,
-        body: content.body,
-        imageUrl: image?.url ?? null,
-        imageKey: image?.key ?? null,
-      });
-      runTitles.push(topic);
-      await db
-        .update(contentGenerationRuns)
-        .set({ created: index + 1 })
-        .where(eq(contentGenerationRuns.id, run.id));
-    }
+    if (run.kind === "topics") await runTopics(run, profile);
+    else await runPosts(run, profile);
 
     await db
       .update(contentGenerationRuns)
@@ -149,31 +215,42 @@ export async function runContentGeneration(runId: string): Promise<void> {
       .update(contentGenerationRuns)
       .set({
         status: "failed",
-        error: "AI nie przygotowało wszystkich propozycji - spróbuj ponownie",
+        error:
+          run.kind === "topics"
+            ? "AI nie zaproponowało tematów - spróbuj ponownie"
+            : "AI nie przygotowało wszystkich postów - spróbuj ponownie",
         finishedAt: new Date(),
       })
       .where(eq(contentGenerationRuns.id, run.id));
   }
 }
 
-/** Groups (of the given account) that already have at least one post. */
+/** Groups (of the given account) that already have posts or topics. */
 export async function groupsWithContent(
   groupIds: string[],
 ): Promise<Set<string>> {
   if (groupIds.length === 0) return new Set();
-  const rows = await db
-    .selectDistinct({ groupId: contentItems.groupId })
-    .from(contentItems)
-    .where(inArray(contentItems.groupId, groupIds));
+  const [items, topics] = await Promise.all([
+    db
+      .selectDistinct({ groupId: contentItems.groupId })
+      .from(contentItems)
+      .where(inArray(contentItems.groupId, groupIds)),
+    db
+      .selectDistinct({ groupId: contentTopics.groupId })
+      .from(contentTopics)
+      .where(inArray(contentTopics.groupId, groupIds)),
+  ]);
   return new Set(
-    rows.map((row) => row.groupId).filter((id): id is string => Boolean(id)),
+    [...items, ...topics]
+      .map((row) => row.groupId)
+      .filter((id): id is string => Boolean(id)),
   );
 }
 
 /**
- * After onboarding: 3 proposals (1 with an image) per new publish group and
- * per new ungrouped profile, in the background. Never throws - onboarding
- * must finish even if this fails.
+ * After onboarding: 5 topics to choose from per new publish group and per new
+ * ungrouped profile, in the background. Never throws - onboarding must finish
+ * even if this fails.
  */
 export async function scheduleOnboardingProposals(
   accountId: string,
@@ -207,11 +284,11 @@ export async function scheduleOnboardingProposals(
       await enqueueContentGeneration({
         profile: byId.get(entry.profileId)!,
         scope: { profileId: entry.profileId, groupId: entry.groupId },
-        count: ONBOARDING_POSTS,
-        imageCount: ONBOARDING_IMAGES,
+        kind: "topics",
+        count: TOPICS_BATCH,
       });
     }
   } catch (error) {
-    console.error("Onboarding proposals were not scheduled:", error);
+    console.error("Onboarding topics were not scheduled:", error);
   }
 }

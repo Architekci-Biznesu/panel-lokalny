@@ -12,6 +12,7 @@ import {
   contentChannelEnum,
   contentGenerationRuns,
   contentItems,
+  contentTopics,
   contentRevisions,
   contentTargets,
   type ContentItem,
@@ -36,7 +37,11 @@ import {
   createPostImage,
   enqueueContentGeneration,
 } from "@/features/publikacje/generate";
-import { MORE_POSTS } from "@/features/publikacje/generation-rules";
+import {
+  checkTopicSelection,
+  TOPICS_BATCH,
+} from "@/features/publikacje/generation-rules";
+import { TOPIC_MAX } from "@/lib/ai/topic-list";
 import {
   checkManualPost,
   manualEditLabel,
@@ -46,6 +51,7 @@ import {
   loadContentScope,
   ownedByScope,
   runsInScope,
+  topicsInScope,
 } from "@/features/publikacje/scope";
 import { initialTargetStatus } from "@/features/publikacje/publish-core";
 import { publishTargets } from "@/features/publikacje/publish";
@@ -99,8 +105,30 @@ async function requirePending(profile: Profile, itemId: string) {
 
 // --- Propozycje (generowanie w tle) ---
 
-/** "Wygeneruj kolejne" - 3 posts in the background, images on demand. */
-export async function generateMoreProposals(): Promise<
+// --- Tematy postów (wybór przed pisaniem) ---
+
+const topicTitleSchema = z.string().trim().min(3).max(TOPIC_MAX);
+
+/** A topic of the active profile / its group that is still on the list. */
+async function requireOpenTopic(profile: Profile, topicId: string) {
+  const scope = await loadContentScope(profile);
+  const [topic] = await db
+    .select()
+    .from(contentTopics)
+    .where(
+      and(
+        eq(contentTopics.id, topicId),
+        topicsInScope(scope),
+        eq(contentTopics.status, "open"),
+      ),
+    )
+    .limit(1);
+  if (!topic) throw new AuthError("Temat nie istnieje", 404);
+  return topic;
+}
+
+/** "Zaproponuj kolejne tematy" - AI adds 5 topics in the background. */
+export async function suggestTopics(): Promise<
   { ok: true; runId: string } | ActionFail
 > {
   try {
@@ -109,10 +137,126 @@ export async function generateMoreProposals(): Promise<
     const runId = await enqueueContentGeneration({
       profile,
       scope,
-      count: MORE_POSTS,
+      kind: "topics",
+      count: TOPICS_BATCH,
     });
     revalidateModule();
     return { ok: true, runId };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** Customer's own topic, added to the list. */
+export async function addTopic(
+  input: unknown,
+): Promise<{ ok: true; topicId: string } | ActionFail> {
+  const parsed = z.object({ title: topicTitleSchema }).safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: `Temat musi mieć od 3 do ${TOPIC_MAX} znaków` };
+  }
+  try {
+    const profile = await getActiveProfile();
+    const scope = await loadContentScope(profile);
+    const [topic] = await db
+      .insert(contentTopics)
+      .values({
+        profileId: profile.id,
+        groupId: scope.groupId,
+        title: parsed.data.title,
+        origin: "manual",
+      })
+      .returning({ id: contentTopics.id });
+    revalidateModule();
+    return { ok: true, topicId: topic.id };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function updateTopic(
+  input: unknown,
+): Promise<{ ok: true; title: string } | ActionFail> {
+  const parsed = z
+    .object({ topicId: z.string().uuid(), title: topicTitleSchema })
+    .safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: `Temat musi mieć od 3 do ${TOPIC_MAX} znaków` };
+  }
+  try {
+    const profile = await getActiveProfile();
+    const topic = await requireOpenTopic(profile, parsed.data.topicId);
+    await db
+      .update(contentTopics)
+      .set({ title: parsed.data.title })
+      .where(eq(contentTopics.id, topic.id));
+    revalidateModule();
+    return { ok: true, title: parsed.data.title };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** Removes a topic from the list (kept in the database as dismissed). */
+export async function dismissTopic(
+  input: unknown,
+): Promise<{ ok: true } | ActionFail> {
+  const parsed = z.object({ topicId: z.string().uuid() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
+  try {
+    const profile = await getActiveProfile();
+    const topic = await requireOpenTopic(profile, parsed.data.topicId);
+    await db
+      .update(contentTopics)
+      .set({ status: "dismissed" })
+      .where(eq(contentTopics.id, topic.id));
+    revalidateModule();
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** "Napisz posty" - one post per chosen topic (1-10), in the background. */
+export async function writePostsFromTopics(
+  input: unknown,
+): Promise<{ ok: true; runId: string; count: number } | ActionFail> {
+  const parsed = z
+    .object({ topicIds: z.array(z.string().uuid()).max(50) })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
+  const selection = checkTopicSelection(parsed.data.topicIds);
+  if (!selection.ok) return { ok: false, error: selection.error };
+
+  try {
+    const profile = await getActiveProfile();
+    const scope = await loadContentScope(profile);
+    // Every id must be an open topic of this profile / group - never trust the list.
+    const owned = await db
+      .select({ id: contentTopics.id })
+      .from(contentTopics)
+      .where(
+        and(
+          inArray(contentTopics.id, selection.ids),
+          topicsInScope(scope),
+          eq(contentTopics.status, "open"),
+        ),
+      );
+    if (owned.length !== selection.ids.length) {
+      return {
+        ok: false,
+        error: "Któryś temat nie jest już dostępny - odśwież listę",
+      };
+    }
+
+    const runId = await enqueueContentGeneration({
+      profile,
+      scope,
+      kind: "posts",
+      topicIds: selection.ids,
+    });
+    revalidateModule();
+    return { ok: true, runId, count: selection.ids.length };
   } catch (error) {
     return fail(error);
   }
@@ -214,6 +358,7 @@ export async function routeChatMessage(
 
 export type GenerationStatus = {
   id: string;
+  kind: "posts" | "topics";
   status: "running" | "done" | "failed";
   requested: number;
   created: number;
@@ -235,6 +380,7 @@ export async function getGenerationStatus(
     const runs = await db
       .select({
         id: contentGenerationRuns.id,
+        kind: contentGenerationRuns.kind,
         status: contentGenerationRuns.status,
         requested: contentGenerationRuns.requested,
         created: contentGenerationRuns.created,
@@ -267,7 +413,6 @@ const acceptSchema = z.object({
   channels: z.array(z.enum(contentChannelEnum.enumValues)).min(1).max(3),
   extraProfileIds: z.array(z.string().uuid()).max(50).default([]),
   scheduledAt: z.string().datetime({ offset: true }).nullable().optional(),
-  withImage: z.boolean().default(false),
 });
 
 export async function acceptContent(
@@ -298,18 +443,6 @@ export async function acceptContent(
       : null;
     if (scheduledAt && scheduledAt.getTime() < Date.now() - 60_000) {
       return { ok: false, error: "Data publikacji jest w przeszłości" };
-    }
-
-    if (parsed.data.withImage && !item.imageUrl) {
-      const context = await loadContentContext(profile);
-      const image = await createPostImage(
-        profile.id,
-        defaultImagePrompt(context, item.title),
-      );
-      await db
-        .update(contentItems)
-        .set({ imageUrl: image.url, imageKey: image.key })
-        .where(eq(contentItems.id, item.id));
     }
 
     const status = initialTargetStatus(scheduledAt);

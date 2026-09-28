@@ -68,6 +68,32 @@ export function topicUserPrompt(input: GenerateTopicInput): string {
     .join("\n");
 }
 
+export const TOPICS_SYSTEM_PROMPT = `Proponujesz tematy postów do wizytówki Google lokalnej firmy w Polsce. Klient wybierze z listy te, o których AI ma napisać.
+Zwróć WYŁĄCZNIE JSON: { "topics": string[] }.
+- Każdy temat to jedno zdanie po polsku (maks. ok. 100 znaków), bez numeracji, cudzysłowów i kropki na końcu. Będzie tytułem posta.
+- Tematy konkretne i różne od siebie: usługi, porady dla klientów, wyróżniki firmy, sezonowość, obszar działania. Mieszaj rodzaje.
+- Przestrzegaj ZAKAZÓW z kontekstu. Nie powtarzaj tematów z listy "Nie proponuj" ani ich przeformułowań.
+- Nie zmyślaj cen, dat, promocji ani faktów spoza kontekstu.`;
+
+export function topicsUserPrompt(input: {
+  context: ContentContext;
+  count: number;
+  exclude: string[];
+}): string {
+  return [
+    contentContextBlock(input.context),
+    "",
+    input.exclude.length
+      ? [
+          "Nie proponuj (już użyte albo czekają na liście):",
+          ...input.exclude.map((t) => `- ${t}`),
+        ].join("\n")
+      : "",
+    "",
+    `Liczba tematów: ${input.count}`,
+  ].join("\n");
+}
+
 export const CONTENT_SYSTEM_PROMPT = `Piszesz post do wizytówki Google lokalnej firmy w Polsce.
 Zwróć WYŁĄCZNIE JSON: { "changes": string[], "title": string | null, "body": string | null, "newImagePrompt": string | null }.
 Pierwsza wersja posta (bez instrukcji klienta):

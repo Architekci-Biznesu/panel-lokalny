@@ -22,7 +22,6 @@ function acceptable(file: File): string | null {
  */
 export function PostImagePicker({
   previewUrl,
-  emptyLabel = "Post bez grafiki",
   disabled,
   busy,
   onPick,
@@ -31,8 +30,6 @@ export function PostImagePicker({
   generating,
 }: {
   previewUrl: string | null;
-  /** Text in the empty state */
-  emptyLabel?: string;
   disabled?: boolean;
   /** Upload in progress - spinner over the image */
   busy?: boolean;
@@ -106,7 +103,7 @@ export function PostImagePicker({
     <div className="pub-card-placeholder">
       {input}
       {busy ? <Loader2 aria-hidden /> : <ImageIcon aria-hidden />}
-      <p>{busy ? "Wgrywam zdjęcie…" : emptyLabel}</p>
+      <p>{busy ? "Wgrywam zdjęcie…" : "Post bez grafiki"}</p>
       <div className="pub-image-empty-actions">
         <button
           type="button"

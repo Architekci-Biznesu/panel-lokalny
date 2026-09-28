@@ -1,19 +1,34 @@
 /** Pure rules for background proposal generation (no DB, safe for tests). */
 
+/** Posts one chat message may ask for. */
 export const MAX_POSTS_PER_REQUEST = 3;
-export const ONBOARDING_POSTS = 3;
-export const ONBOARDING_IMAGES = 1;
-export const MORE_POSTS = 3;
+/** Topics AI proposes at once (also after onboarding). */
+export const TOPICS_BATCH = 5;
+/** Topics the customer may pick for one batch of posts. */
+export const MAX_TOPICS_TO_WRITE = 10;
 
-/** Window event: a generation run started outside the workspace (header button). */
-export const GENERATION_STARTED_EVENT = "pub:generation-started";
+/** 1-10 distinct topic ids, or an error message for the customer. */
+export function checkTopicSelection(
+  ids: string[],
+): { ok: true; ids: string[] } | { ok: false; error: string } {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0)
+    return { ok: false, error: "Wybierz co najmniej jeden temat" };
+  if (unique.length > MAX_TOPICS_TO_WRITE) {
+    return {
+      ok: false,
+      error: `Możesz wybrać maks. ${MAX_TOPICS_TO_WRITE} tematów naraz`,
+    };
+  }
+  return { ok: true, ids: unique };
+}
 
 export type OnboardingProfile = { profileId: string; groupId: string | null };
 
 /**
- * One generation run per publish group (the group shares one post list;
- * author = first new profile in it) and one per ungrouped profile. Groups that
- * already have posts are skipped - they were set up before this onboarding.
+ * One generation run per publish group (the group shares one list; author =
+ * first new profile in it) and one per ungrouped profile. Groups that already
+ * have posts or topics are skipped - they were set up before this onboarding.
  */
 export function planOnboardingGeneration(
   created: OnboardingProfile[],
