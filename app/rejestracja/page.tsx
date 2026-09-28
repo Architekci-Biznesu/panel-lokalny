@@ -5,7 +5,7 @@ export default function RegisterPage() {
   return (
     <SplitScreenLayout
       hero={{
-        topic: "3 kroki, ok. 3 minuty",
+        topic: "3 kroki, 3 minuty",
         headline: "Zacznij w kilka minut",
         description:
           "Załóż konto, zatwierdź brief od AI i wejdź do panelu bez zbędnych formularzy.",

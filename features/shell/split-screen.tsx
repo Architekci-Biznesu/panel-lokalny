@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, Sparkles } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { logoutAction } from "@/features/auth/actions";
 import { BrandLogo } from "@/features/shell/brand-logo";
 import {
@@ -135,10 +135,7 @@ export function SplitScreenLayout({
         <div className="split-left-overlay">
           <div className="split-left-copy">
             {hero.topic ? (
-              <span className="split-topic-pill">
-                {hero.showTrustBar ? <Sparkles aria-hidden /> : null}
-                {hero.topic}
-              </span>
+              <span className="split-topic-pill">{hero.topic}</span>
             ) : null}
             <h2 className="split-headline">{hero.headline}</h2>
             <p className="split-desc">{hero.description}</p>

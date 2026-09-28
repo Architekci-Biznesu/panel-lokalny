@@ -396,6 +396,7 @@ async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
       websiteUri: location.websiteUri,
       phoneNumbers: location.phoneNumbers,
       storefrontAddress: location.storefrontAddress,
+      serviceArea: location.serviceArea,
     }),
     availableCategories,
     serviceTypes,

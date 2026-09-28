@@ -1368,32 +1368,39 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
   }
 
+  /* Dzień | przełącznik | godziny - stałe kolumny, więc przełączniki i pola
+     czasu trzymają jedną linię także przy dniach zamkniętych. */
   .wiz-hours-edit-day {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.65rem 1rem;
-    min-height: 2.75rem;
-    padding: 0.35rem 0;
+    gap: 0.5rem 1rem;
+    min-height: 3.25rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .wiz-hours-edit-day:last-child {
+    border-bottom: 0;
   }
 
   .wiz-hours-edit-day-name {
-    min-width: 7rem;
     font-size: var(--type-base);
     font-weight: 600;
     color: var(--foreground);
   }
 
+  .wiz-hours-edit-day.is-closed .wiz-hours-edit-day-name {
+    color: var(--muted-foreground);
+  }
+
   .wiz-hours-edit-day-controls {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 7.5rem 17.25rem;
     align-items: center;
-    gap: 0.65rem 0.85rem;
-    margin-left: auto;
+    gap: 0.5rem 0.75rem;
   }
 
   .wiz-hours-switch {
@@ -1466,7 +1473,7 @@
   }
 
   .wiz-hours-time {
-    width: 7.25rem;
+    width: 8rem;
     min-width: 0;
   }
 
@@ -1480,8 +1487,9 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.5rem;
-    margin-top: 0.35rem;
-    padding-top: 0.85rem;
+    /* Linia od krawędzi do krawędzi kafla (padding boczny .wiz-hours-tile = 24px). */
+    margin: 0.35rem -24px 0;
+    padding: 0.85rem 24px 0;
     border-top: 1px solid var(--border);
   }
 
@@ -1494,11 +1502,12 @@
     gap: 0.65rem;
   }
 
+  /* Karta dnia: u góry data, nazwa i kosz; na dole pasek trybu
+     (Zamknięte / Inne godziny) z godzinami albo opisem po prawej. */
   .wiz-special-edit-card {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
-    padding: 0.75rem;
+    overflow: hidden;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--card);
@@ -1506,9 +1515,10 @@
 
   .wiz-special-edit-top {
     display: grid;
-    grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 10rem) minmax(0, 1fr) auto;
     gap: 0.5rem;
     align-items: center;
+    padding: 0.75rem;
   }
 }
 
@@ -1521,6 +1531,46 @@
     .wiz-special-edit-top .ui-field[type="date"] {
       grid-column: 1 / -1;
     }
+
+    /* Mobile: nazwa dnia i przełącznik w jednej linii, godziny pod spodem
+       na całą szerokość. */
+    .wiz-hours-edit-day {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .wiz-hours-edit-day-controls {
+      display: contents;
+    }
+
+    .wiz-hours-edit-day-controls .wiz-hours-switch {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+    }
+
+    .wiz-hours-edit-day-controls .wiz-hours-time-range {
+      grid-column: 1 / -1;
+    }
+
+    .wiz-hours-edit-day-controls .wiz-hours-time-range {
+      display: flex;
+      min-width: 0;
+    }
+
+    .wiz-hours-edit-day-controls .wiz-hours-time,
+    .wiz-special-edit-bottom .wiz-hours-time {
+      flex: 1 1 0;
+      width: auto;
+    }
+
+    .wiz-special-edit-bottom .wiz-hours-time-range {
+      display: flex;
+      flex: 1 1 100%;
+    }
+
+    .wiz-special-edit-note {
+      display: none;
+    }
   }
 }
 
@@ -1529,7 +1579,21 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.65rem 1rem;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    min-height: 3.25rem;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid var(--border);
+    background: var(--neutral-50);
+  }
+
+  .wiz-special-edit-bottom .wiz-attr-toggle {
+    background: var(--neutral-150);
+  }
+
+  .wiz-special-edit-note {
+    font-size: var(--type-base);
+    color: var(--muted-foreground);
   }
 
   .wiz-special-remove {
@@ -1567,6 +1631,80 @@
     width: 1rem;
     height: 1rem;
     stroke-width: 2;
+  }
+
+  .wiz-special-suggest {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .wiz-special-suggest-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .wiz-special-suggest-title {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: var(--type-sm);
+  }
+
+  .wiz-special-suggest-all {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--brand-deep);
+    font: inherit;
+    font-size: var(--type-sm);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .wiz-special-suggest-all:hover {
+    text-decoration: underline;
+  }
+
+  .wiz-special-suggest-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .wiz-special-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: 2rem;
+    padding: 0 0.75rem 0 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    color: var(--foreground);
+    font: inherit;
+    font-size: var(--type-sm);
+    cursor: pointer;
+  }
+
+  .wiz-special-chip:hover {
+    border-color: color-mix(in srgb, var(--brand) 45%, var(--border));
+    background: var(--accent);
+  }
+
+  .wiz-special-chip svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    stroke-width: 2;
+    color: var(--brand-deep);
+  }
+
+  .wiz-special-chip-date {
+    color: var(--muted-foreground);
   }
 
   .wiz-attr-choice:disabled {
@@ -3503,6 +3641,103 @@
     .wiz-reject-pop {
       animation: none;
     }
+  }
+}
+
+/* Pole godziny: przycisk jak ui-field + dropdown z kolumnami godzin i minut */
+@layer components {
+  .wiz-time-field {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: var(--foreground);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .wiz-time-field svg {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 2;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-time-field.is-open {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
+  }
+
+  .wiz-time-pop {
+    position: fixed;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    width: 9.5rem;
+    padding: var(--space-2);
+    border-radius: 16px;
+    background: var(--card);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.06),
+      0 24px 48px -16px rgb(0 0 0 / 0.22);
+    animation: wiz-reject-pop-in 0.16s ease-out;
+  }
+
+  .wiz-time-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .wiz-time-col-label {
+    margin: 0;
+    padding: 2px 0;
+    font-size: var(--type-xs);
+    color: var(--muted-foreground);
+    text-align: center;
+  }
+
+  .wiz-time-list {
+    position: relative;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    height: 13rem;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .wiz-time-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .wiz-time-opt {
+    display: block;
+    width: 100%;
+    height: 2rem;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--foreground);
+    font-size: var(--type-base);
+    cursor: pointer;
+  }
+
+  .wiz-time-opt:hover {
+    background: var(--neutral-150);
+  }
+
+  .wiz-time-opt:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+
+  .wiz-time-opt.is-active {
+    background: var(--brand);
+    color: var(--primary-foreground);
   }
 }
 

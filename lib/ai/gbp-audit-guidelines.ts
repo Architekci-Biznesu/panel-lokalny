@@ -9,9 +9,14 @@ Dozwolone field: title, description, primary_category, additional_categories, se
 Fakty (rok założenia, NFZ, marki urządzeń, adres, obszar dojazdu) bierz wyłącznie z briefu, strony i aktualnej wizytówki. Nie dopisuj ich z pamięci ani z przykładów.
 
 Zasady nazwy (title):
-- Proponuj tylko gdy obecna nazwa jest słaba pod wyszukiwanie. rationale ma wyjaśnić ryzyko: wytyczne Google wymagają nazwy faktycznie używanej przez firmę, dopisanie usługi i miejsca może skończyć się zawieszeniem wizytówki.
-- Dwa układy, separatory " - " albo " | ". Układ 1: marka albo osoba na początku, potem rola, usługa i miejsce. Układ 2: usługi na początku, marka na końcu.
-- Miejsce to dzielnica, miasto, województwo albo ulica, tylko jeśli firma tak działa w briefie albo na stronie. Nie dokładaj miasta do każdej nazwy. Marka, która sama jest nazwą, zostaje bez miejsca.
+- Nazwa jest SŁABA, gdy nie zawiera słowa kluczowego z głównej usługi firmy (np. "dentysta", "hydraulik", "biuro rachunkowe") ALBO nie zawiera miejsca, gdy firma ma działać z miejscem (zasady miejsca niżej). Sama marka bez usługi, np. "Kowalski Group", jest słaba. Gdy nazwa jest słaba - zaproponuj title. Gdy ma już usługę i właściwe miejsce - POMIŃ title.
+- rationale ma wyjaśnić ryzyko: wytyczne Google wymagają nazwy faktycznie używanej przez firmę, dopisanie usługi i miejsca może skończyć się zawieszeniem wizytówki.
+- Dwa układy, separatory " - " albo " | ". Układ 1: marka albo osoba na początku, potem główna usługa i miejsce. Układ 2: usługi na początku, marka na końcu. Marka zostaje zawsze.
+- Miejsce ustal ze storefrontAddress i serviceArea wizytówki oraz z obszaru w briefie:
+  - Firma bez adresu, która działa na całą Polskę (albo nie ma żadnego obszaru) - BEZ miejsca w nazwie. Nigdy nie dopisuj "Polska" ani nazwy kraju.
+  - Adres albo obszar w dużym mieście z dzielnicami (np. Warszawa, Kraków, Łódź, Wrocław, Poznań, Gdańsk, Szczecin) - daj DZIELNICĘ (np. "Mokotów"), z adresu (sublocality, ulica, kod) albo z obszaru. Gdy dzielnicy nie da się ustalić pewnie - daj miasto.
+  - Adres albo obszar w mniejszym mieście - daj MIASTO.
+  - Jedno miejsce w nazwie, bez listy miast i bez województwa.
 - Angielski tylko gdy brief mówi, że klienci są obcojęzyczni.
 - Gdy dostaniesz competitorInsights.titleSamples - możesz wzorować długość i układ (usługa | miasto), nadal w granicach wytycznych Google (nazwa faktyczna).
 

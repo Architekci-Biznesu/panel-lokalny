@@ -8,9 +8,12 @@ import {
   updateGbpRegularHours,
   updateGbpSpecialHours,
 } from "@/features/wizytowka/actions";
+import { TimeField } from "@/features/wizytowka/components/time-field";
 import {
   getUpcomingHolidayHint,
   holidayNameFor,
+  upcomingHolidays,
+  type Holiday,
 } from "@/features/wizytowka/polish-holidays";
 import {
   WEEKDAYS,
@@ -35,8 +38,12 @@ const MONTH_SHORT = [
   "GRU",
 ];
 
+/** Ile najbliższych świąt proponować jako dni zamknięte. */
+const HOLIDAY_SUGGESTIONS = 6;
+
 export function GodzinyView({ location }: { location: GbpLocation }) {
-  const [editing, setEditing] = useState(false);
+  // Edytowany jest tylko otwarty kafel; drugi zostaje w podglądzie.
+  const [editing, setEditing] = useState<"hours" | "special" | null>(null);
   const [seedEmptySpecial, setSeedEmptySpecial] = useState(false);
   const periods = location.regularHours?.periods ?? [];
   const special = useMemo(
@@ -48,20 +55,26 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
     [special],
   );
 
-  function enterEdit(opts?: { seedSpecial?: boolean }) {
+  function enterEdit(
+    tile: "hours" | "special",
+    opts?: { seedSpecial?: boolean },
+  ) {
     setSeedEmptySpecial(Boolean(opts?.seedSpecial));
-    setEditing(true);
+    setEditing(tile);
   }
 
   function exitEdit() {
-    setEditing(false);
+    setEditing(null);
     setSeedEmptySpecial(false);
   }
 
+  const editingHours = editing === "hours";
+  const editingSpecial = editing === "special";
+
   return (
     <div className="wiz-hours-row" id="wiz-field-hours">
-      <article className={`wiz-hours-tile${editing ? " is-editing" : ""}`}>
-        {editing ? (
+      <article className={`wiz-hours-tile${editingHours ? " is-editing" : ""}`}>
+        {editingHours ? (
           <HoursEditor
             initial={periods}
             onDone={exitEdit}
@@ -75,7 +88,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
                 type="button"
                 className="wiz-field-edit"
                 aria-label="Edytuj godziny"
-                onClick={() => enterEdit()}
+                onClick={() => enterEdit("hours")}
               >
                 <Pencil aria-hidden />
               </button>
@@ -86,10 +99,10 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
       </article>
 
       <article
-        className={`wiz-hours-tile${editing ? " is-editing" : ""}`}
+        className={`wiz-hours-tile${editingSpecial ? " is-editing" : ""}`}
         id="wiz-field-special-hours"
       >
-        {editing ? (
+        {editingSpecial ? (
           <SpecialHoursEditor
             initial={special}
             seedEmpty={seedEmptySpecial}
@@ -104,7 +117,9 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
                 type="button"
                 className="wiz-field-edit"
                 aria-label="Dodaj dzień specjalny"
-                onClick={() => enterEdit({ seedSpecial: special.length === 0 })}
+                onClick={() =>
+                  enterEdit("special", { seedSpecial: special.length === 0 })
+                }
               >
                 <Plus aria-hidden />
               </button>
@@ -153,6 +168,36 @@ function HoursSwitch({
       <span className="wiz-hours-switch-track" aria-hidden />
       <span className="wiz-hours-switch-label">{label}</span>
     </label>
+  );
+}
+
+/** Tryb dnia specjalnego - ten sam segmentowy przełącznik co Tak/Nie w atrybutach. */
+function SpecialModeToggle({
+  closed,
+  onChange,
+}: {
+  closed: boolean;
+  onChange: (closed: boolean) => void;
+}) {
+  return (
+    <div className="wiz-attr-toggle" role="group" aria-label="Tryb dnia">
+      <button
+        type="button"
+        className={`wiz-attr-choice${closed ? " is-active is-no" : ""}`}
+        aria-pressed={closed}
+        onClick={() => onChange(true)}
+      >
+        Zamknięte
+      </button>
+      <button
+        type="button"
+        className={`wiz-attr-choice${closed ? "" : " is-active is-no"}`}
+        aria-pressed={!closed}
+        onClick={() => onChange(false)}
+      >
+        Inne godziny
+      </button>
+    </div>
   );
 }
 
@@ -371,7 +416,7 @@ function HoursEditor({
     >
       <header className="wiz-hours-col-head">
         <div className="wiz-hours-col-titles">
-          <div className="wiz-field-label">Godziny otwarcia</div>
+          <h3 className="wiz-hours-tile-title">Godziny otwarcia</h3>
           <p className="wiz-hours-col-sub">
             Edycja - zmiany trafią do Google po zapisaniu
           </p>
@@ -380,7 +425,10 @@ function HoursEditor({
 
       <ul className="wiz-hours-edit-list">
         {rows.map((row, index) => (
-          <li key={row.day} className="wiz-hours-edit-day">
+          <li
+            key={row.day}
+            className={`wiz-hours-edit-day${row.closed ? " is-closed" : ""}`}
+          >
             <span className="wiz-hours-edit-day-name">
               {WEEKDAYS.find((d) => d.value === row.day)?.label}
             </span>
@@ -401,26 +449,26 @@ function HoursEditor({
               />
               {!row.closed ? (
                 <div className="wiz-hours-time-range">
-                  <input
-                    className="ui-field wiz-hours-time"
-                    type="time"
+                  <TimeField
+                    className="wiz-hours-time"
+                    ariaLabel="Otwarcie"
                     value={row.open}
-                    onChange={(e) => {
+                    onChange={(value) => {
                       const next = [...rows];
-                      next[index] = { ...row, open: e.target.value };
+                      next[index] = { ...row, open: value };
                       setRows(next);
                     }}
                   />
                   <span className="wiz-hours-time-sep" aria-hidden>
                     -
                   </span>
-                  <input
-                    className="ui-field wiz-hours-time"
-                    type="time"
+                  <TimeField
+                    className="wiz-hours-time"
+                    ariaLabel="Zamknięcie"
                     value={row.close}
-                    onChange={(e) => {
+                    onChange={(value) => {
                       const next = [...rows];
-                      next[index] = { ...row, close: e.target.value };
+                      next[index] = { ...row, close: value };
                       setRows(next);
                     }}
                   />
@@ -507,6 +555,28 @@ function SpecialHoursEditor({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [rows, setRows] = useState(() => toSpecialRows(initial, seedEmpty));
+  const holidays = useMemo(() => upcomingHolidays(HOLIDAY_SUGGESTIONS), []);
+  const takenDates = new Set(rows.map((row) => row.date));
+  const holidaySuggestions = holidays.filter(
+    (h) => !takenDates.has(toDateInputValue(h)),
+  );
+
+  /** Dodaje święta jako dni zamknięte; najpierw wypełnia puste wiersze. */
+  function addClosedHolidays(days: Holiday[]) {
+    const next = [...rows];
+    for (const h of days) {
+      const filled: SpecialRow = {
+        ...emptySpecialRow(),
+        date: toDateInputValue(h),
+        name: h.name,
+        closed: true,
+      };
+      const blank = next.findIndex((row) => !row.date);
+      if (blank >= 0) next[blank] = { ...filled, id: next[blank].id };
+      else next.push(filled);
+    }
+    setRows(next);
+  }
 
   return (
     <form
@@ -563,7 +633,7 @@ function SpecialHoursEditor({
     >
       <header className="wiz-hours-col-head">
         <div className="wiz-hours-col-titles">
-          <div className="wiz-field-label">Dni specjalne</div>
+          <h3 className="wiz-hours-tile-title">Dni specjalne</h3>
           <p className="wiz-hours-col-sub">
             Święta i wyjątki od standardowych godzin
           </p>
@@ -577,6 +647,7 @@ function SpecialHoursEditor({
               <input
                 className="ui-field"
                 type="date"
+                aria-label="Data"
                 value={row.date}
                 onChange={(e) => {
                   const date = parseDateInput(e.target.value);
@@ -592,6 +663,7 @@ function SpecialHoursEditor({
               <input
                 className="ui-field"
                 type="text"
+                aria-label="Nazwa"
                 placeholder="Nazwa (np. Wielkanoc)"
                 value={row.name}
                 onChange={(e) => {
@@ -610,42 +682,45 @@ function SpecialHoursEditor({
               </button>
             </div>
             <div className="wiz-special-edit-bottom">
-              <HoursSwitch
-                checked={row.closed}
-                label="Zamknięte cały dzień"
+              <SpecialModeToggle
+                closed={row.closed}
                 onChange={(closed) => {
                   const next = [...rows];
                   next[index] = { ...row, closed };
                   setRows(next);
                 }}
               />
-              {!row.closed ? (
+              {row.closed ? (
+                <span className="wiz-special-edit-note">
+                  Nieczynne cały dzień
+                </span>
+              ) : (
                 <div className="wiz-hours-time-range">
-                  <input
-                    className="ui-field wiz-hours-time"
-                    type="time"
+                  <TimeField
+                    className="wiz-hours-time"
+                    ariaLabel="Otwarcie"
                     value={row.open}
-                    onChange={(e) => {
+                    onChange={(value) => {
                       const next = [...rows];
-                      next[index] = { ...row, open: e.target.value };
+                      next[index] = { ...row, open: value };
                       setRows(next);
                     }}
                   />
                   <span className="wiz-hours-time-sep" aria-hidden>
                     -
                   </span>
-                  <input
-                    className="ui-field wiz-hours-time"
-                    type="time"
+                  <TimeField
+                    className="wiz-hours-time"
+                    ariaLabel="Zamknięcie"
                     value={row.close}
-                    onChange={(e) => {
+                    onChange={(value) => {
                       const next = [...rows];
-                      next[index] = { ...row, close: e.target.value };
+                      next[index] = { ...row, close: value };
                       setRows(next);
                     }}
                   />
                 </div>
-              ) : null}
+              )}
             </div>
           </li>
         ))}
@@ -659,6 +734,42 @@ function SpecialHoursEditor({
         <Plus aria-hidden />
         Dodaj dzień specjalny
       </button>
+
+      {holidaySuggestions.length ? (
+        <div className="wiz-special-suggest">
+          <div className="wiz-special-suggest-head">
+            <p className="wiz-special-suggest-title">
+              Propozycje dni zamkniętych
+            </p>
+            {holidaySuggestions.length > 1 ? (
+              <button
+                type="button"
+                className="wiz-special-suggest-all"
+                onClick={() => addClosedHolidays(holidaySuggestions)}
+              >
+                Dodaj wszystkie
+              </button>
+            ) : null}
+          </div>
+          <ul className="wiz-special-suggest-list">
+            {holidaySuggestions.map((h) => (
+              <li key={toDateInputValue(h)}>
+                <button
+                  type="button"
+                  className="wiz-special-chip"
+                  onClick={() => addClosedHolidays([h])}
+                >
+                  <Plus aria-hidden />
+                  <span className="wiz-special-chip-date mono">
+                    {h.day} {MONTH_SHORT[h.month - 1].toLowerCase()}
+                  </span>
+                  {h.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="wiz-hours-edit-footer">
         <button

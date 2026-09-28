@@ -121,6 +121,22 @@ function specialDateParts(date?: {
   return { year: date.year, month: date.month, day: date.day };
 }
 
+/** Holidays from today (Warsaw) onward, soonest first, across this and next year. */
+function holidaysFrom(today: Date): Array<Holiday & { date: Date }> {
+  const year = today.getFullYear();
+  return [...polishHolidaysForYear(year), ...polishHolidaysForYear(year + 1)]
+    .map((h) => ({ ...h, date: new Date(h.year, h.month - 1, h.day) }))
+    .filter((h) => h.date >= today)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
+/** Next `limit` holidays - suggestions for closed days in the special hours editor. */
+export function upcomingHolidays(limit: number): Holiday[] {
+  return holidaysFrom(warsawToday())
+    .slice(0, limit)
+    .map(({ year, month, day, name }) => ({ year, month, day, name }));
+}
+
 /** Next holiday labels when no upcoming special hours are set. */
 export function getUpcomingHolidayHint(
   special: GbpSpecialHourPeriod[],
@@ -133,14 +149,7 @@ export function getUpcomingHolidayHint(
   });
   if (hasUpcomingSpecial) return null;
 
-  const year = today.getFullYear();
-  const holidays = [
-    ...polishHolidaysForYear(year),
-    ...polishHolidaysForYear(year + 1),
-  ]
-    .map((h) => ({ ...h, date: new Date(h.year, h.month - 1, h.day) }))
-    .filter((h) => h.date >= today)
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
+  const holidays = holidaysFrom(today);
 
   const labels: string[] = [];
   let i = 0;
