@@ -58,7 +58,10 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
             proposalsTotal={data.proposalsTotal}
           />
           <NewReviewsCard reviews={data.reviews} />
-          <RecentPublicationsCard publications={data.publications} />
+          <RecentPublicationsCard
+            publications={data.publications}
+            rhythm={data.rhythm}
+          />
         </aside>
       </div>
     </div>

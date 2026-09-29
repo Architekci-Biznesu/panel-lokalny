@@ -24,7 +24,11 @@ import {
 } from "@/lib/integrations/gbp/client";
 import { AuthError } from "@/lib/session";
 import type { ContentChannel, GbpSuggestion, Profile } from "@/lib/db/schema";
-import { loadRecentPublished } from "@/features/publikacje/load-published";
+import {
+  loadPublishingRhythm,
+  loadRecentPublished,
+  type PublishingRhythm,
+} from "@/features/publikacje/load-published";
 import {
   ALL_PERFORMANCE_METRICS,
   buildReportSummary,
@@ -70,6 +74,7 @@ export type PulpitPublication = {
   title: string;
   channel: ContentChannel;
   date: Date | null;
+  imageUrl: string | null;
 };
 
 export type PulpitPayload = {
@@ -84,6 +89,8 @@ export type PulpitPayload = {
   proposals: PulpitProposalItem[];
   proposalsTotal: number;
   publications: PulpitPublication[];
+  /** Weeks with a post and the next scheduled one (null when it could not be read) */
+  rhythm: PublishingRhythm | null;
   /** Reviews from the Opinie module (null when it could not be read) */
   reviews: PulpitReviews | null;
   loadError: string | null;
@@ -248,6 +255,7 @@ function emptyPayload(
     proposals: [],
     proposalsTotal: 0,
     publications: [],
+    rhythm: null,
     reviews: null,
     ...partial,
   };
@@ -264,18 +272,30 @@ async function loadPulpitReviewsSafe(
   }
 }
 
-const PUBLICATIONS_PREVIEW = 4;
+const PUBLICATIONS_PREVIEW = 3;
+
+async function loadPublishingRhythmSafe(
+  profile: Profile,
+): Promise<PublishingRhythm | null> {
+  try {
+    return await loadPublishingRhythm(profile);
+  } catch (error) {
+    console.error("Pulpit publishing rhythm failed:", error);
+    return null;
+  }
+}
 
 async function loadPulpitPublications(
   profile: Profile,
 ): Promise<PulpitPublication[]> {
   try {
     const rows = await loadRecentPublished(profile, PUBLICATIONS_PREVIEW);
-    return rows.map(({ targetId, title, channel, date }) => ({
+    return rows.map(({ targetId, title, channel, date, imageUrl }) => ({
       targetId,
       title,
       channel,
       date,
+      imageUrl,
     }));
   } catch (error) {
     console.error("Pulpit publications failed:", error);
@@ -405,6 +425,7 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
       proposals: proposalItems.slice(0, PROPOSALS_PREVIEW),
       proposalsTotal: proposalItems.length,
       publications: await loadPulpitPublications(profile),
+      rhythm: await loadPublishingRhythmSafe(profile),
       reviews: await loadPulpitReviewsSafe(profile),
       loadError: metricsError,
     };
