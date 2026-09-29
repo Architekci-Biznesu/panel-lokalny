@@ -8,7 +8,7 @@ import {
   useTransition,
   type FormEvent,
 } from "react";
-import { Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "gooey-toast";
 import { updateGbpServices } from "@/features/wizytowka/actions";
 import { InlineSuggestion } from "@/features/wizytowka/components/inline-suggestion";
@@ -20,6 +20,7 @@ import {
 } from "@/features/wizytowka/types";
 import type { GbpCategory } from "@/lib/integrations/gbp/client";
 import type { GbpSuggestion } from "@/lib/db/schema";
+import { SaveBar } from "@/components/ui/save-bar";
 import { UiSelect } from "@/features/shell/ui-select";
 
 const NAME_MAX = 140;
@@ -399,49 +400,37 @@ function ServicesEditor({
         ) : null}
       </div>
 
-      <div className="wiz-services-sticky">
-        <div className="wiz-services-sticky-add">
-          <UiSelect
-            aria-label="Dodaj usługę ze słownika"
-            value=""
-            placeholder="Dodaj ze słownika Google…"
-            onChange={addFromDictionary}
-            options={availableTypes.map((s) => ({
-              value: s.serviceTypeId,
-              label: s.displayName,
-            }))}
-            disabled={availableTypes.length === 0}
-          />
-          <button
-            type="button"
-            className="ui-btn ui-btn-secondary ui-btn-sm"
-            onClick={addCustom}
-          >
-            <Plus aria-hidden />
-            Dodaj własną
-          </button>
-        </div>
-        <div className="wiz-services-sticky-actions">
-          <button
-            type="button"
-            className="ui-btn ui-btn-outline ui-btn-sm"
-            disabled={pending}
-            onClick={onCancel}
-          >
-            Anuluj
-          </button>
-          <button
-            type="submit"
-            className="ui-btn ui-btn-primary ui-btn-sm"
-            disabled={pending || !dirty}
-          >
-            {pending ? (
-              <Loader2 aria-hidden className="ui-btn-spinner" />
-            ) : null}
-            Zapisz w Google
-          </button>
-        </div>
-      </div>
+      <SaveBar
+        leading={
+          <>
+            <UiSelect
+              aria-label="Dodaj usługę ze słownika"
+              value=""
+              placeholder="Dodaj ze słownika Google…"
+              onChange={addFromDictionary}
+              options={availableTypes.map((s) => ({
+                value: s.serviceTypeId,
+                label: s.displayName,
+              }))}
+              disabled={availableTypes.length === 0}
+            />
+            <button
+              type="button"
+              className="ui-btn ui-btn-secondary ui-btn-sm"
+              onClick={addCustom}
+            >
+              <Plus aria-hidden />
+              Dodaj własną
+            </button>
+          </>
+        }
+        message={dirty ? "Niezapisane zmiany" : undefined}
+        undoLabel="Anuluj"
+        onUndo={onCancel}
+        saveLabel="Zapisz w Google"
+        pending={pending}
+        saveDisabled={!dirty}
+      />
     </form>
   );
 }

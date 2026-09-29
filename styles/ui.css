@@ -552,6 +552,176 @@
     color: var(--neutral-400);
   }
 
+  /* Wspólny pasek zapisu: pływająca czarna pigułka na dole ekranu (Opinie,
+     Usługi, Atrybuty). Ma własne przyciski, żeby style modułów (np.
+     .wiz-page .ui-btn) nie zmieniały jego wysokości ani kroju. */
+  .ui-savebar {
+    position: fixed;
+    bottom: var(--space-5);
+    left: 50%;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: calc(100vw - 2 * var(--space-4));
+    box-sizing: border-box;
+    padding: 6px 6px 6px 18px;
+    border-radius: var(--radius-pill);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: var(--shadow-pop);
+    transform: translateX(-50%);
+  }
+
+  /* Puste miejsce w przepływie strony, żeby pasek nie zasłaniał końca treści */
+  .ui-savebar-space {
+    height: 72px;
+  }
+
+  .ui-savebar-text {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-right: var(--space-2);
+    font-size: var(--type-sm);
+    white-space: nowrap;
+  }
+
+  .ui-savebar-dot {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background: var(--warning);
+  }
+
+  /* Opcjonalna lewa sekcja na własne kontrolki (np. dodawanie usług) */
+  .ui-savebar-lead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    margin-right: var(--space-2);
+  }
+
+  .ui-savebar-lead .ui-select-root {
+    flex: 1 1 12rem;
+    max-width: 22rem;
+    min-width: 10rem;
+  }
+
+  .ui-savebar-undo,
+  .ui-savebar-save {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    height: var(--btn-height-sm);
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    font: inherit;
+    font-size: var(--type-sm);
+    font-weight: 500;
+    line-height: 20px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .ui-savebar-undo {
+    background: none;
+    color: var(--neutral-400);
+  }
+
+  .ui-savebar-undo:hover:not(:disabled) {
+    color: var(--primary-foreground);
+  }
+
+  .ui-savebar-save {
+    background: var(--card);
+    color: var(--foreground);
+  }
+
+  .ui-savebar-save:hover:not(:disabled) {
+    background: var(--neutral-50);
+  }
+
+  .ui-savebar-undo:disabled,
+  .ui-savebar-save:disabled {
+    cursor: not-allowed;
+  }
+
+  .ui-savebar-save:disabled {
+    background: var(--neutral-700);
+    color: var(--neutral-400);
+  }
+
+  .ui-savebar-save svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Kontrolki w lewej sekcji: ciemne warianty pól i przycisków */
+  .ui-savebar .ui-select {
+    height: 36px;
+    background: var(--primary-hover);
+    border-color: transparent;
+    color: var(--primary-foreground);
+  }
+
+  .ui-savebar .ui-select-value {
+    color: var(--neutral-300);
+  }
+
+  .ui-savebar .ui-select-chevron {
+    color: var(--neutral-400);
+  }
+
+  /* Pasek jest przy dolnej krawędzi, więc lista rozwija się w górę */
+  .ui-savebar .ui-select-menu {
+    top: auto;
+    bottom: calc(100% + 0.25rem);
+    color: var(--foreground);
+  }
+
+  .ui-savebar .ui-btn-secondary,
+  .ui-savebar .ui-btn-outline {
+    background: var(--primary-hover);
+    border-color: transparent;
+    color: var(--primary-foreground);
+  }
+
+  .ui-savebar .ui-btn-secondary:hover:not(:disabled),
+  .ui-savebar .ui-btn-outline:hover:not(:disabled) {
+    background: var(--neutral-700);
+  }
+
+  @media (max-width: 639px) {
+    .ui-savebar {
+      right: var(--space-4);
+      left: var(--space-4);
+      flex-wrap: wrap;
+      max-width: none;
+      transform: none;
+    }
+
+    .ui-savebar-lead {
+      flex: 1 1 100%;
+      margin-right: 0;
+    }
+
+    .ui-savebar-text {
+      margin-right: auto;
+    }
+  }
+
   .ui-kpi {
     background: var(--card);
     border: 0;

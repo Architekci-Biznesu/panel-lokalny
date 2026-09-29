@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { Loader2, Pencil, X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import { toast } from "gooey-toast";
 import { updateGbpAttributesBatch } from "@/features/wizytowka/actions";
 import {
@@ -10,6 +10,7 @@ import {
   groupFactsByGroup,
   parseAttributeValues,
 } from "@/features/wizytowka/attributes";
+import { SaveBar } from "@/components/ui/save-bar";
 import { UiSelect } from "@/features/shell/ui-select";
 import type { GbpAttributeMetadata } from "@/lib/integrations/gbp/client";
 
@@ -278,35 +279,18 @@ export function AtrybutyView({
         </div>
 
         {open && dirtyCount > 0 ? (
-          <div className="wiz-services-sticky">
-            <p className="wiz-attr-sticky-hint">
-              <span className="wiz-attr-dirty-dot" aria-hidden />
-              {dirtyCount === 1
+          <SaveBar
+            message={
+              dirtyCount === 1
                 ? "1 niezapisana zmiana"
-                : `${dirtyCount} niezapisane zmiany`}
-            </p>
-            <div className="wiz-services-sticky-actions">
-              <button
-                type="button"
-                className="ui-btn ui-btn-outline ui-btn-sm"
-                disabled={pending}
-                onClick={closeEdit}
-              >
-                Anuluj
-              </button>
-              <button
-                type="button"
-                className="ui-btn ui-btn-primary ui-btn-sm"
-                disabled={pending}
-                onClick={saveDrafts}
-              >
-                {pending ? (
-                  <Loader2 aria-hidden className="ui-btn-spinner" />
-                ) : null}
-                Zapisz w Google
-              </button>
-            </div>
-          </div>
+                : `${dirtyCount} niezapisane zmiany`
+            }
+            undoLabel="Anuluj"
+            onUndo={closeEdit}
+            saveLabel="Zapisz w Google"
+            onSave={saveDrafts}
+            pending={pending}
+          />
         ) : null}
       </div>
     </div>

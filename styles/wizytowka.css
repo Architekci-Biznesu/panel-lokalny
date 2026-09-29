@@ -942,32 +942,12 @@
     color: var(--muted-foreground);
   }
 
-  .wiz-services-sticky-add {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2);
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
-  .wiz-services-sticky-add .ui-select-root {
-    flex: 1 1 12rem;
-    max-width: 22rem;
-    min-width: 10rem;
-  }
-
   .wiz-services-sticky-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
-  }
-
-  .wiz-services-sticky .ui-select-menu {
-    top: auto;
-    bottom: calc(100% + 0.25rem);
   }
 
   .wiz-tab-note {
@@ -2655,19 +2635,6 @@
     background: var(--muted);
   }
 
-  .wiz-services-sticky {
-    flex-shrink: 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2) var(--space-3);
-    padding: var(--space-3) var(--space-5);
-    border-top: 1px solid var(--border);
-    background: var(--neutral-50);
-    border-top-color: var(--neutral-150);
-  }
-
   .wiz-attr-choice.is-active.is-yes {
     background: var(--primary);
     border-color: transparent;
@@ -2985,50 +2952,6 @@
     background: var(--warning);
     flex-shrink: 0;
   }
-
-  .wiz-attr-sticky-hint {
-    color: var(--muted-foreground);
-    flex: 1 1 auto;
-    min-width: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0;
-    font-size: var(--type-sm);
-    font-weight: 500;
-  }
-
-  .wiz-fields:has(.wiz-attr-group) .wiz-services-sticky {
-    position: sticky;
-    bottom: 24px;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-top: 0;
-    padding: 10px 10px 10px 24px;
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: var(--primary);
-    color: var(--primary-foreground);
-    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.35);
-  }
-
-  .wiz-fields:has(.wiz-attr-group) .wiz-attr-sticky-hint {
-    color: var(--primary-foreground);
-  }
-
-  .wiz-fields:has(.wiz-attr-group) .wiz-services-sticky .ui-btn-outline {
-    background: var(--primary-hover);
-    border-color: transparent;
-    color: var(--primary-foreground);
-  }
-
-  .wiz-fields:has(.wiz-attr-group) .wiz-services-sticky .ui-btn-primary {
-    background: var(--card);
-    color: var(--foreground);
-  }
 }
 
 @layer components {
@@ -3267,69 +3190,6 @@
   .wiz-service-card-remove:hover:not(:disabled) {
     background: color-mix(in srgb, var(--destructive) 8%, var(--card));
     color: var(--destructive);
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky {
-    position: sticky;
-    bottom: 24px;
-    z-index: 5;
-    padding: 8px 8px 8px 8px;
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: var(--primary);
-    color: var(--primary-foreground);
-    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.35);
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-select {
-    height: 36px;
-    background: var(--primary-hover);
-    border-color: transparent;
-    color: var(--primary-foreground);
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-select-value {
-    color: var(--neutral-300);
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-select-chevron {
-    color: var(--neutral-400);
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-select-menu {
-    color: var(--foreground);
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-secondary,
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-outline {
-    background: var(--primary-hover);
-    border-color: transparent;
-    color: var(--primary-foreground);
-  }
-
-  .wiz-uslugi.is-editing
-    .wiz-services-sticky
-    .ui-btn-secondary:hover:not(:disabled),
-  .wiz-uslugi.is-editing
-    .wiz-services-sticky
-    .ui-btn-outline:hover:not(:disabled) {
-    background: var(--neutral-700);
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-secondary svg,
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-outline svg {
-    color: currentColor;
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-primary {
-    background: var(--card);
-    color: var(--foreground);
-  }
-
-  .wiz-uslugi.is-editing .wiz-services-sticky .ui-btn-primary:disabled {
-    background: var(--neutral-700);
-    color: var(--neutral-400);
-    opacity: 1;
   }
 }
 
