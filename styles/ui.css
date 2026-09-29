@@ -496,6 +496,62 @@
     color: var(--muted-foreground);
   }
 
+  /* Segment-pigułka: filtry i przełączniki (linki albo przyciski). */
+  .ui-seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--card);
+  }
+
+  .ui-seg-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--neutral-700);
+    font: inherit;
+    font-size: var(--type-sm);
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .ui-seg-item:hover {
+    background: var(--canvas);
+    color: var(--foreground);
+  }
+
+  .ui-seg-item.is-active,
+  .ui-seg-item.is-active:hover {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .ui-seg-item:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  .ui-seg-count {
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+
+  .ui-seg-item.is-active .ui-seg-count {
+    color: var(--neutral-400);
+  }
+
   .ui-kpi {
     background: var(--card);
     border: 0;

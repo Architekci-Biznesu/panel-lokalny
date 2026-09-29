@@ -1,4 +1,8 @@
 import {
+  loadPulpitReviews,
+  type PulpitReviews,
+} from "@/features/opinie/load-pulpit-reviews";
+import {
   computeCompleteness,
   type CompletenessCheck,
 } from "@/features/wizytowka/completeness";
@@ -80,6 +84,8 @@ export type PulpitPayload = {
   proposals: PulpitProposalItem[];
   proposalsTotal: number;
   publications: PulpitPublication[];
+  /** Reviews from the Opinie module (null when it could not be read) */
+  reviews: PulpitReviews | null;
   loadError: string | null;
 };
 
@@ -242,8 +248,20 @@ function emptyPayload(
     proposals: [],
     proposalsTotal: 0,
     publications: [],
+    reviews: null,
     ...partial,
   };
+}
+
+async function loadPulpitReviewsSafe(
+  profile: Profile,
+): Promise<PulpitReviews | null> {
+  try {
+    return await loadPulpitReviews(profile);
+  } catch (error) {
+    console.error("Pulpit reviews failed:", error);
+    return null;
+  }
 }
 
 const PUBLICATIONS_PREVIEW = 4;
@@ -387,6 +405,7 @@ export async function loadPulpitPayload(): Promise<PulpitPayload> {
       proposals: proposalItems.slice(0, PROPOSALS_PREVIEW),
       proposalsTotal: proposalItems.length,
       publications: await loadPulpitPublications(profile),
+      reviews: await loadPulpitReviewsSafe(profile),
       loadError: metricsError,
     };
   } catch (error) {

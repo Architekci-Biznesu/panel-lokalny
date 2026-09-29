@@ -18,6 +18,11 @@ import {
   contentUserPrompt,
   topicUserPrompt,
 } from "@/lib/ai/content-prompts";
+import {
+  REVIEW_REPLY_SYSTEM_PROMPT,
+  finalizeReviewReply,
+  reviewReplyUserPrompt,
+} from "@/lib/ai/review-prompts";
 import { stripReviewFluffFromDescription } from "@/features/wizytowka/description-sanitize";
 import type {
   BriefFields,
@@ -88,15 +93,6 @@ async function completeText(system: string, user: string): Promise<string> {
     ],
   });
   return response.output_text.trim();
-}
-
-function briefContext(brief: BriefFields): string {
-  return [
-    `Usługi: ${brief.services}`,
-    `Ton: ${brief.tone}`,
-    `Grupa: ${brief.targetAudience}`,
-    `Wyróżniki: ${brief.differentiators}`,
-  ].join("\n");
 }
 
 export const openaiTextProvider: TextProvider = {
@@ -201,10 +197,11 @@ Bez markdownu, bez dodatkowych kluczy.`;
   },
 
   async generateReviewReply(input: GenerateReviewReplyInput): Promise<string> {
-    return completeText(
-      "Piszesz odpowiedź na opinię klienta lokalnej firmy po polsku. Zwróć samą odpowiedź.",
-      `Ocena: ${input.rating}/5\nOpinia: ${input.reviewText}\n${briefContext(input.brief)}`,
+    const text = await completeText(
+      REVIEW_REPLY_SYSTEM_PROMPT,
+      reviewReplyUserPrompt(input),
     );
+    return finalizeReviewReply(text, input.signature);
   },
 
   async generateGbpAuditSuggestions(

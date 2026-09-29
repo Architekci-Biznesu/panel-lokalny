@@ -74,10 +74,27 @@ export type GeneratedContent = {
   newImagePrompt: string | null;
 };
 
+/** Everything AI knows when it drafts a reply to one review. */
 export type GenerateReviewReplyInput = {
+  businessName: string;
   brief: BriefFields;
-  reviewText: string;
-  rating: number;
+  /** "Czego unikać" from the customer's brief - a hard ban */
+  avoid?: string | null;
+  /** 1-5; null when the channel sent no usable rating */
+  rating: number | null;
+  authorName: string;
+  /** What the author wrote; null for a stars-only review */
+  reviewText: string | null;
+  /** Google's translation, when the review was written in another language */
+  translatedText?: string | null;
+  /** The customer's standing guidelines (settings) */
+  instructions?: string | null;
+  /** One line appended under every reply (added by code, not by the model) */
+  signature?: string | null;
+  /** Public phone number of the business, for inviting unhappy authors to call */
+  phone?: string | null;
+  /** One-off request for this draft ("odpowiedz krócej") */
+  oneOffInstruction?: string | null;
 };
 
 export type GenerateImageInput = {

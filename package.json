@@ -15,7 +15,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "test:rank": "npx --yes tsx features/wizytowka/rank/metrics.test.ts && npx --yes tsx features/wizytowka/rank/smoke.test.ts && npx --yes tsx features/wizytowka/rank/acceptance.test.ts",
-    "test:content": "npx --yes tsx features/publikacje/storage.test.ts && npx --yes tsx features/publikacje/publish.test.ts && npx --yes tsx features/publikacje/content.test.ts && npx --yes tsx features/publikacje/generation.test.ts"
+    "test:content": "npx --yes tsx features/publikacje/storage.test.ts && npx --yes tsx features/publikacje/publish.test.ts && npx --yes tsx features/publikacje/content.test.ts && npx --yes tsx features/publikacje/generation.test.ts",
+    "test:reviews": "npx --yes tsx features/opinie/review-rules.test.ts && npx --yes tsx lib/ai/review-prompts.test.ts && npx --yes tsx features/opinie/no-session-imports.test.ts && npx --yes tsx features/opinie/reviews-db.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",

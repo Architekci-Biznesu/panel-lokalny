@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays } from "lucide-react";
 import { ImproveCard } from "@/features/pulpit/improve-card";
+import { NewReviewsCard } from "@/features/pulpit/new-reviews-card";
 import { RankPhrasesCard } from "@/features/pulpit/rank-phrases-card";
 import { RecentPublicationsCard } from "@/features/pulpit/recent-publications-card";
 import { ReportKpiStrip } from "@/features/pulpit/report-kpi-strip";
@@ -42,7 +43,7 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
 
       {data.loadError ? <p className="locked-note">{data.loadError}</p> : null}
 
-      <ReportKpiStrip summary={data.reportSummary} />
+      <ReportKpiStrip summary={data.reportSummary} reviews={data.reviews} />
 
       <div className="pulpit-grid">
         <div className="pulpit-main">
@@ -56,6 +57,7 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
             proposals={data.proposals}
             proposalsTotal={data.proposalsTotal}
           />
+          <NewReviewsCard reviews={data.reviews} />
           <RecentPublicationsCard publications={data.publications} />
         </aside>
       </div>

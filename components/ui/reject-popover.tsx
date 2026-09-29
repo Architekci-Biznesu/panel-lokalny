@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 
@@ -21,6 +22,39 @@ const QUICK_REASONS = [
 
 const GAP = 8;
 
+/** Teksty i wygląd popovera z polem tekstowym - domyślnie "Odrzuć propozycję". */
+export type ReasonPopoverCopy = {
+  trigger: string;
+  triggerIcon: ReactNode;
+  triggerClassName: string;
+  /** aria-label okna */
+  label: string;
+  title: string;
+  description: string;
+  quickReasons: readonly string[];
+  fieldLabel: string;
+  placeholder: string;
+  confirm: string;
+  confirmIcon: ReactNode;
+  confirmClassName: string;
+};
+
+const REJECT_COPY: ReasonPopoverCopy = {
+  trigger: "Odrzuć",
+  triggerIcon: <X aria-hidden />,
+  triggerClassName: "ui-btn ui-btn-soft-danger ui-btn-sm",
+  label: "Odrzuć propozycję",
+  title: "Odrzucić propozycję?",
+  description:
+    "Powód jest opcjonalny - dopiszemy go do „czego unikać” w kontekście, żeby AI nie proponowało tego ponownie.",
+  quickReasons: QUICK_REASONS,
+  fieldLabel: "Dlaczego odrzucasz?",
+  placeholder: "Np. nie oferujemy wymiany oleju",
+  confirm: "Odrzuć propozycję",
+  confirmIcon: <X aria-hidden />,
+  confirmClassName: "ui-btn ui-btn-danger ui-btn-sm",
+};
+
 /**
  * Przycisk "Odrzuć" z dropdownem: opcjonalny powód (trafia do "czego unikać")
  * i potwierdzenie. Panel jest w portalu z pozycją fixed, więc nie ucina go
@@ -32,6 +66,27 @@ export function RejectPopover({
 }: {
   pending: boolean;
   onConfirm: (reason: string | undefined) => void;
+}) {
+  return (
+    <ReasonPopover pending={pending} onConfirm={onConfirm} copy={REJECT_COPY} />
+  );
+}
+
+/**
+ * Ten sam popover z własnymi tekstami (np. "Wygeneruj ponownie" z instrukcją
+ * w opiniach). `copy` zastępuje wszystkie teksty, zachowanie jest identyczne.
+ */
+export function ReasonPopover({
+  pending,
+  onConfirm,
+  copy,
+  closeOnConfirm = false,
+}: {
+  pending: boolean;
+  onConfirm: (reason: string | undefined) => void;
+  copy: ReasonPopoverCopy;
+  /** Zamknij panel od razu po potwierdzeniu (gdy karta zostaje na ekranie) */
+  closeOnConfirm?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -95,6 +150,10 @@ export function RejectPopover({
 
   function confirm() {
     onConfirm(reason.trim() || undefined);
+    if (closeOnConfirm) {
+      setOpen(false);
+      setReason("");
+    }
   }
 
   return (
@@ -102,14 +161,14 @@ export function RejectPopover({
       <button
         ref={triggerRef}
         type="button"
-        className="ui-btn ui-btn-soft-danger ui-btn-sm"
+        className={copy.triggerClassName}
         disabled={pending}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <X aria-hidden />
-        Odrzuć
+        {copy.triggerIcon}
+        {copy.trigger}
       </button>
 
       {open
@@ -118,7 +177,7 @@ export function RejectPopover({
               ref={panelRef}
               className="ui-reject-pop"
               role="dialog"
-              aria-label="Odrzuć propozycję"
+              aria-label={copy.label}
               style={style}
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
@@ -136,15 +195,12 @@ export function RejectPopover({
               }}
             >
               <div className="ui-reject-pop-head">
-                <p className="ui-reject-pop-title">Odrzucić propozycję?</p>
-                <p className="ui-reject-pop-desc">
-                  Powód jest opcjonalny - dopiszemy go do „czego unikać” w
-                  kontekście, żeby AI nie proponowało tego ponownie.
-                </p>
+                <p className="ui-reject-pop-title">{copy.title}</p>
+                <p className="ui-reject-pop-desc">{copy.description}</p>
               </div>
 
               <div className="ui-reject-pop-chips">
-                {QUICK_REASONS.map((item) => (
+                {copy.quickReasons.map((item) => (
                   <button
                     key={item}
                     type="button"
@@ -160,14 +216,14 @@ export function RejectPopover({
               </div>
 
               <label className="sr-only" htmlFor={fieldId}>
-                Dlaczego odrzucasz?
+                {copy.fieldLabel}
               </label>
               <textarea
                 ref={textareaRef}
                 id={fieldId}
                 className="ui-textarea ui-reject-pop-field"
                 rows={3}
-                placeholder="Np. nie oferujemy wymiany oleju"
+                placeholder={copy.placeholder}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
               />
@@ -182,16 +238,16 @@ export function RejectPopover({
                 </button>
                 <button
                   type="button"
-                  className="ui-btn ui-btn-danger ui-btn-sm"
+                  className={copy.confirmClassName}
                   disabled={pending}
                   onClick={confirm}
                 >
                   {pending ? (
                     <Loader2 aria-hidden className="ui-btn-spinner" />
                   ) : (
-                    <X aria-hidden />
+                    copy.confirmIcon
                   )}
-                  Odrzuć propozycję
+                  {copy.confirm}
                 </button>
               </div>
             </div>,

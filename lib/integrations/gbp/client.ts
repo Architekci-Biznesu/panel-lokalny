@@ -686,7 +686,7 @@ export function pickGbpCollageUrls(items: GbpMediaItem[], limit = 6): string[] {
  * v4 `accounts/{aid}/locations/{id}` for a v1 `locations/{id}` - same account
  * probing as listGbpLocationMedia (the account that can list the location's posts owns it).
  */
-async function resolveGbpV4LocationName(
+export async function resolveGbpV4LocationName(
   accessToken: string,
   locationName: string,
 ): Promise<string | null> {

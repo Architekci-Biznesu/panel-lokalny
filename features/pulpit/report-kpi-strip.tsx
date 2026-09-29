@@ -1,3 +1,5 @@
+import Link from "next/link";
+import type { PulpitReviews } from "@/features/opinie/load-pulpit-reviews";
 import {
   formatIntPl,
   formatRatePl,
@@ -60,8 +62,35 @@ function RateTicks({ value }: { value: number }) {
   );
 }
 
-/** Trzy kafle KPI jak w Raportach; zakres dat i link do raportu są w nagłówku Pulpitu. */
-export function ReportKpiStrip({ summary }: { summary: ReportSummary | null }) {
+/** Nowe opinie z modułu Opinie; klik prowadzi do listy "Do odpowiedzi". */
+function ReviewsKpi({ reviews }: { reviews: PulpitReviews }) {
+  return (
+    <Link
+      href="/opinie?status=pending"
+      className="ui-kpi wiz-report-kpi pulpit-kpi-link"
+    >
+      <p className="wiz-report-kpi-label">Nowe opinie</p>
+      <p className="wiz-report-kpi-value mono">
+        {formatIntPl(reviews.lastWeek)}
+      </p>
+      <p className="wiz-report-kpi-desc">
+        W ostatnich 7 dniach.{" "}
+        {reviews.pending > 0
+          ? `Czeka na odpowiedź: ${reviews.pending}.`
+          : "Wszystkie mają odpowiedź."}
+      </p>
+    </Link>
+  );
+}
+
+/** Trzy kafle KPI jak w Raportach plus opinie; zakres dat i link do raportu są w nagłówku Pulpitu. */
+export function ReportKpiStrip({
+  summary,
+  reviews,
+}: {
+  summary: ReportSummary | null;
+  reviews: PulpitReviews | null;
+}) {
   const hasData =
     summary != null && (summary.viewsTotal > 0 || summary.actionsTotal > 0);
   const mobilePct =
@@ -77,11 +106,20 @@ export function ReportKpiStrip({ summary }: { summary: ReportSummary | null }) {
   return (
     <section className="pulpit-section" aria-label="Statystyki wizytówki">
       {!hasData || !summary ? (
-        <p className="pulpit-card pulpit-empty">
-          Brak danych o widoczności w tym okresie.
-        </p>
+        <>
+          <p className="pulpit-card pulpit-empty">
+            Brak danych o widoczności w tym okresie.
+          </p>
+          {reviews ? (
+            <div className="wiz-report-summary">
+              <ReviewsKpi reviews={reviews} />
+            </div>
+          ) : null}
+        </>
       ) : (
-        <div className="wiz-report-summary">
+        <div
+          className={`wiz-report-summary${reviews ? " pulpit-has-reviews" : ""}`}
+        >
           <div className="ui-kpi wiz-report-kpi">
             <p className="wiz-report-kpi-label">Wyświetlenia wizytówki</p>
             <p className="wiz-report-kpi-value mono">
@@ -119,6 +157,8 @@ export function ReportKpiStrip({ summary }: { summary: ReportSummary | null }) {
             </p>
             <RateTicks value={summary.actionsPer100} />
           </div>
+
+          {reviews ? <ReviewsKpi reviews={reviews} /> : null}
         </div>
       )}
     </section>

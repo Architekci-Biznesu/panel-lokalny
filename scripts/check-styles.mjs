@@ -51,6 +51,7 @@ const PREFIXES = {
   admin: ["admin-"],
   ustawienia: ["kontekst-", "ustawienia-"],
   publikacje: ["pub-"],
+  opinie: ["op-"],
 };
 
 const errors = [];

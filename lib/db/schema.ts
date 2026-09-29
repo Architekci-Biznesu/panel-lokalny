@@ -13,7 +13,7 @@ import {
   doublePrecision,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 export const userRoleEnum = pgEnum("user_role", ["owner", "member"]);
 export const profileKindEnum = pgEnum("profile_kind", ["local_business"]);
@@ -22,6 +22,9 @@ export const companyContextSourceEnum = pgEnum("company_context_source", [
   "gbp",
 ]);
 export const oauthProviderEnum = pgEnum("oauth_provider", ["gbp"]);
+
+/** Review replies: customer approves each one, or AI publishes the 3-5 star ones. */
+export const reviewModeEnum = pgEnum("review_mode", ["accept", "auto"]);
 
 export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -58,6 +61,13 @@ export const profiles = pgTable("profiles", {
     (): AnyPgColumn => oauthConnections.id,
     { onDelete: "set null" },
   ),
+  reviewMode: reviewModeEnum("review_mode").notNull().default("accept"),
+  /** When auto mode was switched on (null while off) - older reviews are never answered automatically. */
+  reviewAutoSince: timestamp("review_auto_since", { withTimezone: true }),
+  /** Customer's extra guidelines for every generated reply. */
+  reviewReplyInstructions: text("review_reply_instructions"),
+  /** One line under every reply, e.g. "Zespół Pizzerii Roma". */
+  reviewSignature: text("review_signature"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -674,3 +684,123 @@ export type ContentChannel = (typeof contentChannelEnum.enumValues)[number];
 export type ContentTargetStatus =
   (typeof contentTargetStatusEnum.enumValues)[number];
 export type ContentStatus = (typeof contentStatusEnum.enumValues)[number];
+
+export const reviewReplySourceEnum = pgEnum("review_reply_source", [
+  "panel",
+  "external",
+]);
+
+export const reviewDraftStatusEnum = pgEnum("review_draft_status", [
+  "none",
+  "generating",
+  "ready",
+  "failed",
+]);
+
+export const reviewPublishStatusEnum = pgEnum("review_publish_status", [
+  "idle",
+  "publishing",
+  "failed",
+]);
+
+export const reviewSyncStatusEnum = pgEnum("review_sync_status", [
+  "running",
+  "done",
+  "failed",
+]);
+
+/** One review of a profile, per channel (only Google is implemented). */
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    channel: contentChannelEnum("channel").notNull().default("gbp"),
+    /** Channel-side id (Google: reviewId) */
+    externalId: text("external_id").notNull(),
+    /** 1-5; null when the channel sent no usable rating */
+    rating: integer("rating"),
+    authorName: text("author_name").notNull().default(""),
+    authorPhotoUrl: text("author_photo_url"),
+    /** Raw text as the channel sent it (may hold a "(Translated by Google)" block); null = stars only */
+    comment: text("comment"),
+    /** The author's own words when `comment` is a Google translation */
+    commentOriginal: text("comment_original"),
+    reviewCreatedAt: timestamp("review_created_at", { withTimezone: true }),
+    reviewUpdatedAt: timestamp("review_updated_at", { withTimezone: true }),
+    /** Reply that is public right now - never touched by editing a draft */
+    replyText: text("reply_text"),
+    replySource: reviewReplySourceEnum("reply_source"),
+    repliedAt: timestamp("replied_at", { withTimezone: true }),
+    /** AI proposal or the version being edited */
+    draftText: text("draft_text"),
+    draftStatus: reviewDraftStatusEnum("draft_status")
+      .notNull()
+      .default("none"),
+    publishStatus: reviewPublishStatusEnum("publish_status")
+      .notNull()
+      .default("idle"),
+    publishError: text("publish_error"),
+    /** When the panel first saw this review - gates automatic replies */
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("reviews_profile_channel_external_idx").on(
+      table.profileId,
+      table.channel,
+      table.externalId,
+    ),
+    index("reviews_profile_updated_idx").on(
+      table.profileId,
+      table.reviewUpdatedAt,
+    ),
+  ],
+);
+
+/** One synchronization of a profile's reviews with the channel. */
+export const reviewSyncRuns = pgTable(
+  "review_sync_runs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    status: reviewSyncStatusEnum("status").notNull().default("running"),
+    /** Reviews read from the channel in this run */
+    fetched: integer("fetched").notNull().default(0),
+    /** Reviews the panel had not seen before */
+    newCount: integer("new_count").notNull().default(0),
+    /** From the channel's answer: overall rating and number of reviews */
+    averageRating: numeric("average_rating", { precision: 3, scale: 2 }),
+    totalCount: integer("total_count"),
+    error: text("error"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("review_sync_runs_profile_started_idx").on(
+      table.profileId,
+      table.startedAt,
+    ),
+    // One running sync per profile at a time (the database enforces it).
+    uniqueIndex("review_sync_runs_one_running_idx")
+      .on(table.profileId)
+      .where(sql`${table.status} = 'running'`),
+  ],
+);
+
+export type Review = typeof reviews.$inferSelect;
+export type ReviewSyncRun = typeof reviewSyncRuns.$inferSelect;
+export type ReviewMode = (typeof reviewModeEnum.enumValues)[number];
