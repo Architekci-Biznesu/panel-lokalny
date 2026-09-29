@@ -1180,6 +1180,13 @@
     padding: 0;
   }
 
+  /* Nagłówek z przyciskiem + nie ma własnego marginesu - bez odstępu
+     pierwsza karta dnia specjalnego styka się z przyciskiem. */
+  .wiz-hours-col-head + .wiz-special-list,
+  .wiz-hours-col-head + .wiz-special-empty {
+    margin-top: var(--space-4);
+  }
+
   .wiz-special-item.is-past {
     opacity: 0.78;
   }
@@ -2693,6 +2700,12 @@
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
     padding: 8px 0;
+  }
+
+  /* Rozwijane menu (obszar obsługi, kategorie, UiSelect) są pozycjonowane
+     absolutnie wewnątrz karty - bez tego overflow: hidden ucina im dół. */
+  .wiz-fields:has(.ui-menu) {
+    overflow: visible;
   }
 
   .wiz-field-row {
