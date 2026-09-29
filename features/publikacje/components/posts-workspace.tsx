@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Inbox, Loader2, Sparkles, SquarePen } from "lucide-react";
+import { Check, Inbox, Sparkles, SquarePen } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -21,38 +21,44 @@ import {
 } from "@/features/publikacje/components/history-list";
 import type { HistoryStatusFilter } from "@/features/publikacje/content-status";
 import { TopicPicker } from "@/features/publikacje/components/topic-picker";
+import { TopicsButton } from "@/features/publikacje/components/topics-button";
 import type { HistoryItem } from "@/features/publikacje/load-history";
 import type { InboxData, TopicItem } from "@/features/publikacje/load-inbox";
 
 const POLL_MS = 2000;
-const COLLAPSED_KEY = "pub-chat-collapsed";
-const COLLAPSED_EVENT = "pub-chat-collapsed-change";
 
-function readCollapsed(): boolean {
-  try {
-    return window.localStorage.getItem(COLLAPSED_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function writeCollapsed(value: boolean) {
-  try {
-    window.localStorage.setItem(COLLAPSED_KEY, value ? "1" : "0");
-  } catch {
-    // storage blocked - the chat simply is not remembered
-  }
-  window.dispatchEvent(new Event(COLLAPSED_EVENT));
-}
-
-function subscribeCollapsed(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(COLLAPSED_EVENT, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(COLLAPSED_EVENT, onChange);
+/** Collapsed/expanded flag remembered in localStorage (chat, topics list). */
+function storedFlag(key: string) {
+  const event = `${key}-change`;
+  return {
+    read(): boolean {
+      try {
+        return window.localStorage.getItem(key) === "1";
+      } catch {
+        return false;
+      }
+    },
+    write(value: boolean) {
+      try {
+        window.localStorage.setItem(key, value ? "1" : "0");
+      } catch {
+        // storage blocked - the state simply is not remembered
+      }
+      window.dispatchEvent(new Event(event));
+    },
+    subscribe(onChange: () => void) {
+      window.addEventListener("storage", onChange);
+      window.addEventListener(event, onChange);
+      return () => {
+        window.removeEventListener("storage", onChange);
+        window.removeEventListener(event, onChange);
+      };
+    },
   };
 }
+
+const chatFlag = storedFlag("pub-chat-collapsed");
+const topicsFlag = storedFlag("pub-topics-collapsed");
 
 function PostSkeleton({ label, sub }: { label: string; sub?: string }) {
   return (
@@ -79,15 +85,6 @@ function PostSkeleton({ label, sub }: { label: string; sub?: string }) {
       </div>
     </article>
   );
-}
-
-function topicsWord(count: number): string {
-  if (count === 1) return "temat";
-  const last = count % 10;
-  const lastTwo = count % 100;
-  return last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)
-    ? "tematy"
-    : "tematów";
 }
 
 /**
@@ -133,8 +130,13 @@ export function PostsWorkspace({
     ...tracked,
   ]);
   const collapsed = useSyncExternalStore(
-    subscribeCollapsed,
-    readCollapsed,
+    chatFlag.subscribe,
+    chatFlag.read,
+    () => false,
+  );
+  const topicsCollapsed = useSyncExternalStore(
+    topicsFlag.subscribe,
+    topicsFlag.read,
     () => false,
   );
 
@@ -165,6 +167,16 @@ export function PostsWorkspace({
     if (channel !== "all") params.set("kanal", channel);
     router.replace(`/publikacje?${params.toString()}`);
   }
+
+  // ?tematy=1 (links from other places) is a one-shot "show the topics":
+  // expand the list and drop the parameter from the address.
+  useEffect(() => {
+    if (!topicsOpen) return;
+    topicsFlag.write(false);
+    const params = new URLSearchParams({ status });
+    if (channel !== "all") params.set("kanal", channel);
+    router.replace(`/publikacje?${params.toString()}`);
+  }, [topicsOpen, status, channel, router]);
 
   // Poll running batches; refresh the list as soon as a post or topic lands
   // (and once more when a batch finishes). Progress seen so far lives in the
@@ -212,7 +224,7 @@ export function PostsWorkspace({
     setEditRequest(null);
     setEditingId(itemId);
     setMobileOpen(true);
-    if (collapsed) writeCollapsed(false);
+    if (collapsed) chatFlag.write(false);
   }
 
   function exitEdit() {
@@ -229,41 +241,14 @@ export function PostsWorkspace({
           pendingCount={inbox.items.length}
         />
 
-        {topicsOpen ? (
+        {topicsOpen || topics.length || pendingTopics ? (
           <TopicPicker
             topics={topics}
             pendingTopics={pendingTopics}
+            collapsed={topicsCollapsed && !topicsOpen}
+            onToggleCollapsed={() => topicsFlag.write(!topicsCollapsed)}
             onRunStarted={trackRun}
-            onClose={() => closePanel("pending")}
           />
-        ) : topics.length || pendingTopics ? (
-          <div className="pub-topics-banner" role="note">
-            <span className="pub-topics-banner-icon" aria-hidden>
-              {pendingTopics && !topics.length ? (
-                <Loader2 className="pub-spin" />
-              ) : (
-                <Sparkles />
-              )}
-            </span>
-            <p>
-              {pendingTopics && !topics.length ? (
-                "AI przygotowuje tematy postów…"
-              ) : (
-                <>
-                  <strong>
-                    Masz {topics.length} {topicsWord(topics.length)} do wyboru
-                  </strong>{" "}
-                  - AI napisze posty z tych, które zaznaczysz.
-                </>
-              )}
-            </p>
-            <Link
-              href="/publikacje?tematy=1"
-              className="ui-btn ui-btn-primary ui-btn-sm"
-            >
-              Wybierz tematy
-            </Link>
-          </div>
         ) : null}
 
         {newPostOpen ? <ManualPostForm onClose={() => closePanel()} /> : null}
@@ -312,21 +297,16 @@ export function PostsWorkspace({
             </h2>
             <p className="pub-empty-text">
               {status === "pending" ? "Nic nie czeka na Twoją decyzję. " : ""}
-              Wybierz tematy, z których AI napisze posty, poproś o nie w czacie
-              obok albo dodaj własny post.
+              {topics.length ? "Wybierz tematy" : "Wygeneruj tematy"}, z których
+              AI napisze posty, poproś o nie w czacie obok albo dodaj własny
+              post.
             </p>
             <div className="pub-empty-actions">
               <Link href="/publikacje?nowy=1" className="ui-btn ui-btn-outline">
                 <SquarePen aria-hidden />
                 Nowy post
               </Link>
-              <Link
-                href="/publikacje?tematy=1"
-                className="ui-btn ui-btn-primary"
-              >
-                <Sparkles aria-hidden />
-                Wybierz tematy
-              </Link>
+              <TopicsButton className="ui-btn ui-btn-primary" />
             </div>
           </section>
         ) : null}
@@ -346,11 +326,11 @@ export function PostsWorkspace({
         runs={runs}
         onRunStarted={(runId, count) => trackRun(runId, count)}
         collapsed={collapsed}
-        onToggleCollapsed={() => writeCollapsed(!collapsed)}
+        onToggleCollapsed={() => chatFlag.write(!collapsed)}
         mobileOpen={mobileOpen}
         onMobileOpenChange={(open) => {
           setMobileOpen(open);
-          if (open && collapsed) writeCollapsed(false);
+          if (open && collapsed) chatFlag.write(false);
         }}
       />
     </div>

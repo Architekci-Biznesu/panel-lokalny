@@ -1,12 +1,7 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  ImageIcon,
-  Plus,
-  Sparkles,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageIcon, Plus } from "lucide-react";
 import Link from "next/link";
 import { TargetStatusPill } from "@/features/publikacje/components/content-status-pill";
+import { TopicsButton } from "@/features/publikacje/components/topics-button";
 import {
   CalendarViewToggle,
   TIME_FMT,
@@ -180,13 +175,10 @@ export function CalendarWeeks({
                       <Plus aria-hidden />
                       Zaplanuj post
                     </Link>
-                    <Link
-                      href="/publikacje?tematy=1"
+                    <TopicsButton
                       className="ui-btn ui-btn-ghost ui-btn-sm pub-week-slot-ai"
-                    >
-                      <Sparkles aria-hidden />
-                      Wybierz temat
-                    </Link>
+                      pickLabel="Wybierz temat"
+                    />
                   </div>
                 ) : null}
                 {count === 0 && week.isPast ? (

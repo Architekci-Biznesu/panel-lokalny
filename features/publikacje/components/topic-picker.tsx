@@ -1,8 +1,17 @@
 "use client";
 
-import { Loader2, Pencil, Plus, Sparkles, UserRound, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Pencil,
+  Plus,
+  Sparkles,
+  UserRound,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import {
   addTopic,
@@ -17,26 +26,38 @@ import {
 } from "@/features/publikacje/generation-rules";
 import type { TopicItem } from "@/features/publikacje/load-inbox";
 
+function topicsWord(count: number): string {
+  if (count === 1) return "temat";
+  const last = count % 10;
+  const lastTwo = count % 100;
+  return last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)
+    ? "tematy"
+    : "tematów";
+}
+
 /**
  * "Tematy postów": the customer picks topics (max 10), edits them, adds own
  * ones or asks AI for more - only then AI writes posts from the chosen ones.
- * Topics not chosen stay for later.
+ * Topics not chosen stay for later. Always shown while there are topics;
+ * can be collapsed to a bar (like the chat) - selection survives that.
  */
 export function TopicPicker({
   topics,
   pendingTopics,
+  collapsed,
+  onToggleCollapsed,
   onRunStarted,
-  onClose,
 }: {
   topics: TopicItem[];
   /** Topics AI is still writing (running "topics" runs) */
   pendingTopics: number;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   onRunStarted: (
     runId: string,
     count: number,
     kind: "posts" | "topics",
   ) => void;
-  onClose: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -45,7 +66,6 @@ export function TopicPicker({
   const [draft, setDraft] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [asking, setAsking] = useState(false);
-  const askedRef = useRef(false);
 
   const ids = new Set(topics.map((t) => t.id));
   const chosen = selected.filter((id) => ids.has(id));
@@ -68,20 +88,6 @@ export function TopicPicker({
     setAsking(true);
     void requestTopics().finally(() => setAsking(false));
   }
-
-  // Fewer than 5 topics waiting and AI is not already on it - ask right away.
-  useEffect(() => {
-    if (
-      askedRef.current ||
-      topics.length >= TOPICS_BATCH ||
-      pendingTopics > 0
-    ) {
-      return;
-    }
-    askedRef.current = true;
-    void requestTopics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the panel opens
-  }, []);
 
   function toggle(id: string) {
     setSelected((list) =>
@@ -165,8 +171,42 @@ export function TopicPicker({
         description: "Pojawią się na liście po kolei.",
       });
       onRunStarted(result.runId, result.count, "posts");
-      onClose();
+      setSelected([]);
+      onToggleCollapsed();
     });
+  }
+
+  if (collapsed) {
+    const writing = pendingTopics > 0 && !topics.length;
+    return (
+      <div className="pub-topics-banner" role="note">
+        <span className="pub-topics-banner-icon" aria-hidden>
+          {writing ? <Loader2 className="pub-spin" /> : <Sparkles />}
+        </span>
+        <p>
+          {writing ? (
+            "AI przygotowuje tematy postów…"
+          ) : (
+            <>
+              <strong>
+                {topics.length} {topicsWord(topics.length)} do wyboru
+              </strong>
+              {chosen.length ? ` · zaznaczono ${chosen.length}` : null}
+              {" - AI napisze posty z tych, które zaznaczysz."}
+            </>
+          )}
+        </p>
+        <button
+          type="button"
+          className="ui-btn ui-btn-primary ui-btn-sm"
+          aria-expanded={false}
+          onClick={onToggleCollapsed}
+        >
+          <ChevronDown aria-hidden />
+          Pokaż tematy
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -185,10 +225,11 @@ export function TopicPicker({
         <button
           type="button"
           className="ui-btn ui-btn-ghost ui-btn-sm pub-panel-close"
-          aria-label="Zamknij"
-          onClick={onClose}
+          aria-label="Zwiń tematy"
+          aria-expanded
+          onClick={onToggleCollapsed}
         >
-          <X aria-hidden />
+          <ChevronUp aria-hidden />
         </button>
       </header>
 
@@ -342,9 +383,10 @@ export function TopicPicker({
           <button
             type="button"
             className="ui-btn ui-btn-secondary"
-            onClick={onClose}
+            disabled={pending || !chosen.length}
+            onClick={() => setSelected([])}
           >
-            Anuluj
+            Wyczyść
           </button>
           <button
             type="button"
