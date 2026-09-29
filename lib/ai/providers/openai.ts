@@ -19,8 +19,8 @@ import {
   topicUserPrompt,
 } from "@/lib/ai/content-prompts";
 import {
-  REVIEW_REPLY_SYSTEM_PROMPT,
   finalizeReviewReply,
+  reviewReplySystemPrompt,
   reviewReplyUserPrompt,
 } from "@/lib/ai/review-prompts";
 import { stripReviewFluffFromDescription } from "@/features/wizytowka/description-sanitize";
@@ -198,7 +198,12 @@ Bez markdownu, bez dodatkowych kluczy.`;
 
   async generateReviewReply(input: GenerateReviewReplyInput): Promise<string> {
     const text = await completeText(
-      REVIEW_REPLY_SYSTEM_PROMPT,
+      reviewReplySystemPrompt({
+        rating: input.rating,
+        hasText: Boolean(input.reviewText?.trim()),
+        perspective: input.perspective,
+        style: input.style,
+      }),
       reviewReplyUserPrompt(input),
     );
     return finalizeReviewReply(text, input.signature);

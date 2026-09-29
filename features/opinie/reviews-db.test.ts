@@ -544,6 +544,82 @@ async function main() {
   assert.equal(cleared.replyText, null);
   assert.deepEqual(fakeA.deleteCalls, ["n1"]);
 
+  // =============== 12b. wytyczne osobno dla ocen ===============
+  const fakeD = new FakeReviews();
+  fakeD.reviews = [
+    fakeReview("d1", { rating: 2, comment: "Slabo", createdAt: day(1) }),
+    fakeReview("d2", { rating: 5, comment: "Super", createdAt: day(2) }),
+    fakeReview("d3", { rating: 4, comment: null, createdAt: day(3) }),
+  ];
+  clock = at(600);
+  const D = await makeProfile("d@test.pl", fakeD, {
+    reviewReplyInstructions: "Wspólne",
+    reviewRatingInstructions: {
+      "2": "Wytyczna dla dwójki",
+      "5": "Wytyczna dla piątki",
+    },
+  });
+  aiInputs.length = 0;
+  await sync(D.profile.id, D.deps);
+  const forTwo = aiInputs.find((input) => input.rating === 2);
+  const forFive = aiInputs.find((input) => input.rating === 5);
+  const forFour = aiInputs.find((input) => input.rating === 4);
+  assert.equal(forTwo?.ratingInstructions, "Wytyczna dla dwójki");
+  assert.equal(forFive?.ratingInstructions, "Wytyczna dla piątki");
+  assert.equal(
+    forFour?.ratingInstructions,
+    null,
+    "ocena bez wytycznych nie dostaje cudzych",
+  );
+  assert.equal(
+    forTwo?.instructions,
+    "Wspólne",
+    "wspólne wytyczne dochodzą obok",
+  );
+  // domyślnie zespół + ciepły styl; ustawienia profilu docierają do AI
+  assert.equal(forTwo?.perspective, "team");
+  assert.equal(forTwo?.style, "warm");
+  // ręczne "Wygeneruj ponownie" też używa wytycznych oceny opinii
+  aiInputs.length = 0;
+  await db
+    .update(reviews)
+    .set({ draftText: null, draftStatus: "none" })
+    .where(eq(reviews.profileId, D.profile.id));
+  const d1 = await row(D.profile.id, "d1");
+  await generateReviewDraft(
+    { reviewId: d1.id, profileId: D.profile.id },
+    D.deps,
+  );
+  assert.equal(aiInputs[0].ratingInstructions, "Wytyczna dla dwójki");
+  // tryb auto nadal nie publikuje 1-2 gwiazdek, choć ma wytyczne
+  await db
+    .update(profiles)
+    .set({ reviewMode: "auto", reviewAutoSince: at(590) })
+    .where(eq(profiles.id, D.profile.id));
+  D.profile.reviewMode = "auto";
+  const putBefore = fakeD.putCalls.length;
+  await sync(D.profile.id, D.deps);
+  assert.equal(
+    fakeD.putCalls.some((call) => call.externalId === "d1"),
+    false,
+  );
+  assert.ok(fakeD.putCalls.length >= putBefore);
+
+  // =============== 12c. perspektywa i styl z profilu trafiają do AI ===============
+  const fakeE = new FakeReviews();
+  fakeE.reviews = [
+    fakeReview("e1", { rating: 5, comment: "Super", createdAt: day(1) }),
+  ];
+  clock = at(700);
+  const E = await makeProfile("e@test.pl", fakeE, {
+    reviewPerspective: "owner",
+    reviewStyle: "formal",
+  });
+  aiInputs.length = 0;
+  await sync(E.profile.id, E.deps);
+  assert.equal(aiInputs[0]?.perspective, "owner");
+  assert.equal(aiInputs[0]?.style, "formal");
+
   // =============== 13. izolacja: listy i liczniki tylko własnego profilu ===============
   const { loadReviews, countPendingReviews } = await import("./load-reviews");
   const { loadPulpitReviews } = await import("./load-pulpit-reviews");

@@ -5,6 +5,7 @@ import {
   checkReplyText,
   splitReviewText,
 } from "@/features/opinie/review-rules";
+import { pickRatingInstructions } from "@/features/opinie/review-settings";
 import { reviewDeps, type ReviewDeps } from "@/features/opinie/review-deps";
 import {
   loadReplyContext,
@@ -42,8 +43,14 @@ async function writeDraft(
       reviewText: original,
       translatedText: translated,
       instructions: context.instructions,
+      ratingInstructions: pickRatingInstructions(
+        context.ratingInstructions,
+        review.rating,
+      ),
       signature: context.signature,
       phone: context.phone,
+      perspective: context.perspective,
+      style: context.style,
       oneOffInstruction,
     });
     const checked = checkReplyText(text);

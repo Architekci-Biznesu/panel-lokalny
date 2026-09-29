@@ -113,6 +113,20 @@
       "when": 1790680162086,
       "tag": "0015_opinie",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790682059230,
+      "tag": "0016_opinie_rating_instructions",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790682433425,
+      "tag": "0017_opinie_perspektywa_styl",
+      "breakpoints": true
     }
   ]
 }

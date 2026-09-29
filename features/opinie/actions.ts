@@ -25,6 +25,13 @@ import {
 import { reviewDeps } from "@/features/opinie/review-deps";
 import { loadReplyContext } from "@/features/opinie/reply-context";
 import { splitReviewText } from "@/features/opinie/review-rules";
+import { SAMPLE_REVIEWS } from "@/features/opinie/review-samples";
+import {
+  RATING_INSTRUCTION_MAX,
+  normalizeRatingInstructions,
+  pickRatingInstructions,
+  type RatingKey,
+} from "@/features/opinie/review-settings";
 import { beginReviewSync } from "@/features/opinie/start-sync";
 import { loadReviewSyncState } from "@/features/opinie/sync-control";
 
@@ -220,6 +227,12 @@ const settingsSchema = z.object({
   mode: z.enum(["accept", "auto"]),
   signature: z.string().trim().max(120),
   instructions: z.string().trim().max(1500),
+  perspective: z.enum(["team", "owner"]),
+  style: z.enum(["warm", "formal"]),
+  /** Guidelines per star rating ("1".."5"); unknown keys and empty texts are dropped */
+  ratingInstructions: z
+    .record(z.string(), z.string().max(RATING_INSTRUCTION_MAX))
+    .optional(),
 });
 
 /**
@@ -233,12 +246,13 @@ export async function saveReviewSettings(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Sprawdź pola - podpis do 120, instrukcje do 1500 znaków",
+      error: `Sprawdź pola - podpis do 120, instrukcje do 1500 znaków, wytyczne oceny do ${RATING_INSTRUCTION_MAX}`,
     };
   }
   try {
     const profile = await getActiveProfile();
-    const { mode, signature, instructions } = parsed.data;
+    const { mode, signature, instructions, ratingInstructions } = parsed.data;
+    const { perspective, style } = parsed.data;
     const autoSince =
       mode === "auto" ? (profile.reviewAutoSince ?? new Date()) : null;
     await db
@@ -248,6 +262,10 @@ export async function saveReviewSettings(
         reviewAutoSince: autoSince,
         reviewSignature: signature || null,
         reviewReplyInstructions: instructions || null,
+        reviewPerspective: perspective,
+        reviewStyle: style,
+        reviewRatingInstructions:
+          normalizeRatingInstructions(ratingInstructions),
       })
       .where(eq(profiles.id, profile.id));
     revalidate();
@@ -258,18 +276,8 @@ export async function saveReviewSettings(
   }
 }
 
-const SAMPLE_REVIEWS = [
-  {
-    rating: 5,
-    authorName: "Anna",
-    text: "Bardzo polecam, wszystko załatwione szybko i konkretnie. Miła obsługa.",
-  },
-  {
-    rating: 2,
-    authorName: "Marek",
-    text: "Czekałem dłużej niż zapowiadano i nikt mi nie wytłumaczył, co się dzieje.",
-  },
-] as const;
+/** Ratings the "Pokaż przykładową odpowiedź" button writes samples for. */
+const PREVIEW_RATINGS = [5, 2] as const;
 
 /** Sample replies with the settings as typed in the form - nothing is saved or published. */
 export async function previewReviewReplies(input: unknown): Promise<
@@ -280,28 +288,41 @@ export async function previewReviewReplies(input: unknown): Promise<
   | ActionFail
 > {
   const parsed = settingsSchema
-    .pick({ signature: true, instructions: true })
+    .pick({
+      signature: true,
+      instructions: true,
+      ratingInstructions: true,
+      perspective: true,
+      style: true,
+    })
     .safeParse(input);
   if (!parsed.success) return { ok: false, error: "Sprawdź pola formularza" };
   try {
     const profile = await getActiveProfile();
     const deps = reviewDeps();
     const context = await loadReplyContext(profile, deps);
+    const perRating = normalizeRatingInstructions(
+      parsed.data.ratingInstructions,
+    );
     const samples = await Promise.all(
-      SAMPLE_REVIEWS.map(async (sample) => {
+      PREVIEW_RATINGS.map(async (rating) => {
+        const sample = SAMPLE_REVIEWS[String(rating) as RatingKey];
         const { original } = splitReviewText(sample.text);
         const reply = await deps.generateReply({
           businessName: context.businessName,
           brief: context.brief,
           avoid: context.avoid,
-          rating: sample.rating,
+          rating,
           authorName: sample.authorName,
           reviewText: original,
           instructions: parsed.data.instructions || null,
+          ratingInstructions: pickRatingInstructions(perRating, rating),
           signature: parsed.data.signature || null,
           phone: context.phone,
+          perspective: parsed.data.perspective,
+          style: parsed.data.style,
         });
-        return { rating: sample.rating, review: sample.text, reply };
+        return { rating, review: sample.text, reply };
       }),
     );
     return { ok: true, samples };

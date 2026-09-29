@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "review_rating_instructions" jsonb;

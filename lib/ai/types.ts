@@ -89,12 +89,18 @@ export type GenerateReviewReplyInput = {
   translatedText?: string | null;
   /** The customer's standing guidelines (settings) */
   instructions?: string | null;
+  /** The customer's guidelines for THIS star rating only (settings) */
+  ratingInstructions?: string | null;
   /** One line appended under every reply (added by code, not by the model) */
   signature?: string | null;
   /** Public phone number of the business, for inviting unhappy authors to call */
   phone?: string | null;
   /** One-off request for this draft ("odpowiedz krócej") */
   oneOffInstruction?: string | null;
+  /** Who speaks: "team" = "Dziękujemy", "owner" = "Dziękuję" (default team) */
+  perspective?: "team" | "owner";
+  /** Tone: "warm" = direct and warm, "formal" = official (default warm) */
+  style?: "warm" | "formal";
 };
 
 export type GenerateImageInput = {

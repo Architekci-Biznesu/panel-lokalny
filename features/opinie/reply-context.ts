@@ -1,6 +1,10 @@
 import { and, desc, eq } from "drizzle-orm";
 import { companyContext, profileBriefs, type Profile } from "@/lib/db/schema";
 import type { BriefFields } from "@/lib/ai/types";
+import {
+  normalizeRatingInstructions,
+  type RatingInstructions,
+} from "@/features/opinie/review-settings";
 import type { ReviewDeps } from "@/features/opinie/review-deps";
 import type { GbpLocation } from "@/features/wizytowka/types";
 
@@ -12,7 +16,11 @@ export type ReplyContext = {
   /** Public phone from the saved Google profile, for inviting unhappy authors to call */
   phone: string | null;
   instructions: string | null;
+  /** Guidelines per star rating, each used only for replies to that rating */
+  ratingInstructions: RatingInstructions | null;
   signature: string | null;
+  perspective: "team" | "owner";
+  style: "warm" | "formal";
 };
 
 export async function loadReplyContext(
@@ -52,6 +60,11 @@ export async function loadReplyContext(
     avoid: brief?.avoid ?? null,
     phone,
     instructions: profile.reviewReplyInstructions?.trim() || null,
+    ratingInstructions: normalizeRatingInstructions(
+      profile.reviewRatingInstructions,
+    ),
     signature: profile.reviewSignature?.trim() || null,
+    perspective: profile.reviewPerspective,
+    style: profile.reviewStyle,
   };
 }

@@ -26,6 +26,15 @@ export const oauthProviderEnum = pgEnum("oauth_provider", ["gbp"]);
 /** Review replies: customer approves each one, or AI publishes the 3-5 star ones. */
 export const reviewModeEnum = pgEnum("review_mode", ["accept", "auto"]);
 
+/** Who speaks in a reply: "Dziękujemy" (team) or "Dziękuję" (owner). */
+export const reviewPerspectiveEnum = pgEnum("review_perspective", [
+  "team",
+  "owner",
+]);
+
+/** Tone of a reply: warm and direct, or formal. */
+export const reviewStyleEnum = pgEnum("review_style", ["warm", "formal"]);
+
 export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
   email: text("email").notNull().unique(),
@@ -68,6 +77,14 @@ export const profiles = pgTable("profiles", {
   reviewReplyInstructions: text("review_reply_instructions"),
   /** One line under every reply, e.g. "Zespół Pizzerii Roma". */
   reviewSignature: text("review_signature"),
+  reviewPerspective: reviewPerspectiveEnum("review_perspective")
+    .notNull()
+    .default("team"),
+  reviewStyle: reviewStyleEnum("review_style").notNull().default("warm"),
+  /** Guidelines per star rating: { "1": "...", ..., "5": "..." } - each added only to replies for that rating. */
+  reviewRatingInstructions: jsonb("review_rating_instructions").$type<Partial<
+    Record<"1" | "2" | "3" | "4" | "5", string>
+  > | null>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -804,3 +821,6 @@ export const reviewSyncRuns = pgTable(
 export type Review = typeof reviews.$inferSelect;
 export type ReviewSyncRun = typeof reviewSyncRuns.$inferSelect;
 export type ReviewMode = (typeof reviewModeEnum.enumValues)[number];
+export type ReviewPerspective =
+  (typeof reviewPerspectiveEnum.enumValues)[number];
+export type ReviewStyle = (typeof reviewStyleEnum.enumValues)[number];
