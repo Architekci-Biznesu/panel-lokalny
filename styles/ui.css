@@ -552,6 +552,44 @@
     color: var(--neutral-400);
   }
 
+  /* Ramka AI: cienka ramka w jasnym gradiencie (indygo, lawenda, brzoskwinia
+     z logo) powoli krążąca dookoła kafla - ta sama co przy poście edytowanym
+     z AI w Publikacjach. Element musi mieć własny promień i tło. */
+  .ui-ai-frame {
+    /* Kolory o podobnej jasności - bez bladych odcinków, które przy
+       krążeniu wyglądają jak cieńsza ramka */
+    --ui-ai-soft:
+      var(--brand-400), var(--brand-soft),
+      color-mix(in srgb, var(--warning) 60%, var(--brand-soft)),
+      var(--brand-soft), var(--brand-400);
+
+    position: relative;
+  }
+
+  .ui-ai-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    /* Pełne piksele: 1,5 px wypada między pikselami i przy ułamkowej
+       szerokości kafla jedna krawędź rysuje się cieniej */
+    padding: 2px;
+    border-radius: inherit;
+    background: conic-gradient(from var(--ui-ai-angle), var(--ui-ai-soft));
+    pointer-events: none;
+    mask:
+      linear-gradient(var(--foreground) 0 0) content-box,
+      linear-gradient(var(--foreground) 0 0);
+    mask-composite: exclude;
+    animation: ui-ai-spin 8s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-ai-frame::before {
+      animation: none;
+    }
+  }
+
   /* Wspólny pasek zapisu: pływająca czarna pigułka na dole ekranu (Opinie,
      Usługi, Atrybuty). Ma własne przyciski, żeby style modułów (np.
      .wiz-page .ui-btn) nie zmieniały jego wysokości ani kroju. */
@@ -1491,5 +1529,18 @@
   from {
     opacity: 0;
     transform: translateY(-4px) scale(0.98);
+  }
+}
+
+/* Kąt gradientu ramki AI animowany jako typowana właściwość (obraca kolory) */
+@property --ui-ai-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes ui-ai-spin {
+  to {
+    --ui-ai-angle: 360deg;
   }
 }

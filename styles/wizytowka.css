@@ -2464,8 +2464,8 @@
     width: 28px;
     height: 28px;
     border-radius: var(--radius-pill);
-    background: var(--primary);
-    color: var(--primary-foreground);
+    background: var(--brand);
+    color: var(--white);
     flex-shrink: 0;
   }
 

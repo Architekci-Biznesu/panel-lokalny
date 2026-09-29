@@ -332,7 +332,7 @@ export function ProposalCards({
             return (
               <li
                 key={cardKey(item)}
-                className={`wiz-proposal-card${warn ? " is-warn" : ""}`}
+                className={`wiz-proposal-card${warn ? " is-warn" : " ui-ai-frame"}`}
               >
                 <div className="wiz-proposal-card-top">
                   <span
