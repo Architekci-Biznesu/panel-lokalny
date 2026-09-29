@@ -12,6 +12,10 @@ import type {
   PulpitProposalItem,
 } from "@/features/pulpit/load-pulpit";
 import type { CompletenessCheck } from "@/features/wizytowka/completeness";
+import {
+  COMPLETENESS_CHECK_ICONS,
+  PROPOSAL_FIELD_ICONS,
+} from "@/features/wizytowka/proposal-icons";
 
 type Tone = "ai" | "check";
 
@@ -118,16 +122,19 @@ export function ImproveCard({
         <div className="pulpit-action-groups">
           {proposals.length > 0 ? (
             <Group title="Propozycje AI" count={proposalsTotal}>
-              {proposals.map((item) => (
-                <ActionRow
-                  key={`ai-${item.id}`}
-                  tone="ai"
-                  icon={<Sparkles />}
-                  title={item.label}
-                  meta={item.hint}
-                  href={item.href}
-                />
-              ))}
+              {proposals.map((item) => {
+                const Icon = PROPOSAL_FIELD_ICONS[item.field] ?? Sparkles;
+                return (
+                  <ActionRow
+                    key={`ai-${item.id}`}
+                    tone="ai"
+                    icon={<Icon />}
+                    title={item.label}
+                    meta={item.hint}
+                    href={item.href}
+                  />
+                );
+              })}
               {proposalsTotal > proposals.length ? (
                 <li>
                   <Link
@@ -144,16 +151,19 @@ export function ImproveCard({
 
           {checks.length > 0 ? (
             <Group title="Do uzupełnienia" count={checks.length}>
-              {checks.map((item) => (
-                <ActionRow
-                  key={`check-${item.id}`}
-                  tone="check"
-                  icon={<CircleDashed />}
-                  title={item.label}
-                  meta="Uzupełnij w panelu"
-                  href={item.href}
-                />
-              ))}
+              {checks.map((item) => {
+                const Icon = COMPLETENESS_CHECK_ICONS[item.id] ?? CircleDashed;
+                return (
+                  <ActionRow
+                    key={`check-${item.id}`}
+                    tone="check"
+                    icon={<Icon />}
+                    title={item.label}
+                    meta="Uzupełnij w panelu"
+                    href={item.href}
+                  />
+                );
+              })}
             </Group>
           ) : null}
         </div>

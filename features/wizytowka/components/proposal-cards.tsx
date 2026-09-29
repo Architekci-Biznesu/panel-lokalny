@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  ArrowRight,
-  CalendarDays,
-  ClipboardList,
-  Clock3,
-  FileText,
-  ImageIcon,
-  ListChecks,
-  Sparkles,
-  Tags,
-  Type,
-} from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useTransition } from "react";
 import { toast } from "gooey-toast";
@@ -20,6 +9,10 @@ import { GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
 import { formatWeeklyHoursLabel } from "@/features/wizytowka/hours-compare";
 import { aiHintForSuggestion } from "@/features/wizytowka/components/suggestion-display";
 import {
+  NUDGE_ICONS,
+  PROPOSAL_FIELD_ICONS,
+} from "@/features/wizytowka/proposal-icons";
+import {
   isNudgeProposalCard,
   isProposalField,
   PROPOSAL_META,
@@ -27,12 +20,6 @@ import {
   type ProposalCardItem,
 } from "@/features/wizytowka/proposal-meta";
 import type { GbpSuggestion } from "@/lib/db/schema";
-
-const FIELD_ICONS = {
-  title: Type,
-  description: FileText,
-  services: ClipboardList,
-} as const;
 
 const SPECIAL_HOURS_HREF = "/wizytowka/informacje#wiz-field-special-hours";
 const REGULAR_HOURS_HREF = "/wizytowka/informacje#wiz-field-hours";
@@ -176,17 +163,18 @@ function cardActionLabel(item: ProposalCardItem): string {
 }
 
 function cardIcon(item: ProposalCardItem) {
-  if (item.kind === "special_hours") return CalendarDays;
-  if (item.kind === "regular_hours") return Clock3;
-  if (item.kind === "attributes") return ListChecks;
-  if (item.kind === "photos") return ImageIcon;
-  if (item.kind === "categories") return Tags;
+  if (item.kind === "special_hours") return NUDGE_ICONS.special_hours;
+  if (item.kind === "regular_hours") return NUDGE_ICONS.regular_hours;
+  if (item.kind === "attributes") return NUDGE_ICONS.attributes;
+  if (item.kind === "photos") return NUDGE_ICONS.photos;
+  if (item.kind === "categories") return PROPOSAL_FIELD_ICONS.primary_category;
   if (isProposalField(item.suggestion.field)) {
     return (
-      FIELD_ICONS[item.suggestion.field as keyof typeof FIELD_ICONS] ?? Tags
+      PROPOSAL_FIELD_ICONS[item.suggestion.field] ??
+      PROPOSAL_FIELD_ICONS.primary_category
     );
   }
-  return Tags;
+  return PROPOSAL_FIELD_ICONS.primary_category;
 }
 
 function cardKey(item: ProposalCardItem): string {
