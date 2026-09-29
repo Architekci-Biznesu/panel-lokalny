@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ReviewsWorkspace } from "@/features/opinie/components/reviews-workspace";
 import {
   countGeneratingDrafts,
+  loadReviewStats,
   loadReviews,
 } from "@/features/opinie/load-reviews";
 import {
@@ -43,10 +44,11 @@ export default async function OpiniePage({
     Math.max(REVIEWS_PAGE_SIZE, Number.parseInt(params.limit ?? "", 10) || 0),
   );
 
-  const [list, state, generating] = await Promise.all([
+  const [list, state, generating, stats] = await Promise.all([
     loadReviews(profile, { status, rating, limit }),
     loadReviewSyncState(profile.id),
     countGeneratingDrafts(profile),
+    loadReviewStats(profile),
   ]);
 
   return (
@@ -58,7 +60,12 @@ export default async function OpiniePage({
       rating={rating}
       limit={limit}
       totalStored={list.total}
-      autoMode={profile.reviewMode === "auto"}
+      stats={stats}
+      voice={{
+        mode: profile.reviewMode,
+        perspective: profile.reviewPerspective,
+        style: profile.reviewStyle,
+      }}
       sync={{
         running: state.running,
         lastSyncedAt: state.lastSyncedAt?.toISOString() ?? null,

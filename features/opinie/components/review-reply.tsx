@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { Check, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "gooey-toast";
@@ -68,16 +68,19 @@ function PublishedReply({ item }: { item: ReviewItem }) {
   }
 
   return (
-    <div className="op-reply">
-      <p className="op-reply-label">
-        Odpowiedź firmy
+    <div className="op-reply is-published">
+      <div className="op-reply-top">
+        <p className="op-reply-label">
+          <Check aria-hidden />
+          Odpowiedź opublikowana
+        </p>
         <span className="op-reply-meta">
           {when ? <span className="mono">{when}</span> : null}
           {when ? " · " : null}
           {source}
         </span>
-      </p>
-      <p className="op-reply-text">{item.replyText}</p>
+      </div>
+      <p className="op-reply-text is-quote">{item.replyText}</p>
       <div className="op-reply-foot">
         {confirming ? (
           <>
@@ -154,8 +157,8 @@ function NoReply({ item }: { item: ReviewItem }) {
 
   if (pending) {
     return (
-      <div className="op-reply" aria-busy="true">
-        <p className="op-reply-label">
+      <div className="op-reply is-draft" aria-busy="true">
+        <p className="op-reply-label is-ai">
           <Sparkles aria-hidden />
           <span className="op-shimmer">AI pisze odpowiedź…</span>
         </p>
@@ -182,7 +185,7 @@ function NoReply({ item }: { item: ReviewItem }) {
       ) : null}
       <button
         type="button"
-        className="ui-btn ui-btn-white ui-btn-sm"
+        className="ui-btn ui-btn-outline ui-btn-sm"
         onClick={propose}
       >
         <Sparkles aria-hidden />

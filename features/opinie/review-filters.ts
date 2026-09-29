@@ -1,6 +1,6 @@
 import type { RatingFilter } from "@/features/opinie/review-rules";
 
-/** Do odpowiedzi (no public reply yet) / Wszystkie / Z odpowiedzią. */
+/** Do odpowiedzi (no public reply yet) / Z odpowiedzią / Wszystkie. */
 export type ReviewStatusFilter = "pending" | "all" | "replied";
 
 export const REVIEW_STATUS_FILTERS: Array<{
@@ -8,8 +8,8 @@ export const REVIEW_STATUS_FILTERS: Array<{
   label: string;
 }> = [
   { value: "pending", label: "Do odpowiedzi" },
-  { value: "all", label: "Wszystkie" },
   { value: "replied", label: "Z odpowiedzią" },
+  { value: "all", label: "Wszystkie" },
 ];
 
 export const REVIEW_RATING_FILTERS: Array<{

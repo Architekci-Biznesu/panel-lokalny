@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { Loader2, Send, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "gooey-toast";
@@ -20,7 +20,7 @@ import { REPLY_MAX_BYTES, byteLength } from "@/features/opinie/review-rules";
 const REGENERATE_COPY: ReasonPopoverCopy = {
   trigger: "Wygeneruj ponownie",
   triggerIcon: <Sparkles aria-hidden />,
-  triggerClassName: "ui-btn ui-btn-white ui-btn-sm",
+  triggerClassName: "ui-btn ui-btn-outline ui-btn-sm",
   label: "Wygeneruj odpowiedź ponownie",
   title: "Wygenerować ponownie?",
   description:
@@ -111,8 +111,8 @@ export function ReplyEditor({ item }: { item: ReviewItem }) {
 
   if (writing) {
     return (
-      <div className="op-reply" aria-busy="true">
-        <p className="op-reply-label">
+      <div className="op-reply is-draft" aria-busy="true">
+        <p className="op-reply-label is-ai">
           <Sparkles aria-hidden />
           <span className="op-shimmer">AI pisze odpowiedź…</span>
         </p>
@@ -127,12 +127,20 @@ export function ReplyEditor({ item }: { item: ReviewItem }) {
   }
 
   return (
-    <div className="op-reply">
-      <p className="op-reply-label">
-        {editingPublished
-          ? "Edytujesz opublikowaną odpowiedź"
-          : "Szkic odpowiedzi"}
-      </p>
+    <div className="op-reply is-draft">
+      <div className="op-reply-top">
+        {editingPublished ? (
+          <p className="op-reply-label">Edytujesz opublikowaną odpowiedź</p>
+        ) : (
+          <p className="op-reply-label is-ai">
+            <Sparkles aria-hidden />
+            Szkic odpowiedzi od AI
+          </p>
+        )}
+        <span className={`op-counter mono${over ? " is-over" : ""}`}>
+          {bytes} / {REPLY_MAX_BYTES} B
+        </span>
+      </div>
       {editingPublished ? (
         <p className="op-reply-hint">
           W Google obowiązuje dotychczasowa wersja, dopóki nie klikniesz
@@ -148,6 +156,13 @@ export function ReplyEditor({ item }: { item: ReviewItem }) {
         onChange={(event) => setText(event.target.value)}
         onBlur={saveOnBlur}
       />
+      {item.rating !== null && item.rating <= 2 && !editingPublished ? (
+        <p className="op-reply-rule">
+          <ShieldCheck aria-hidden />
+          Ocena 1-2: odpowiedź nie przyznaje się do winy i zaprasza do kontaktu
+          poza Google. Publikujesz zawsze Ty.
+        </p>
+      ) : null}
       {item.draftStatus === "failed" ? (
         <p className="op-reply-hint">
           Ostatnie generowanie nie powiodło się - możesz poprawić szkic ręcznie
@@ -160,13 +175,10 @@ export function ReplyEditor({ item }: { item: ReviewItem }) {
         </p>
       ) : null}
       <div className="op-reply-foot">
-        <span className={`op-counter mono${over ? " is-over" : ""}`}>
-          {bytes} / {REPLY_MAX_BYTES} B
-        </span>
-        <div className="op-actions">
+        <div className="op-actions is-start">
           <button
             type="button"
-            className="ui-btn ui-btn-ghost ui-btn-sm"
+            className="ui-btn ui-btn-ghost ui-btn-sm op-muted-btn"
             disabled={pending}
             onClick={discard}
           >
@@ -180,20 +192,20 @@ export function ReplyEditor({ item }: { item: ReviewItem }) {
               closeOnConfirm
             />
           )}
-          <button
-            type="button"
-            className="ui-btn ui-btn-primary ui-btn-sm"
-            disabled={pending || over || !text.trim()}
-            onClick={publish}
-          >
-            {pending ? (
-              <Loader2 aria-hidden className="ui-btn-spinner" />
-            ) : (
-              <Send aria-hidden />
-            )}
-            Opublikuj
-          </button>
         </div>
+        <button
+          type="button"
+          className="ui-btn ui-btn-primary ui-btn-sm"
+          disabled={pending || over || !text.trim()}
+          onClick={publish}
+        >
+          {pending ? (
+            <Loader2 aria-hidden className="ui-btn-spinner" />
+          ) : (
+            <Send aria-hidden />
+          )}
+          Opublikuj
+        </button>
       </div>
     </div>
   );

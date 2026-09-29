@@ -7,7 +7,15 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "gooey-toast";
 import { getReviewSyncStatus, refreshReviews } from "@/features/opinie/actions";
 import { ReviewCard } from "@/features/opinie/components/review-card";
-import type { ReviewCounts, ReviewItem } from "@/features/opinie/load-reviews";
+import {
+  ReviewsSummary,
+  type ReviewVoice,
+} from "@/features/opinie/components/reviews-summary";
+import type {
+  ReviewCounts,
+  ReviewItem,
+  ReviewStats,
+} from "@/features/opinie/load-reviews";
 import {
   REVIEW_RATING_FILTERS,
   REVIEW_STATUS_FILTERS,
@@ -24,11 +32,6 @@ const SYNC_FMT = new Intl.DateTimeFormat("pl-PL", {
   hour: "2-digit",
   minute: "2-digit",
   timeZone: "Europe/Warsaw",
-});
-
-const RATING_FMT = new Intl.NumberFormat("pl-PL", {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
 });
 
 export type ReviewsSyncInfo = {
@@ -53,15 +56,6 @@ function listHref(
   return query ? `/opinie?${query}` : "/opinie";
 }
 
-function ratingLabel(count: number): string {
-  if (count === 1) return "opinia";
-  const last = count % 10;
-  const lastTwo = count % 100;
-  return last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)
-    ? "opinie"
-    : "opinii";
-}
-
 /**
  * One list of reviews with filters (not separate routes). Polls while a sync
  * or draft writing is running and refreshes the list as things land.
@@ -74,7 +68,8 @@ export function ReviewsWorkspace({
   rating,
   limit,
   sync,
-  autoMode,
+  stats,
+  voice,
   totalStored,
 }: {
   items: ReviewItem[];
@@ -84,7 +79,8 @@ export function ReviewsWorkspace({
   rating: RatingFilter;
   limit: number;
   sync: ReviewsSyncInfo;
-  autoMode: boolean;
+  stats: ReviewStats;
+  voice: ReviewVoice;
   /** Reviews stored for the profile, whatever the filters */
   totalStored: number;
 }) {
@@ -133,56 +129,13 @@ export function ReviewsWorkspace({
 
   return (
     <div className="op-workspace">
-      <header className="op-summary">
-        <div className="op-score">
-          {sync.averageRating !== null ? (
-            <>
-              <span className="op-score-value mono">
-                {RATING_FMT.format(sync.averageRating)}
-              </span>
-              <Star aria-hidden className="op-score-star" />
-            </>
-          ) : null}
-          <span className="op-score-count">
-            {sync.totalCount !== null
-              ? `${sync.totalCount} ${ratingLabel(sync.totalCount)} w Google`
-              : "Opinie z wizytówki Google"}
-          </span>
-        </div>
-        <div className="op-summary-side">
-          <span className="ui-pill ui-pill-neutral">
-            {autoMode
-              ? "Tryb: automatycznie dla ocen 3-5"
-              : "Tryb: akceptuję każdą odpowiedź"}
-          </span>
-          <span className="op-synced">
-            {checking ? (
-              <>
-                <Loader2 aria-hidden className="ui-btn-spinner" />
-                Sprawdzam opinie w Google…
-              </>
-            ) : sync.lastSyncedAt ? (
-              <>
-                Sprawdzono{" "}
-                <span className="mono">
-                  {SYNC_FMT.format(new Date(sync.lastSyncedAt))}
-                </span>
-              </>
-            ) : (
-              "Jeszcze nie sprawdzano"
-            )}
-          </span>
-          <button
-            type="button"
-            className="ui-btn ui-btn-white ui-btn-sm"
-            disabled={checking}
-            onClick={refresh}
-          >
-            <RefreshCw aria-hidden />
-            Odśwież
-          </button>
-        </div>
-      </header>
+      <ReviewsSummary
+        stats={stats}
+        averageRating={sync.averageRating}
+        totalCount={sync.totalCount}
+        voice={voice}
+        ratingHref={(value) => listHref(status, value)}
+      />
 
       {sync.lastError && !sync.running ? (
         <p className="locked-note">
@@ -239,6 +192,34 @@ export function ReviewsWorkspace({
             );
           })}
         </nav>
+        <div className="op-sync">
+          <span className="op-synced">
+            {checking ? (
+              <>
+                <Loader2 aria-hidden className="ui-btn-spinner" />
+                Sprawdzam opinie w Google…
+              </>
+            ) : sync.lastSyncedAt ? (
+              <>
+                Sprawdzono{" "}
+                <span className="mono">
+                  {SYNC_FMT.format(new Date(sync.lastSyncedAt))}
+                </span>
+              </>
+            ) : (
+              "Jeszcze nie sprawdzano"
+            )}
+          </span>
+          <button
+            type="button"
+            className="ui-btn ui-btn-white ui-btn-sm"
+            disabled={checking}
+            onClick={refresh}
+          >
+            <RefreshCw aria-hidden />
+            Odśwież
+          </button>
+        </div>
       </div>
 
       {firstImport ? (
@@ -274,6 +255,10 @@ export function ReviewsWorkspace({
         </section>
       ) : (
         <div className="op-list">
+          <div className="op-list-head" aria-hidden>
+            <span>Opinia klienta</span>
+            <span>Twoja odpowiedź</span>
+          </div>
           {items.map((item) => (
             <ReviewCard key={item.id} item={item} />
           ))}

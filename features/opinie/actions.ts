@@ -276,56 +276,52 @@ export async function saveReviewSettings(
   }
 }
 
-/** Ratings the "Pokaż przykładową odpowiedź" button writes samples for. */
-const PREVIEW_RATINGS = [5, 2] as const;
+const previewSchema = settingsSchema
+  .pick({
+    signature: true,
+    instructions: true,
+    ratingInstructions: true,
+    perspective: true,
+    style: true,
+  })
+  .extend({
+    rating: z.number().int().min(1).max(5),
+    withText: z.boolean(),
+  });
 
-/** Sample replies with the settings as typed in the form - nothing is saved or published. */
-export async function previewReviewReplies(input: unknown): Promise<
-  | {
-      ok: true;
-      samples: Array<{ rating: number; review: string; reply: string }>;
-    }
-  | ActionFail
-> {
-  const parsed = settingsSchema
-    .pick({
-      signature: true,
-      instructions: true,
-      ratingInstructions: true,
-      perspective: true,
-      style: true,
-    })
-    .safeParse(input);
+/**
+ * A sample reply to the sample review of one rating (with text or stars only),
+ * with the settings as typed in the form - nothing is saved or published.
+ */
+export async function previewReviewReply(
+  input: unknown,
+): Promise<{ ok: true; reply: string } | ActionFail> {
+  const parsed = previewSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Sprawdź pola formularza" };
   try {
     const profile = await getActiveProfile();
     const deps = reviewDeps();
     const context = await loadReplyContext(profile, deps);
-    const perRating = normalizeRatingInstructions(
-      parsed.data.ratingInstructions,
-    );
-    const samples = await Promise.all(
-      PREVIEW_RATINGS.map(async (rating) => {
-        const sample = SAMPLE_REVIEWS[String(rating) as RatingKey];
-        const { original } = splitReviewText(sample.text);
-        const reply = await deps.generateReply({
-          businessName: context.businessName,
-          brief: context.brief,
-          avoid: context.avoid,
-          rating,
-          authorName: sample.authorName,
-          reviewText: original,
-          instructions: parsed.data.instructions || null,
-          ratingInstructions: pickRatingInstructions(perRating, rating),
-          signature: parsed.data.signature || null,
-          phone: context.phone,
-          perspective: parsed.data.perspective,
-          style: parsed.data.style,
-        });
-        return { rating, review: sample.text, reply };
-      }),
-    );
-    return { ok: true, samples };
+    const { rating, withText } = parsed.data;
+    const sample = SAMPLE_REVIEWS[String(rating) as RatingKey];
+    const reply = await deps.generateReply({
+      businessName: context.businessName,
+      brief: context.brief,
+      avoid: context.avoid,
+      rating,
+      authorName: sample.authorName,
+      reviewText: withText ? splitReviewText(sample.text).original : null,
+      instructions: parsed.data.instructions || null,
+      ratingInstructions: pickRatingInstructions(
+        normalizeRatingInstructions(parsed.data.ratingInstructions),
+        rating,
+      ),
+      signature: parsed.data.signature || null,
+      phone: context.phone,
+      perspective: parsed.data.perspective,
+      style: parsed.data.style,
+    });
+    return { ok: true, reply };
   } catch (error) {
     return fail(error);
   }

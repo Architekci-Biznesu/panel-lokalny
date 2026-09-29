@@ -191,3 +191,61 @@ export async function countGeneratingDrafts(
     );
   return row?.value ?? 0;
 }
+
+/** The summary above the list: rating spread and how much still waits for a reply. */
+export type ReviewStats = {
+  /** Stored reviews per star rating (index 0 = 1 star) */
+  byRating: [number, number, number, number, number];
+  /** Average of the stored ratings (Google's own average is preferred when known) */
+  average: number | null;
+  total: number;
+  replied: number;
+  pending: number;
+  /** Waiting reviews rated 1-2 */
+  pendingLow: number;
+  /** Waiting reviews with a ready AI draft */
+  draftsReady: number;
+};
+
+export async function loadReviewStats(
+  profile: Pick<Profile, "id">,
+): Promise<ReviewStats> {
+  const count = (where: SQL) =>
+    sql<number>`count(*) filter (where ${where})`.mapWith(Number);
+  const pendingWhere = sql`${reviews.replyText} is null`;
+  const [row] = await db
+    .select({
+      r1: count(sql`${reviews.rating} = 1`),
+      r2: count(sql`${reviews.rating} = 2`),
+      r3: count(sql`${reviews.rating} = 3`),
+      r4: count(sql`${reviews.rating} = 4`),
+      r5: count(sql`${reviews.rating} = 5`),
+      average: sql<number | null>`avg(${reviews.rating})`.mapWith((value) =>
+        value === null ? null : Number(value),
+      ),
+      total: sql<number>`count(*)`.mapWith(Number),
+      replied: count(sql`${reviews.replyText} is not null`),
+      pending: count(pendingWhere),
+      pendingLow: count(sql`${pendingWhere} and ${reviews.rating} <= 2`),
+      draftsReady: count(
+        sql`${pendingWhere} and ${reviews.draftText} is not null and ${reviews.draftStatus} = 'ready'`,
+      ),
+    })
+    .from(reviews)
+    .where(eq(reviews.profileId, profile.id));
+  return {
+    byRating: [
+      row?.r1 ?? 0,
+      row?.r2 ?? 0,
+      row?.r3 ?? 0,
+      row?.r4 ?? 0,
+      row?.r5 ?? 0,
+    ],
+    average: row?.average ?? null,
+    total: row?.total ?? 0,
+    replied: row?.replied ?? 0,
+    pending: row?.pending ?? 0,
+    pendingLow: row?.pendingLow ?? 0,
+    draftsReady: row?.draftsReady ?? 0,
+  };
+}

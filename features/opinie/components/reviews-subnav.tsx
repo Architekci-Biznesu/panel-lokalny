@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { href: "/opinie", label: "Opinie", exact: true },
-  { href: "/opinie/ustawienia", label: "Ustawienia", exact: false },
+  { href: "/opinie/ustawienia", label: "Ustawienia odpowiedzi", exact: false },
 ] as const;
 
 /** Module tabs - the same .ui-subnav pattern as Publikacje. */
