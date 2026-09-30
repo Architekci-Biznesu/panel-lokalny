@@ -3,7 +3,12 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { ChannelReviewError } from "../../lib/integrations/channel";
-import { FakeReviews, fakeReview, testDatabaseUrl } from "./test-support";
+import {
+  FakeReviews,
+  TEST_EMAIL_DOMAIN,
+  fakeReview,
+  testDatabaseUrl,
+} from "./test-support";
 
 /**
  * Review jobs against a real (local) database with a FAKE channel and FAKE AI:
@@ -12,6 +17,10 @@ import { FakeReviews, fakeReview, testDatabaseUrl } from "./test-support";
  */
 
 async function main() {
+  // TEST_DATABASE_URL (and DATABASE_URL for the same-database check) from
+  // .env.local; variables already set in the shell win.
+  const { config } = await import("dotenv");
+  config({ path: ".env.local", quiet: true });
   const url = testDatabaseUrl();
   if (!url) {
     console.log(
@@ -22,6 +31,20 @@ async function main() {
 
   // Fresh schema from the real migrations, then load the app modules on it.
   const admin = postgres(url, { prepare: false, onnotice: () => {} });
+  // Last guard before wiping: a database holding a real account is not ours.
+  const [accountsTable] =
+    await admin`select to_regclass('public.accounts') as name`;
+  if (accountsTable.name) {
+    const [real] = await admin`
+      select count(*)::int as count from public.accounts
+      where email not like ${"%" + TEST_EMAIL_DOMAIN}`;
+    if (real.count > 0) {
+      await admin.end();
+      throw new Error(
+        `Baza testowa ma ${real.count} prawdziwych kont - to nie jest baza do testów, nic nie usunięto`,
+      );
+    }
+  }
   await admin`drop schema if exists public cascade`;
   await admin`drop schema if exists drizzle cascade`;
   await admin`create schema public`;
@@ -626,13 +649,15 @@ async function main() {
     fakeReview("f1", {
       rating: 4,
       comment: "Dobrze",
-      createdAt: day(1),
+      // after the auto-mode switch below (at 790), so auto publishing applies
+      createdAt: at(795),
       updatedAt: at(795),
     }),
     fakeReview("f2", {
       rating: 5,
       comment: "Super",
-      createdAt: day(1),
+      // after the auto-mode switch below (at 790), so auto publishing applies
+      createdAt: at(795),
       updatedAt: at(795),
     }),
   ];

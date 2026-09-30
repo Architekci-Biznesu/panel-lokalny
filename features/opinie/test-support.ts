@@ -7,20 +7,38 @@ import {
 
 /**
  * Test doubles for the review jobs: a fake channel (never Google) and helpers.
- * Tests that touch the database need TEST_DATABASE_URL pointing at a LOCAL
- * database - anything else is refused, so a test can never write to Neon.
+ * Tests that touch the database need TEST_DATABASE_URL: a local database, or
+ * a separate Neon branch (e.g. "test") when TEST_DATABASE_ALLOW_REMOTE=1 and
+ * its endpoint differs from DATABASE_URL. The test wipes that database, so
+ * anything that could be the app's database is refused.
  */
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
-/** TEST_DATABASE_URL, or null when unset. Throws when it is not a local database. */
+/** Accounts created by the tests - a database with any other account is real. */
+export const TEST_EMAIL_DOMAIN = "@test.pl";
+
+/** Neon endpoint of a host: the pooled and the direct address are one database. */
+function endpointOf(host: string): string {
+  return host.split(".")[0].replace(/-pooler$/, "");
+}
+
+/** TEST_DATABASE_URL, or null when unset. Throws when it could be the app's database. */
 export function testDatabaseUrl(): string | null {
-  const url = process.env.TEST_DATABASE_URL;
+  const url = process.env.TEST_DATABASE_URL?.trim();
   if (!url) return null;
   const host = new URL(url).hostname;
-  if (!LOCAL_HOSTS.has(host)) {
+  if (LOCAL_HOSTS.has(host)) return url;
+
+  if (process.env.TEST_DATABASE_ALLOW_REMOTE !== "1") {
     throw new Error(
-      `TEST_DATABASE_URL musi wskazywać lokalną bazę (localhost), a wskazuje na ${host}`,
+      `TEST_DATABASE_URL wskazuje bazę zdalną (${host}) - ustaw TEST_DATABASE_ALLOW_REMOTE=1, jeśli to osobna gałąź testowa`,
+    );
+  }
+  const appUrl = process.env.DATABASE_URL?.trim();
+  if (appUrl && endpointOf(new URL(appUrl).hostname) === endpointOf(host)) {
+    throw new Error(
+      "TEST_DATABASE_URL wskazuje tę samą bazę co DATABASE_URL - test by ją wyczyścił",
     );
   }
   return url;
