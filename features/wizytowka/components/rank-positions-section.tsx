@@ -212,7 +212,14 @@ export function RankPositionsSection({
       void (async () => {
         const res = await getRankScanStatus({ scanId: scan.id });
         if (cancelled || !res.ok) return;
-        if (res.scan.status === "running") return;
+        if (res.scan.status === "running") {
+          setScan((prev) =>
+            prev && prev.id === scan.id
+              ? { ...prev, results: res.results }
+              : prev,
+          );
+          return;
+        }
         const day = new Intl.DateTimeFormat("en-CA", {
           timeZone: RANK_TIMEZONE,
           year: "numeric",
@@ -705,6 +712,7 @@ export function RankPositionsSection({
                 <button
                   type="button"
                   className="rank-pill-label"
+                  title={k.phrase}
                   onClick={() => {
                     setSelectedKeywordId(k.id);
                     const days = k.scanDays;
@@ -934,8 +942,7 @@ export function RankPositionsSection({
                   <span>Punkty siatki</span>
                   <span className="mono">
                     {(scan?.gridSize ?? RANK_GRID_SIZE) *
-                      (scan?.gridSize ?? RANK_GRID_SIZE)}{" "}
-                    + 1
+                      (scan?.gridSize ?? RANK_GRID_SIZE)}
                   </span>
                 </div>
                 <div className="rank-scan-summary-row">

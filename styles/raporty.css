@@ -148,9 +148,8 @@
     font-weight: 400;
     padding: 0.35rem 0.75rem;
     cursor: pointer;
-    max-width: 16rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    max-width: 26rem;
+    min-width: 0;
     white-space: nowrap;
     display: inline-flex;
     align-items: baseline;
@@ -159,6 +158,13 @@
 
   .rank-pill-phrase {
     font-weight: 700;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .rank-pill-label .rank-pill-radius {
+    flex-shrink: 0;
   }
 
   .rank-pill.is-active .rank-pill-label {
@@ -1667,7 +1673,7 @@
   }
 
   .rank-local-pack .ui-section-header {
-    margin-bottom: 12px;
+    margin-bottom: 0;
   }
 }
 

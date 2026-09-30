@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { friendlyProviderError } from "@/features/wizytowka/rank/friendly-error";
 import { RANK_SCAN_CONCURRENCY } from "@/lib/config/rank-limits";
 import { db } from "@/lib/db";
 import {
@@ -190,7 +191,9 @@ export async function runScan(scanId: string): Promise<void> {
       localPackPosition = matched.position;
     } catch (error) {
       errors.push(
-        `Local Pack: ${error instanceof Error ? error.message : "błąd"}`,
+        `Local Pack: ${friendlyProviderError(
+          error instanceof Error ? error.message : "błąd",
+        )}`,
       );
     }
   } else {
@@ -221,40 +224,35 @@ export async function runScan(scanId: string): Promise<void> {
           businessName,
           businessAddress,
         });
-        return {
+        const row = {
           lat: point.lat,
           lng: point.lng,
           position: matched.position,
           matchMethod: matched.matchMethod,
         };
+        await db
+          .insert(rankResults)
+          .values({ scanId, ...row, checkedAt: new Date() });
+        return row;
       } catch (error) {
         errors.push(
-          `Punkt (${point.lat.toFixed(4)},${point.lng.toFixed(4)}): ${
-            error instanceof Error ? error.message : "błąd"
-          }`,
+          `Siatka: ${friendlyProviderError(
+            error instanceof Error ? error.message : "błąd",
+          )}`,
         );
-        return {
+        const row = {
           lat: point.lat,
           lng: point.lng,
           position: null as number | null,
           matchMethod: "none" as const,
         };
+        await db
+          .insert(rankResults)
+          .values({ scanId, ...row, checkedAt: new Date() });
+        return row;
       }
     },
   );
-
-  if (pointOutcomes.length > 0) {
-    await db.insert(rankResults).values(
-      pointOutcomes.map((row) => ({
-        scanId,
-        lat: row.lat,
-        lng: row.lng,
-        position: row.position,
-        matchMethod: row.matchMethod,
-        checkedAt: new Date(),
-      })),
-    );
-  }
 
   const positions = pointOutcomes.map((r) => r.position);
   const agr = computeAgr(positions);
@@ -268,7 +266,8 @@ export async function runScan(scanId: string): Promise<void> {
       localPackResults,
       agr: agr.toFixed(3),
       atgr: atgr.toFixed(4),
-      error: errors.length > 0 ? errors.slice(0, 5).join("; ") : null,
+      error:
+        errors.length > 0 ? [...new Set(errors)].slice(0, 5).join("; ") : null,
       finishedAt: new Date(),
     })
     .where(eq(rankScans.id, scanId));

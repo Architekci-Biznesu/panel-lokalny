@@ -124,7 +124,7 @@ import {
 /** Config limits. */
 {
   assert.equal(RANK_MAX_KEYWORDS, 10);
-  assert.equal(rankQueryCount(5), 26);
+  assert.equal(rankQueryCount(5), 25);
   assert.deepEqual([...RANK_RADIUS_OPTIONS_KM], [5, 10, 15]);
 }
 

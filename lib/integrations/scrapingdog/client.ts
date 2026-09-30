@@ -166,7 +166,7 @@ async function getJsonWithRetry(
       return await getJson(url, params);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      const isRetryable = lastError.message.includes("(400)");
+      const isRetryable = /\((400|502|503|504)\)/.test(lastError.message);
       if (!isRetryable || i === attempts - 1) throw lastError;
       await new Promise((r) => setTimeout(r, 1200 * (i + 1)));
     }

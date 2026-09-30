@@ -2,6 +2,7 @@
 
 import { Star } from "lucide-react";
 import type { LocalPackSnapshotItem } from "@/lib/db/schema";
+import { friendlyProviderError } from "@/features/wizytowka/rank/friendly-error";
 
 export function RankLocalPackTable({
   rows,
@@ -17,7 +18,8 @@ export function RankLocalPackTable({
   const localPackError = errorHint
     ?.split(";")
     .map((s) => s.trim())
-    .find((s) => s.toLowerCase().startsWith("local pack"));
+    .find((s) => s.toLowerCase().startsWith("local pack"))
+    ?.replace(/^local pack:\s*/i, "");
 
   return (
     <section className="ui-section rank-local-pack">
@@ -34,8 +36,8 @@ export function RankLocalPackTable({
         <div className="ui-section-body">
           <p className="rank-local-pack-empty">
             {localPackError
-              ? localPackError
-              : "Nie udało się pobrać listy firm z Local Packu. Mapa siatki działa osobno - spróbuj ponowić skan później."}
+              ? `Nie udało się pobrać listy firm z Google. ${friendlyProviderError(localPackError)} Wyniki mapy powyżej są aktualne.`
+              : "Nie udało się pobrać listy firm z Google. Wyniki mapy powyżej są aktualne - spróbuj ponowić skan później."}
           </p>
         </div>
       ) : (

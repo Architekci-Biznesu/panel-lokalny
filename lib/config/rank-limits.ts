@@ -22,5 +22,5 @@ export const RANK_SCAN_CONCURRENCY = 5;
 export const RANK_MISSING_POSITION = 21;
 
 export function rankQueryCount(gridSize: number = RANK_GRID_SIZE): number {
-  return gridSize * gridSize + 1;
+  return gridSize * gridSize;
 }
