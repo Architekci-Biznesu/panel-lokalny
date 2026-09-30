@@ -3,7 +3,7 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { acceptAllGbpSuggestions } from "@/features/wizytowka/actions";
 import { GBP_PHOTO_MIN } from "@/features/wizytowka/completeness";
 import { formatWeeklyHoursLabel } from "@/features/wizytowka/hours-compare";

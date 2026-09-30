@@ -4,7 +4,7 @@ import { Check, Inbox, Loader2, RefreshCw, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { getReviewSyncStatus, refreshReviews } from "@/features/opinie/actions";
 import { ReviewCard } from "@/features/opinie/components/review-card";
 import {

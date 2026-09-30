@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { ChevronDown, LogIn, Search } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   enterAdminAccount,
   enterAdminProfile,

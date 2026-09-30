@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   applyContentRevision,
   routeChatMessage,

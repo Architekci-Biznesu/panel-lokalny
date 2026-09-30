@@ -3,7 +3,7 @@
 import { Check, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   deleteReviewReplyAction,
   requestReviewDraft,

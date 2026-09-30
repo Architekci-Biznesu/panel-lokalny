@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Check, Loader2, Pencil, Sparkles } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { RejectPopover } from "@/components/ui/reject-popover";
 import {
   acceptGbpSuggestion,

@@ -4,7 +4,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { suggestTopics } from "@/features/publikacje/actions";
 
 type TopicsState = {

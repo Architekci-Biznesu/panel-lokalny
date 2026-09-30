@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Pencil, Search, X } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   searchServiceAreaPlaces,
   updateGbpAddress,

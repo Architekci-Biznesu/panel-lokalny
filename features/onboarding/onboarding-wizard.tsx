@@ -28,7 +28,7 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   confirmGbpLocations,
   disconnectGbpAction,

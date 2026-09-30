@@ -3,7 +3,7 @@
 import { Check, Loader2, SquarePen, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { createManualPost } from "@/features/publikacje/actions";
 import {
   checkManualPost,

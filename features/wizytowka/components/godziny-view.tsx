@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { CircleAlert, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   updateGbpRegularHours,
   updateGbpSpecialHours,

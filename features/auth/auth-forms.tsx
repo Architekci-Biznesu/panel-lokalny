@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   loginAction,
   registerAction,

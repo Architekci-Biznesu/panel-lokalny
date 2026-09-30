@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   addTopic,
   dismissTopic,
@@ -166,7 +166,7 @@ export function TopicPicker({
         });
         return;
       }
-      toast.info({
+      toast.ai({
         title: `AI pisze ${result.count} ${result.count === 1 ? "post" : result.count < 5 ? "posty" : "postów"}`,
         description: "Pojawią się na liście po kolei.",
       });

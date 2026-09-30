@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { Pencil, X } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { updateGbpAttributesBatch } from "@/features/wizytowka/actions";
 import {
   attributeId,

@@ -9,7 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { updateGbpServices } from "@/features/wizytowka/actions";
 import { InlineSuggestion } from "@/features/wizytowka/components/inline-suggestion";
 import { serviceLabel } from "@/features/wizytowka/components/suggestion-display";

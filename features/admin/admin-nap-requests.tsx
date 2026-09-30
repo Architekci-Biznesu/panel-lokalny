@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { LogIn } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   enterAdminProfile,
   type AdminNapInterestRow,

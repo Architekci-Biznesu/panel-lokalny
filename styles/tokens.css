@@ -129,9 +129,9 @@
 
   /* gooey-toast: kolory stanów (czyta je biblioteka) */
   --gooey-state-success: var(--success);
-  --gooey-state-error: var(--destructive);
+  --gooey-state-error: var(--danger-600);
   --gooey-state-warning: var(--warning-foreground);
-  --gooey-state-info: var(--info);
-  --gooey-state-loading: var(--muted-foreground);
+  --gooey-state-info: var(--brand);
+  --gooey-state-loading: var(--brand);
   --gooey-state-action: var(--primary);
 }

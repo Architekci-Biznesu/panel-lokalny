@@ -7,7 +7,7 @@ import { KONTEKST_FIELDS } from "@/features/ustawienia/kontekst-fields";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { saveKontekstAction } from "@/features/ustawienia/kontekst-actions";
 import { AnalysisProgressOverlay } from "@/features/wizytowka/components/analysis-progress-overlay";
 import { reanalyzeGbpAction } from "@/features/wizytowka/actions";

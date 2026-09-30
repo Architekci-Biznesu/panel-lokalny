@@ -2,7 +2,7 @@
 
 import { ImageIcon, ImagePlus, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { useRef } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const ACCEPT = "image/jpeg,image/png,image/webp";

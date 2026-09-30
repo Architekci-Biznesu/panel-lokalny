@@ -3,7 +3,7 @@
 import { Loader2, Send, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import {
   ReasonPopover,
   type ReasonPopoverCopy,

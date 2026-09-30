@@ -3,7 +3,7 @@
 import { ChevronDown, Loader2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { updatePostText } from "@/features/publikacje/actions";
 import {
   MANUAL_BODY_MAX,

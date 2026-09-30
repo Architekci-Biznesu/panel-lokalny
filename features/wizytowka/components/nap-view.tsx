@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useTransition } from "react";
 import { Check, ExternalLink, Loader2, ShoppingCart } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { requestNapInterest } from "@/features/wizytowka/actions";
 
 type NapStatus = "published" | "in_progress" | "pending";

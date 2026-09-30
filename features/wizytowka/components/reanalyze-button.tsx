@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
-import { toast } from "gooey-toast";
+import { toast } from "@/lib/toast";
 import { AnalysisProgressOverlay } from "@/features/wizytowka/components/analysis-progress-overlay";
 import { reanalyzeGbpAction } from "@/features/wizytowka/actions";
 
