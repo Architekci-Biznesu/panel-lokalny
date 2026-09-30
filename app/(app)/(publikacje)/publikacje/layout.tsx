@@ -11,6 +11,8 @@ import {
   loadTopics,
 } from "@/features/publikacje/load-inbox";
 import { getActiveProfile } from "@/lib/session";
+import { ModuleHeader } from "@/features/shell/module-header";
+import { PUBLIKACJE_HEADER } from "@/features/publikacje/module";
 
 export default async function PublikacjeLayout({
   children,
@@ -28,25 +30,21 @@ export default async function PublikacjeLayout({
   return (
     <TopicsStateProvider open={topics.length} generating={generating}>
       <div className="pub-page">
-        <div className="page-header">
-          <div>
-            <h1>Publikacje</h1>
-            <p>
-              AI proponuje posty do wizytówki Google - akceptujesz, poprawiasz w
-              czacie obok albo odrzucasz
-            </p>
-          </div>
-          <div className="pub-header-actions">
-            <Link href="/publikacje?nowy=1" className="ui-btn ui-btn-white">
-              <SquarePen aria-hidden />
-              Nowy post
-            </Link>
-            <TopicsButton
-              className="ui-btn ui-btn-primary"
-              pickLabel="Wygeneruj posty"
-            />
-          </div>
-        </div>
+        <ModuleHeader
+          {...PUBLIKACJE_HEADER}
+          actions={
+            <div className="pub-header-actions">
+              <Link href="/publikacje?nowy=1" className="ui-btn ui-btn-white">
+                <SquarePen aria-hidden />
+                Nowy post
+              </Link>
+              <TopicsButton
+                className="ui-btn ui-btn-primary"
+                pickLabel="Wygeneruj posty"
+              />
+            </div>
+          }
+        />
         <PublikacjeSubnav pendingCount={pendingCount} />
         <div className="pub-body">{children}</div>
       </div>

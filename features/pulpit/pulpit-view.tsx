@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ModuleHeader } from "@/features/shell/module-header";
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays } from "lucide-react";
 import { ImproveCard } from "@/features/pulpit/improve-card";
@@ -91,35 +92,37 @@ export function PulpitView({ data }: { data: PulpitBase }) {
 
   return (
     <div className="pulpit-page">
-      <div className="page-header">
-        <div>
-          <h1>Pulpit</h1>
-          {profile ? (
+      <ModuleHeader
+        title="Pulpit"
+        below={
+          profile ? (
             <Suspense fallback={<GbpFreshnessPlaceholder />}>
               <Freshness profile={profile} />
             </Suspense>
-          ) : null}
-        </div>
-        <div className="pulpit-header-actions">
-          <span className="pulpit-range mono">
-            <CalendarDays aria-hidden />
-            {profile ? (
-              <Suspense fallback="Ostatnie 30 dni">
-                <RangeLabel profile={profile} />
-              </Suspense>
-            ) : (
-              "Ostatnie 30 dni"
-            )}
-          </span>
-          <Link
-            href="/wizytowka/raporty"
-            className="ui-btn ui-btn-outline ui-btn-sm"
-          >
-            Pełny raport
-            <ArrowUpRight aria-hidden />
-          </Link>
-        </div>
-      </div>
+          ) : null
+        }
+        actions={
+          <div className="pulpit-header-actions">
+            <span className="pulpit-range mono">
+              <CalendarDays aria-hidden />
+              {profile ? (
+                <Suspense fallback="Ostatnie 30 dni">
+                  <RangeLabel profile={profile} />
+                </Suspense>
+              ) : (
+                "Ostatnie 30 dni"
+              )}
+            </span>
+            <Link
+              href="/wizytowka/raporty"
+              className="ui-btn ui-btn-outline ui-btn-sm"
+            >
+              Pełny raport
+              <ArrowUpRight aria-hidden />
+            </Link>
+          </div>
+        }
+      />
 
       {!data.connected ? (
         <p className="locked-note">

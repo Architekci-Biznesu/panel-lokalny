@@ -1,42 +1,13 @@
-"use client";
+import { ModuleSubnav } from "@/features/shell/module-subnav";
+import { PUBLIKACJE_TABS } from "@/features/publikacje/module";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-const PUB_TABS = [
-  { href: "/publikacje", label: "Posty", exact: true },
-  { href: "/publikacje/kalendarz", label: "Kalendarz", exact: false },
-] as const;
-
-/** Module tabs - the same .ui-subnav pattern as Wizytówka. */
 export function PublikacjeSubnav({ pendingCount }: { pendingCount: number }) {
-  const pathname = usePathname();
-
   return (
-    <nav className="ui-subnav" aria-label="Zakładki publikacji">
-      {PUB_TABS.map((tab) => {
-        const active = tab.exact
-          ? pathname === tab.href
-          : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-        const count = tab.href === "/publikacje" ? pendingCount : 0;
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={`ui-subnav-link ${active ? "active" : ""}`}
-          >
-            <span>{tab.label}</span>
-            {count > 0 ? (
-              <span
-                className="ui-subnav-badge"
-                aria-label={`${count} do akceptacji`}
-              >
-                {count}
-              </span>
-            ) : null}
-          </Link>
-        );
-      })}
-    </nav>
+    <ModuleSubnav
+      tabs={PUBLIKACJE_TABS}
+      label="Zakładki publikacji"
+      counts={{ "/publikacje": pendingCount }}
+      countLabel="do akceptacji"
+    />
   );
 }

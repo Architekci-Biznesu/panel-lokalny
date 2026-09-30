@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { KONTEKST_FIELDS } from "@/features/ustawienia/kontekst-fields";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -91,19 +92,7 @@ export function KontekstForm({
           });
         })}
       >
-        {(
-          [
-            ["services", "Usługi", "textarea"],
-            ["tone", "Ton komunikacji", "textarea"],
-            ["targetAudience", "Grupa docelowa", "textarea"],
-            ["differentiators", "Wyróżniki", "textarea"],
-            ["serviceArea", "Obszar działania", "textarea"],
-            ["avoid", "Czego unikać w komunikacji", "textarea"],
-            ["outOfScope", "Czego nie robimy", "textarea"],
-            ["websiteUrl", "Adres strony", "input"],
-            ["notes", "Uwagi własne", "textarea"],
-          ] as const
-        ).map(([name, label, kind]) => (
+        {KONTEKST_FIELDS.map(([name, label, kind]) => (
           <div key={name} className="kontekst-field">
             <label className="text-sm font-medium" htmlFor={name}>
               {label}

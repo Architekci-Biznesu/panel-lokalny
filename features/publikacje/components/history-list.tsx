@@ -32,7 +32,8 @@ const STATUS_ORDER: HistoryStatusFilter[] = [
   "all",
 ];
 
-const STATUS_FILTERS = STATUS_ORDER.map((value) =>
+/** Status filters in display order (also used by the loading skeleton). */
+export const STATUS_FILTERS = STATUS_ORDER.map((value) =>
   HISTORY_STATUS_FILTERS.find((f) => f.value === value)!,
 );
 

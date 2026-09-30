@@ -3,6 +3,7 @@ import { LastAnalysisLabel } from "@/features/wizytowka/components/last-analysis
 import { AnalysisRunningGate } from "@/features/wizytowka/components/analysis-running-gate";
 import { ProposalCards } from "@/features/wizytowka/components/proposal-cards";
 import { PendingEditsBanner } from "@/features/wizytowka/components/pending-edits-banner";
+import { ModuleHeader } from "@/features/shell/module-header";
 import { WizytowkaSubnav } from "@/features/wizytowka/components/wizytowka-subnav";
 import { GbpFreshness } from "@/features/wizytowka/components/gbp-freshness";
 import { WizEditingProvider } from "@/features/wizytowka/components/wiz-editing";
@@ -126,28 +127,31 @@ export default async function WizytowkaLayout({
     <WizEditingProvider>
       <div className="wiz-page">
         <AnalysisRunningGate analyzing={analyzing} />
-        <div className="page-header wiz-header">
-          <div>
-            <h1>Wizytówka Google</h1>
-            {gbpStatus ? (
+        <ModuleHeader
+          title="Wizytówka Google"
+          className="wiz-header"
+          below={
+            gbpStatus ? (
               <GbpFreshness
                 scope="wizytowka"
                 fetchedAtIso={gbpStatus.fetchedAt?.toISOString() ?? null}
                 refreshing={gbpStatus.refreshing}
               />
-            ) : null}
-          </div>
-          <div className="wiz-header-actions">
-            <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-white">
-              <ArrowUpRight aria-hidden />
-              <span>Kontekst firmy</span>
-            </Link>
-            <div className="wiz-reanalyze">
-              <ReanalyzeButton />
-              <LastAnalysisLabel iso={lastAnalyzedIso} />
+            ) : null
+          }
+          actions={
+            <div className="wiz-header-actions">
+              <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-white">
+                <ArrowUpRight aria-hidden />
+                <span>Kontekst firmy</span>
+              </Link>
+              <div className="wiz-reanalyze">
+                <ReanalyzeButton />
+                <LastAnalysisLabel iso={lastAnalyzedIso} />
+              </div>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {!connected ? (
           <div className="ui-section">

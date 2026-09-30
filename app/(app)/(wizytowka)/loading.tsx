@@ -1,4 +1,4 @@
-import { WizytowkaModuleSkel } from "@/features/wizytowka/components/tab-skeletons";
+import { WizytowkaModuleSkel } from "@/features/wizytowka/components/wizytowka-skeleton";
 
 // Only for the first entry into Wizytówka. It sits above wizytowka/layout.tsx
 // (route group), so switching tabs inside Wizytówka never shows it - the

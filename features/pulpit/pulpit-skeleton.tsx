@@ -1,23 +1,21 @@
 import { GbpFreshnessPlaceholder } from "@/features/wizytowka/components/gbp-freshness";
+import { ModuleHeader } from "@/features/shell/module-header";
+import { Skel, SkelButton } from "@/features/shell/skeleton";
 
 // Szkielet ładowania Pulpitu - ten sam układ co PulpitView (KPI + siatka 8/4).
-
-function Bar({ w, h = "0.75rem" }: { w: string; h?: string }) {
-  return <span className="ui-skel" style={{ width: w, height: h }} />;
-}
 
 // Heights below match the loaded tiles (measured at 1440 px), so the page
 // does not jump when data arrives.
 
 function KpiSkel() {
   return (
-    <div className="ui-kpi wiz-report-kpi" style={{ minHeight: 247 }}>
+    <div className="ui-kpi wiz-report-kpi" style={{ minHeight: 244 }}>
       <div className="ui-skel-stack">
-        <Bar w="9rem" h="0.75rem" />
-        <Bar w="5rem" h="2rem" />
-        <Bar w="100%" h="0.5rem" />
-        <Bar w="70%" h="0.5rem" />
-        <Bar w="55%" h="0.5rem" />
+        <Skel w="9rem" h="0.75rem" />
+        <Skel w="5rem" h="2rem" />
+        <Skel w="100%" h="0.5rem" />
+        <Skel w="70%" h="0.5rem" />
+        <Skel w="55%" h="0.5rem" />
       </div>
     </div>
   );
@@ -32,8 +30,8 @@ function CardHeadSkel({ leadWide = "16rem" }: { leadWide?: string }) {
           style={{ width: 40, height: 40 }}
         />
         <div className="ui-skel-stack">
-          <Bar w="10rem" h="1.25rem" />
-          <Bar w={leadWide} h="0.75rem" />
+          <Skel w="10rem" h="1.25rem" />
+          <Skel w={leadWide} h="0.75rem" />
         </div>
       </div>
     </header>
@@ -48,8 +46,8 @@ function ActionRowSkel() {
         style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0 }}
       />
       <div className="ui-skel-stack" style={{ flex: 1, minWidth: 0 }}>
-        <Bar w="7rem" h="0.875rem" />
-        <Bar w="11rem" h="0.7rem" />
+        <Skel w="7rem" h="0.875rem" />
+        <Skel w="11rem" h="0.7rem" />
       </div>
     </div>
   );
@@ -93,8 +91,8 @@ export function ImproveSkeleton() {
       <div className="pulpit-action-groups" aria-hidden>
         <div className="pulpit-action-group">
           <div className="pulpit-action-group-title">
-            <Bar w="7rem" h="0.65rem" />
-            <Bar w="1rem" h="0.65rem" />
+            <Skel w="7rem" h="0.65rem" />
+            <Skel w="1rem" h="0.65rem" />
           </div>
           <div className="pulpit-action-list">
             <ActionRowSkel />
@@ -103,8 +101,8 @@ export function ImproveSkeleton() {
         </div>
         <div className="pulpit-action-group">
           <div className="pulpit-action-group-title">
-            <Bar w="8rem" h="0.65rem" />
-            <Bar w="1rem" h="0.65rem" />
+            <Skel w="8rem" h="0.65rem" />
+            <Skel w="1rem" h="0.65rem" />
           </div>
           <div className="pulpit-action-list">
             <ActionRowSkel />
@@ -126,23 +124,16 @@ export function PulpitSkeleton() {
       aria-busy="true"
       aria-label="Ładowanie pulpitu"
     >
-      <div className="page-header">
-        {/* Real title and freshness line - the loaded header has the same height. */}
-        <div>
-          <h1>Pulpit</h1>
-          <GbpFreshnessPlaceholder />
-        </div>
-        <div className="pulpit-header-actions">
-          <span
-            className="ui-skel"
-            style={{ width: "9rem", height: "var(--btn-height-sm)" }}
-          />
-          <span
-            className="ui-skel"
-            style={{ width: "7rem", height: "var(--btn-height-sm)" }}
-          />
-        </div>
-      </div>
+      <ModuleHeader
+        title="Pulpit"
+        below={<GbpFreshnessPlaceholder />}
+        actions={
+          <div className="pulpit-header-actions">
+            <SkelButton w="12rem" small />
+            <SkelButton w="7.5rem" small />
+          </div>
+        }
+      />
 
       <KpiStripSkeleton />
 
@@ -159,10 +150,10 @@ export function PulpitSkeleton() {
                   className="ui-skel-row"
                   style={{ padding: "10px 0", borderBottom: 0 }}
                 >
-                  <Bar w={i % 2 === 0 ? "12rem" : "9rem"} h="0.875rem" />
-                  <Bar w="3rem" h="0.875rem" />
-                  <Bar w="4rem" h="1.25rem" />
-                  <Bar w="5.5rem" h="1.5rem" />
+                  <Skel w={i % 2 === 0 ? "12rem" : "9rem"} h="0.875rem" />
+                  <Skel w="3rem" h="0.875rem" />
+                  <Skel w="4rem" h="1.25rem" />
+                  <Skel w="5.5rem" h="1.5rem" />
                 </div>
               ))}
             </div>

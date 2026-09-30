@@ -1,3 +1,5 @@
+import { ModuleHeader } from "@/features/shell/module-header";
+import { USTAWIENIA_HEADER } from "@/features/ustawienia/module";
 import { UstawieniaSubnav } from "@/features/ustawienia/ustawienia-subnav";
 
 export default function UstawieniaLayout({
@@ -7,12 +9,7 @@ export default function UstawieniaLayout({
 }) {
   return (
     <div className="wiz-page">
-      <div className="page-header wiz-header">
-        <div>
-          <h1>Ustawienia</h1>
-          <p>Kontekst firmy, profile, integracje i plan</p>
-        </div>
-      </div>
+      <ModuleHeader {...USTAWIENIA_HEADER} className="wiz-header" />
       <UstawieniaSubnav />
       {children}
     </div>
