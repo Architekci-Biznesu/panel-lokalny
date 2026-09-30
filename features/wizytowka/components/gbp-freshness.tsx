@@ -7,8 +7,8 @@ import {
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw } from "lucide-react";
-import { toast } from "gooey-toast";
+import { Loader2, RefreshCw } from "lucide-react";
+import { toast } from "@/lib/toast";
 import {
   getGbpDataStatusAction,
   refreshGbpDataAction,
@@ -19,6 +19,8 @@ type Scope = "wizytowka" | "pulpit";
 
 const POLL_MS = 2500;
 const CLOCK_MS = 30_000;
+/** Older than a day: the dot turns orange - a hint to refresh. */
+const STALE_MS = 24 * 60 * 60 * 1000;
 
 // Relative time is computed only in the browser (no hydration mismatch) and
 // ticks every 30 s.
@@ -45,7 +47,7 @@ function relativeLabel(iso: string, now: number): string {
 }
 
 /**
- * "Dane z Google: 4 min temu" with a manual refresh. While a background
+ * "● Google · 4 min temu ↻" - age of Google data with a manual refresh. While a background
  * refresh runs it polls a light status action and, when it ends, reloads the
  * screen - unless the customer is editing; then it only says newer data waits.
  */
@@ -113,34 +115,47 @@ function FreshnessLine({
   }
 
   const busy = polling || pending;
+  const stale =
+    fetchedAtIso != null &&
+    now != null &&
+    now - new Date(fetchedAtIso).getTime() > STALE_MS;
+  const age =
+    fetchedAtIso && now != null
+      ? relativeLabel(fetchedAtIso, now)
+      : fetchedAtIso
+        ? "…"
+        : "brak danych";
 
   return (
-    <div className="ui-freshness" aria-live="polite">
-      {busy ? <span className="ui-freshness-dot" aria-hidden /> : null}
-      <span>
-        Dane z Google:{" "}
-        <span className="mono">
-          {fetchedAtIso && now != null
-            ? relativeLabel(fetchedAtIso, now)
-            : fetchedAtIso
-              ? "…"
-              : "-"}
+    <div
+      className={`ui-freshness${busy ? " is-busy" : stale ? " is-stale" : ""}`}
+      aria-live="polite"
+    >
+      <span className="ui-freshness-dot" aria-hidden />
+      {busy ? (
+        <span>Pobieram dane z Google…</span>
+      ) : (
+        <span>
+          Google · <span className="mono">{age}</span>
+          <span className="sr-only"> - wiek danych z Google</span>
         </span>
-        {busy ? " · odświeżanie…" : null}
-      </span>
+      )}
       {newerWaiting && editing ? (
-        <span className="ui-freshness-note">
-          W Google są nowsze dane - odśwież po zapisaniu
-        </span>
+        <span className="ui-freshness-note">· nowsze dane po zapisaniu</span>
       ) : (
         <button
           type="button"
           className="ui-freshness-refresh"
           disabled={busy}
           onClick={onRefresh}
+          aria-label="Odśwież z Google"
+          data-tip="Odśwież z Google"
         >
-          <RefreshCw aria-hidden />
-          Odśwież z Google
+          {busy ? (
+            <Loader2 aria-hidden className="ui-freshness-spin" />
+          ) : (
+            <RefreshCw aria-hidden />
+          )}
         </button>
       )}
     </div>
@@ -150,13 +165,13 @@ function FreshnessLine({
 /** Same line while the real one waits for its data - keeps the page from jumping. */
 export function GbpFreshnessPlaceholder() {
   return (
-    <div className="ui-freshness" aria-hidden>
+    <div className="ui-freshness is-placeholder" aria-hidden>
+      <span className="ui-freshness-dot" />
       <span>
-        Dane z Google: <span className="mono">…</span>
+        Google · <span className="mono">…</span>
       </span>
       <button type="button" className="ui-freshness-refresh" disabled>
         <RefreshCw aria-hidden />
-        Odśwież z Google
       </button>
     </div>
   );

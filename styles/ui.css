@@ -895,16 +895,22 @@
     animation: ui-freshness-pulse 1.2s ease-in-out infinite;
   }
 
-  /* "Dane z Google: 4 min temu" - age of Google data with a manual refresh */
+  /* "● Google · 4 min temu ↻" - age of Google data with a manual refresh.
+     Light on purpose: no frame or fill, the dot carries the state. */
   .ui-freshness {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-1) var(--space-3);
+    gap: 7px;
+    min-height: 24px;
     margin-top: var(--space-2);
     font-size: var(--type-xs);
     color: var(--muted-foreground);
     line-height: 1.35;
+  }
+
+  .ui-freshness .mono {
+    font-size: 11px;
   }
 
   .ui-freshness-dot {
@@ -912,38 +918,102 @@
     height: 6px;
     flex-shrink: 0;
     border-radius: var(--radius-pill);
+    background: var(--success);
+  }
+
+  .ui-freshness.is-stale .ui-freshness-dot {
+    background: var(--warning);
+  }
+
+  .ui-freshness.is-busy .ui-freshness-dot {
     background: var(--brand);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 15%, transparent);
     animation: ui-freshness-pulse 1.2s ease-in-out infinite;
   }
 
-  .ui-freshness-refresh {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    font: inherit;
-    color: var(--brand);
-    cursor: pointer;
+  .ui-freshness.is-placeholder .ui-freshness-dot {
+    background: var(--neutral-300);
   }
 
-  .ui-freshness-refresh:hover:not(:disabled) {
-    text-decoration: underline;
+  .ui-freshness-refresh {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-left: -2px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--neutral-400);
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .ui-freshness-refresh:hover:not(:disabled),
+  .ui-freshness-refresh:focus-visible {
+    background: var(--border);
+    color: var(--foreground);
+    outline: none;
   }
 
   .ui-freshness-refresh:disabled {
-    color: var(--muted-foreground);
     cursor: default;
   }
 
   .ui-freshness-refresh svg {
     width: 12px;
     height: 12px;
+    stroke-width: 1.75;
+  }
+
+  .ui-freshness.is-busy .ui-freshness-refresh {
+    color: var(--brand);
+  }
+
+  .ui-freshness-spin {
+    animation: ui-spin 0.9s linear infinite;
+  }
+
+  /* Podpowiedź nad ikonką */
+  .ui-freshness-refresh[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    z-index: 20;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 2px);
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  .ui-freshness-refresh[data-tip]:hover:not(:disabled)::after,
+  .ui-freshness-refresh[data-tip]:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
   }
 
   .ui-freshness-note {
     color: var(--warning-foreground);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-freshness-spin,
+    .ui-freshness.is-busy .ui-freshness-dot {
+      animation: none;
+    }
   }
 
   .ui-check-label {
