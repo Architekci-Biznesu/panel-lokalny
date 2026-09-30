@@ -37,6 +37,55 @@ function isActive(
   return pathname === match || pathname.startsWith(`${match}/`);
 }
 
+/** First path segment - "wizytowka" for /wizytowka/raporty. */
+function moduleOf(pathname: string): string {
+  return pathname.split("/")[1] ?? "";
+}
+
+/**
+ * Entering another module starts at its top. Next scrolls the new page's
+ * content into view once it streams in - for Wizytówka that is the tab body
+ * far below the header. For a moment after the switch such automatic scrolls
+ * are undone; the customer's own scrolling and #anchor links are left alone.
+ */
+function useModuleScrollTop(pathname: string) {
+  const mainRef = useRef<HTMLElement>(null);
+  const lastModule = useRef(moduleOf(pathname));
+
+  useEffect(() => {
+    const current = moduleOf(pathname);
+    if (current === lastModule.current) return;
+    lastModule.current = current;
+    const main = mainRef.current;
+    if (!main || window.location.hash) return;
+
+    main.scrollTop = 0;
+    let userScrolls = false;
+    const markUser = () => {
+      userScrolls = true;
+    };
+    const undoAutoScroll = () => {
+      if (!userScrolls && main.scrollTop !== 0) main.scrollTop = 0;
+    };
+    const events = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+    for (const name of events) {
+      window.addEventListener(name, markUser, { passive: true });
+    }
+    main.addEventListener("scroll", undoAutoScroll);
+    const stop = () => {
+      for (const name of events) window.removeEventListener(name, markUser);
+      main.removeEventListener("scroll", undoAutoScroll);
+    };
+    const timer = window.setTimeout(stop, 2000);
+    return () => {
+      window.clearTimeout(timer);
+      stop();
+    };
+  }, [pathname]);
+
+  return mainRef;
+}
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -81,6 +130,7 @@ export function AppShell({
   const moreRef = useDismiss(moreOpen, () => setMoreOpen(false));
   const accountRef = useDismiss(accountOpen, () => setAccountOpen(false));
   const moreActive = topNavMore.some((item) => isActive(pathname, item));
+  const mainRef = useModuleScrollTop(pathname);
 
   function closeAll() {
     setDrawerOpen(false);
@@ -248,7 +298,9 @@ export function AppShell({
         </>
       ) : null}
 
-      <main className="app-content">{children}</main>
+      <main ref={mainRef} className="app-content">
+        {children}
+      </main>
     </div>
   );
 }

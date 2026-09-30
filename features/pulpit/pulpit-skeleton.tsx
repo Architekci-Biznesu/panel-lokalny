@@ -1,12 +1,17 @@
+import { GbpFreshnessPlaceholder } from "@/features/wizytowka/components/gbp-freshness";
+
 // Szkielet ładowania Pulpitu - ten sam układ co PulpitView (KPI + siatka 8/4).
 
 function Bar({ w, h = "0.75rem" }: { w: string; h?: string }) {
   return <span className="ui-skel" style={{ width: w, height: h }} />;
 }
 
+// Heights below match the loaded tiles (measured at 1440 px), so the page
+// does not jump when data arrives.
+
 function KpiSkel() {
   return (
-    <div className="ui-kpi wiz-report-kpi">
+    <div className="ui-kpi wiz-report-kpi" style={{ minHeight: 247 }}>
       <div className="ui-skel-stack">
         <Bar w="9rem" h="0.75rem" />
         <Bar w="5rem" h="2rem" />
@@ -54,7 +59,8 @@ function ActionRowSkel() {
 export function KpiStripSkeleton() {
   return (
     <section className="pulpit-section" aria-hidden>
-      <div className="wiz-report-summary">
+      <div className="wiz-report-summary pulpit-has-reviews">
+        <KpiSkel />
         <KpiSkel />
         <KpiSkel />
         <KpiSkel />
@@ -66,7 +72,10 @@ export function KpiStripSkeleton() {
 /** Visibility chart while the metrics snapshot loads. */
 export function VisibilitySkeleton() {
   return (
-    <section className="pulpit-card">
+    <section
+      className="pulpit-card pulpit-visibility"
+      style={{ minHeight: 390 }}
+    >
       <CardHeadSkel leadWide="20rem" />
       <div
         className="ui-skel ui-skel-block"
@@ -79,7 +88,7 @@ export function VisibilitySkeleton() {
 /** "Co do poprawy" while the listing snapshot loads. */
 export function ImproveSkeleton() {
   return (
-    <section className="pulpit-card pulpit-improve">
+    <section className="pulpit-card pulpit-improve" style={{ minHeight: 344 }}>
       <CardHeadSkel leadWide="14rem" />
       <div className="pulpit-action-groups" aria-hidden>
         <div className="pulpit-action-group">
@@ -118,9 +127,10 @@ export function PulpitSkeleton() {
       aria-label="Ładowanie pulpitu"
     >
       <div className="page-header">
-        <div className="ui-skel-stack">
-          <Bar w="8rem" h="2rem" />
-          <Bar w="12rem" h="0.75rem" />
+        {/* Real title and freshness line - the loaded header has the same height. */}
+        <div>
+          <h1>Pulpit</h1>
+          <GbpFreshnessPlaceholder />
         </div>
         <div className="pulpit-header-actions">
           <span

@@ -1,6 +1,8 @@
 // Szkielet Wizytówki przy pierwszym wejściu - odwzorowuje układ Stylu 4 (te same kontenery co widoki),
 // żeby po załadowaniu treść nie "skakała". Klocki: .ui-skel* z styles/ui.css.
 
+import { GbpFreshnessPlaceholder } from "@/features/wizytowka/components/gbp-freshness";
+
 function Bar({ w, h = "0.75rem" }: { w: string; h?: string }) {
   return <span className="ui-skel" style={{ width: w, height: h }} />;
 }
@@ -42,9 +44,9 @@ export function WizytowkaModuleSkel() {
   return (
     <div className="wiz-page" aria-busy="true" aria-label="Ładowanie wizytówki">
       <div className="page-header wiz-header">
-        <div className="ui-skel-stack">
-          <Bar w="16rem" h="2.5rem" />
-          <Bar w="12rem" h="0.75rem" />
+        <div>
+          <h1>Wizytówka Google</h1>
+          <GbpFreshnessPlaceholder />
         </div>
       </div>
       <div className="wiz-top-row">

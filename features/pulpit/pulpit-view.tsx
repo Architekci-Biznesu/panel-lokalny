@@ -18,7 +18,10 @@ import {
   type PulpitBase,
 } from "@/features/pulpit/load-pulpit";
 import type { PulpitReviews } from "@/features/opinie/load-pulpit-reviews";
-import { GbpFreshness } from "@/features/wizytowka/components/gbp-freshness";
+import {
+  GbpFreshness,
+  GbpFreshnessPlaceholder,
+} from "@/features/wizytowka/components/gbp-freshness";
 import type { Profile } from "@/lib/db/schema";
 import {
   getGbpDataStatus,
@@ -92,7 +95,7 @@ export function PulpitView({ data }: { data: PulpitBase }) {
         <div>
           <h1>Pulpit</h1>
           {profile ? (
-            <Suspense fallback={null}>
+            <Suspense fallback={<GbpFreshnessPlaceholder />}>
               <Freshness profile={profile} />
             </Suspense>
           ) : null}

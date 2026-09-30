@@ -146,3 +146,18 @@ function FreshnessLine({
     </div>
   );
 }
+
+/** Same line while the real one waits for its data - keeps the page from jumping. */
+export function GbpFreshnessPlaceholder() {
+  return (
+    <div className="ui-freshness" aria-hidden>
+      <span>
+        Dane z Google: <span className="mono">…</span>
+      </span>
+      <button type="button" className="ui-freshness-refresh" disabled>
+        <RefreshCw aria-hidden />
+        Odśwież z Google
+      </button>
+    </div>
+  );
+}
