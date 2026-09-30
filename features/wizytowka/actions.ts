@@ -2,7 +2,6 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { invalidateGbpReads } from "@/lib/integrations/gbp/read-cache";
 import { z } from "zod";
 import { startGbpAudit } from "@/features/wizytowka/audit";
 import { buildAttributeUpdateBody } from "@/features/wizytowka/attributes";
@@ -29,8 +28,25 @@ import {
 import { autocompleteRegions } from "@/lib/integrations/places/client";
 import { getActiveProfile, requireOwnedProfile } from "@/lib/session";
 import { parseLocation } from "@/features/wizytowka/types";
+import {
+  listFingerprint,
+  WHOLE_LIST_CONFLICT_MESSAGES,
+  type WholeListField,
+} from "@/features/wizytowka/fingerprint";
+import {
+  saveAttributesAfterPatch,
+  saveFreshLocation,
+  saveLocationAfterPatch,
+} from "@/features/wizytowka/snapshots/after-write";
 
-type ActionResult = { ok: true } | { ok: false; error: string };
+type ActionResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: string;
+      /** Google changed the edited list since the editor opened - nothing was saved. */
+      conflict?: boolean;
+    };
 
 function fail(error: unknown): ActionResult {
   if (error instanceof GbpNotConnectedError) {
@@ -42,21 +58,70 @@ function fail(error: unknown): ActionResult {
   };
 }
 
+/** Editor's fingerprint of a whole-list field, taken when it opened. */
+type ListGuard = { field: WholeListField; fingerprint: string };
+
+/**
+ * Saves a field to Google and puts Google's answer into the snapshot. A
+ * whole-list field is saved only if Google still has what the editor showed
+ * (fingerprint); otherwise nothing is written and the snapshot gets the newer
+ * list.
+ */
 async function withGbpPatch(
   updateMask: string[],
   body: Record<string, unknown>,
+  guard?: ListGuard,
 ): Promise<ActionResult> {
   try {
     const profile = await getActiveGbpProfile();
     const token = await getGbpAccessTokenForProfile(profile);
-    await patchGbpLocation(token, profile.gbpLocationId!, body, updateMask);
-    invalidateGbpReads();
+    const locationName = profile.gbpLocationId!;
+
+    let freshBase: Record<string, unknown> | null = null;
+    if (guard) {
+      freshBase = await fetchGbpLocationDetails(token, locationName);
+      const conflict = await rejectIfChanged(profile, token, freshBase, guard);
+      if (conflict) return conflict;
+    }
+
+    const response = await patchGbpLocation(
+      token,
+      locationName,
+      body,
+      updateMask,
+    );
+    await saveLocationAfterPatch(profile, token, {
+      body,
+      updateMask,
+      response,
+      freshBase,
+    });
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
     return fail(error);
   }
 }
+
+/** Conflict result (and a snapshot with Google's newer data) when the list changed. */
+async function rejectIfChanged(
+  profile: Awaited<ReturnType<typeof getActiveGbpProfile>>,
+  token: string,
+  freshRaw: Record<string, unknown>,
+  guard: ListGuard,
+): Promise<ActionResult | null> {
+  const current = listFingerprint(parseLocation(freshRaw), guard.field);
+  if (current === guard.fingerprint) return null;
+  await saveFreshLocation(profile, token, freshRaw);
+  revalidatePath("/wizytowka", "layout");
+  return {
+    ok: false,
+    error: WHOLE_LIST_CONFLICT_MESSAGES[guard.field],
+    conflict: true,
+  };
+}
+
+const fingerprintField = z.string().trim().min(1).max(64);
 
 const titleSchema = z.object({
   title: z.string().trim().min(1).max(100),
@@ -89,6 +154,7 @@ export async function updateGbpDescription(
 const categoriesSchema = z.object({
   primaryCategoryName: z.string().min(1),
   additionalCategoryNames: z.array(z.string()).max(9),
+  fingerprint: fingerprintField,
 });
 
 export async function updateGbpCategories(
@@ -98,13 +164,18 @@ export async function updateGbpCategories(
   if (!parsed.success) {
     return { ok: false, error: "Wybierz kategorie ze słownika Google" };
   }
-  const { primaryCategoryName, additionalCategoryNames } = parsed.data;
-  return withGbpPatch(["categories"], {
-    categories: {
-      primaryCategory: { name: primaryCategoryName },
-      additionalCategories: additionalCategoryNames.map((name) => ({ name })),
+  const { primaryCategoryName, additionalCategoryNames, fingerprint } =
+    parsed.data;
+  return withGbpPatch(
+    ["categories"],
+    {
+      categories: {
+        primaryCategory: { name: primaryCategoryName },
+        additionalCategories: additionalCategoryNames.map((name) => ({ name })),
+      },
     },
-  });
+    { field: "categories", fingerprint },
+  );
 }
 
 const serviceItemSchema = z.object({
@@ -119,8 +190,12 @@ const servicesSchema = z.object({
   services: z.array(serviceItemSchema).max(40),
 });
 
+const servicesSaveSchema = servicesSchema.extend({
+  fingerprint: fingerprintField,
+});
+
 export async function updateGbpServices(input: unknown): Promise<ActionResult> {
-  const parsed = servicesSchema.safeParse(input);
+  const parsed = servicesSaveSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
@@ -131,7 +206,8 @@ export async function updateGbpServices(input: unknown): Promise<ActionResult> {
   try {
     const profile = await getActiveGbpProfile();
     const token = await getGbpAccessTokenForProfile(profile);
-    const raw = await fetchGbpLocationDetails(token, profile.gbpLocationId!);
+    const locationName = profile.gbpLocationId!;
+    const raw = await fetchGbpLocationDetails(token, locationName);
     const location = parseLocation(raw);
 
     if (location.metadata?.canModifyServiceList === false) {
@@ -142,14 +218,23 @@ export async function updateGbpServices(input: unknown): Promise<ActionResult> {
       };
     }
 
+    const conflict = await rejectIfChanged(profile, token, raw, {
+      field: "serviceItems",
+      fingerprint: parsed.data.fingerprint,
+    });
+    if (conflict) return conflict;
+
     const drafts = parsed.data.services as ServiceItemDraft[];
-    await patchGbpLocation(
-      token,
-      profile.gbpLocationId!,
-      { serviceItems: draftsToServiceItems(drafts) },
-      ["serviceItems"],
-    );
-    invalidateGbpReads();
+    const body = { serviceItems: draftsToServiceItems(drafts) };
+    const response = await patchGbpLocation(token, locationName, body, [
+      "serviceItems",
+    ]);
+    await saveLocationAfterPatch(profile, token, {
+      body,
+      updateMask: ["serviceItems"],
+      response,
+      freshBase: raw,
+    });
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
@@ -181,6 +266,7 @@ export async function updateGbpOpenInfo(input: unknown): Promise<ActionResult> {
 const phoneSchema = z.object({
   primaryPhone: z.string().trim().min(5).max(30),
   additionalPhones: z.array(z.string().trim().min(5).max(30)).max(2).optional(),
+  fingerprint: fingerprintField,
 });
 
 export async function updateGbpPhones(input: unknown): Promise<ActionResult> {
@@ -188,12 +274,16 @@ export async function updateGbpPhones(input: unknown): Promise<ActionResult> {
   if (!parsed.success) {
     return { ok: false, error: "Podaj poprawny numer telefonu" };
   }
-  return withGbpPatch(["phoneNumbers"], {
-    phoneNumbers: {
-      primaryPhone: parsed.data.primaryPhone,
-      additionalPhones: parsed.data.additionalPhones,
+  return withGbpPatch(
+    ["phoneNumbers"],
+    {
+      phoneNumbers: {
+        primaryPhone: parsed.data.primaryPhone,
+        additionalPhones: parsed.data.additionalPhones,
+      },
     },
-  });
+    { field: "phoneNumbers", fingerprint: parsed.data.fingerprint },
+  );
 }
 
 const websiteSchema = z.object({
@@ -241,6 +331,7 @@ const serviceAreaSchema = z.object({
     )
     .max(20)
     .optional(),
+  fingerprint: fingerprintField,
 });
 
 export async function updateGbpServiceArea(
@@ -259,12 +350,16 @@ export async function updateGbpServiceArea(
           })),
         }
       : undefined;
-  return withGbpPatch(["serviceArea"], {
-    serviceArea: {
-      businessType: parsed.data.businessType,
-      places,
+  return withGbpPatch(
+    ["serviceArea"],
+    {
+      serviceArea: {
+        businessType: parsed.data.businessType,
+        places,
+      },
     },
-  });
+    { field: "serviceArea", fingerprint: parsed.data.fingerprint },
+  );
 }
 
 const placeSearchSchema = z.object({
@@ -306,6 +401,7 @@ const hoursPeriodSchema = z.object({
 
 const regularHoursSchema = z.object({
   periods: z.array(hoursPeriodSchema).max(28),
+  fingerprint: fingerprintField,
 });
 
 export async function updateGbpRegularHours(
@@ -329,7 +425,11 @@ export async function updateGbpRegularHours(
         closeTime,
       };
     });
-    return await withGbpPatch(["regularHours"], { regularHours: { periods } });
+    return await withGbpPatch(
+      ["regularHours"],
+      { regularHours: { periods } },
+      { field: "regularHours", fingerprint: parsed.data.fingerprint },
+    );
   } catch (error) {
     return fail(error);
   }
@@ -351,6 +451,7 @@ const specialHourPeriodSchema = z.object({
 
 const specialHoursSchema = z.object({
   periods: z.array(specialHourPeriodSchema).max(50),
+  fingerprint: fingerprintField,
 });
 
 export async function updateGbpSpecialHours(
@@ -383,9 +484,11 @@ export async function updateGbpSpecialHours(
         closed: false,
       };
     });
-    return await withGbpPatch(["specialHours"], {
-      specialHours: { specialHourPeriods },
-    });
+    return await withGbpPatch(
+      ["specialHours"],
+      { specialHours: { specialHourPeriods } },
+      { field: "specialHours", fingerprint: parsed.data.fingerprint },
+    );
   } catch (error) {
     return fail(error);
   }
@@ -419,13 +522,17 @@ export async function updateGbpAttribute(
     const token = await getGbpAccessTokenForProfile(profile);
     const body = buildAttributeUpdateBody(parsed.data);
 
-    await updateGbpLocationAttributes(
+    const response = await updateGbpLocationAttributes(
       token,
       profile.gbpLocationId!,
       body.attributes,
       body.attributeMask,
     );
-    invalidateGbpReads();
+    await saveAttributesAfterPatch(profile, token, {
+      sent: body.attributes,
+      attributeMask: body.attributeMask,
+      response,
+    });
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
@@ -453,13 +560,17 @@ export async function updateGbpAttributesBatch(
       attributeMask.push(...body.attributeMask);
     }
 
-    await updateGbpLocationAttributes(
+    const response = await updateGbpLocationAttributes(
       token,
       profile.gbpLocationId!,
       attributes,
       attributeMask,
     );
-    invalidateGbpReads();
+    await saveAttributesAfterPatch(profile, token, {
+      sent: attributes,
+      attributeMask,
+      response,
+    });
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
   } catch (error) {
@@ -469,7 +580,6 @@ export async function updateGbpAttributesBatch(
 
 export async function reanalyzeGbpAction(): Promise<ActionResult> {
   const result = await startGbpAudit();
-  invalidateGbpReads();
   revalidatePath("/wizytowka", "layout");
   return result.ok
     ? { ok: true }
@@ -515,8 +625,6 @@ export async function rejectGbpSuggestion(
       .where(eq(gbpSuggestions.id, suggestion.id));
 
     await appendBriefAvoid(profile.id, parsed.data.reason);
-
-    invalidateGbpReads();
 
     revalidatePath("/wizytowka", "layout");
     revalidatePath("/ustawienia/kontekst");
@@ -583,20 +691,17 @@ export async function acceptGbpSuggestion(
     const raw = await fetchGbpLocationDetails(token, locationName);
     const location = parseLocation(raw);
 
+    let body: Record<string, unknown>;
+    let updateMask: string[];
     switch (suggestion.field) {
       case "title": {
-        await patchGbpLocation(token, locationName, { title: value }, [
-          "title",
-        ]);
+        body = { title: value };
+        updateMask = ["title"];
         break;
       }
       case "description": {
-        await patchGbpLocation(
-          token,
-          locationName,
-          { profile: { description: value } },
-          ["profile.description"],
-        );
+        body = { profile: { description: value } };
+        updateMask = ["profile.description"];
         break;
       }
       case "primary_category": {
@@ -604,17 +709,13 @@ export async function acceptGbpSuggestion(
           location.categories?.additionalCategories
             ?.map((c) => c.name)
             .filter((n): n is string => Boolean(n) && n !== value) ?? [];
-        await patchGbpLocation(
-          token,
-          locationName,
-          {
-            categories: {
-              primaryCategory: { name: value },
-              additionalCategories: additional.map((name) => ({ name })),
-            },
+        body = {
+          categories: {
+            primaryCategory: { name: value },
+            additionalCategories: additional.map((name) => ({ name })),
           },
-          ["categories"],
-        );
+        };
+        updateMask = ["categories"];
         break;
       }
       case "additional_categories": {
@@ -626,19 +727,15 @@ export async function acceptGbpSuggestion(
         if (!primary) {
           return { ok: false, error: "Brak kategorii głównej" };
         }
-        await patchGbpLocation(
-          token,
-          locationName,
-          {
-            categories: {
-              primaryCategory: { name: primary },
-              additionalCategories: names
-                .filter((n) => n !== primary)
-                .map((name) => ({ name })),
-            },
+        body = {
+          categories: {
+            primaryCategory: { name: primary },
+            additionalCategories: names
+              .filter((n) => n !== primary)
+              .map((name) => ({ name })),
           },
-          ["categories"],
-        );
+        };
+        updateMask = ["categories"];
         break;
       }
       case "services": {
@@ -660,17 +757,26 @@ export async function acceptGbpSuggestion(
           };
         }
         // Full-list replace: merge is already the complete suggested list
-        await patchGbpLocation(
-          token,
-          locationName,
-          { serviceItems: draftsToServiceItems(validated.data.services) },
-          ["serviceItems"],
-        );
+        body = { serviceItems: draftsToServiceItems(validated.data.services) };
+        updateMask = ["serviceItems"];
         break;
       }
       default:
         return { ok: false, error: "Nieobsługiwane pole" };
     }
+
+    const response = await patchGbpLocation(
+      token,
+      locationName,
+      body,
+      updateMask,
+    );
+    await saveLocationAfterPatch(profile, token, {
+      body,
+      updateMask,
+      response,
+      freshBase: raw,
+    });
 
     await db
       .update(gbpSuggestions)
@@ -682,8 +788,6 @@ export async function acceptGbpSuggestion(
         suggestedValue: value,
       })
       .where(eq(gbpSuggestions.id, suggestion.id));
-
-    invalidateGbpReads();
 
     revalidatePath("/wizytowka", "layout");
     return { ok: true };
@@ -731,8 +835,6 @@ export async function acceptAllGbpSuggestions(): Promise<
       }
       accepted += 1;
     }
-
-    invalidateGbpReads();
 
     revalidatePath("/wizytowka", "layout");
     return { ok: true, accepted, skippedHighRiskTitle };

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   loadPulpitReviews,
   type PulpitReviews,
@@ -6,7 +7,10 @@ import {
   computeCompleteness,
   type CompletenessCheck,
 } from "@/features/wizytowka/completeness";
-import { loadActiveGbpBundle } from "@/features/wizytowka/load-location";
+import {
+  loadActiveGbpBundle,
+  loadGbpMedia,
+} from "@/features/wizytowka/load-location";
 import {
   isProposalField,
   PROPOSAL_META,
@@ -14,14 +18,9 @@ import {
 } from "@/features/wizytowka/proposal-meta";
 import {
   getActiveGbpProfile,
-  getGbpAccessTokenForProfile,
   GbpNotConnectedError,
 } from "@/lib/integrations/gbp/access";
-import {
-  countGbpOwnerPhotos,
-  fetchGbpMultiDailyMetrics,
-  listGbpLocationMedia,
-} from "@/lib/integrations/gbp/client";
+import { countGbpOwnerPhotos } from "@/lib/integrations/gbp/client";
 import { AuthError } from "@/lib/session";
 import type { ContentChannel, GbpSuggestion, Profile } from "@/lib/db/schema";
 import {
@@ -32,13 +31,11 @@ import {
 import {
   ALL_PERFORMANCE_METRICS,
   buildReportSummary,
-  defaultRange,
   emptySeriesForMetrics,
   fromDateParts,
   IMPRESSION_METRICS,
   METRIC_LABELS,
   parsePerformancePayload,
-  toDateParts,
   type MetricSeries,
   type ReportSummary,
 } from "@/features/wizytowka/performance";
@@ -46,6 +43,8 @@ import {
   loadPulpitRankPhrases,
   type PulpitRankPhrase,
 } from "@/features/pulpit/load-pulpit-rank";
+import { readGbpSnapshot } from "@/features/wizytowka/snapshots/read";
+import { metricsKey } from "@/features/wizytowka/snapshots/sources";
 
 export type PulpitMonthDay = {
   date: string;
@@ -77,23 +76,33 @@ export type PulpitPublication = {
   imageUrl: string | null;
 };
 
-export type PulpitPayload = {
+/** Parts of Pulpit from our own database - shown at once. */
+export type PulpitBase = {
   connected: boolean;
-  reportSummary: ReportSummary | null;
-  reportRangeLabel: string | null;
-  monthVisibility: PulpitMonthVisibility | null;
+  /** Active profile with a connected listing (null when not connected). */
+  profile: Profile | null;
   rankPhrases: PulpitRankPhrase[];
-  improve: {
-    checks: CompletenessCheck[];
-  } | null;
-  proposals: PulpitProposalItem[];
-  proposalsTotal: number;
   publications: PulpitPublication[];
   /** Weeks with a post and the next scheduled one (null when it could not be read) */
   rhythm: PublishingRhythm | null;
   /** Reviews from the Opinie module (null when it could not be read) */
   reviews: PulpitReviews | null;
   loadError: string | null;
+};
+
+/** Statistics tiles - from the metrics snapshots. */
+export type PulpitMetrics = {
+  reportSummary: ReportSummary | null;
+  reportRangeLabel: string | null;
+  monthVisibility: PulpitMonthVisibility | null;
+  loadError: string | null;
+};
+
+/** "Popraw wizytówkę" - from the listing and photo snapshots. */
+export type PulpitImprove = {
+  improve: { checks: CompletenessCheck[] } | null;
+  proposals: PulpitProposalItem[];
+  proposalsTotal: number;
 };
 
 const PROPOSALS_PREVIEW = 8;
@@ -240,27 +249,6 @@ export function buildMonthVisibility(
   return { days, total, changePct, compareLabel };
 }
 
-function emptyPayload(
-  partial: Partial<PulpitPayload> & {
-    connected: boolean;
-    loadError: string | null;
-  },
-): PulpitPayload {
-  return {
-    reportSummary: null,
-    reportRangeLabel: null,
-    monthVisibility: null,
-    rankPhrases: [],
-    improve: null,
-    proposals: [],
-    proposalsTotal: 0,
-    publications: [],
-    rhythm: null,
-    reviews: null,
-    ...partial,
-  };
-}
-
 async function loadPulpitReviewsSafe(
   profile: Profile,
 ): Promise<PulpitReviews | null> {
@@ -303,142 +291,161 @@ async function loadPulpitPublications(
   }
 }
 
-export async function loadPulpitPayload(): Promise<PulpitPayload> {
+/**
+ * Everything on Pulpit that comes from our database, loaded in parallel.
+ * Google tiles load separately (loadPulpitMetrics / loadPulpitImprove) inside
+ * their own Suspense boundaries.
+ */
+export async function loadPulpitBase(): Promise<PulpitBase> {
+  let profile: Profile;
   try {
-    const range = defaultRange();
-    const rangeStart = fromDateParts(range.start);
-    const rangeEnd = fromDateParts(range.end);
-
-    const profile = await getActiveGbpProfile();
-    const token = await getGbpAccessTokenForProfile(profile);
-
-    let series = emptySeriesForMetrics(ALL_PERFORMANCE_METRICS);
-    let prevYearSeries: MetricSeries[] | null = null;
-    let metricsError: string | null = null;
-    try {
-      const payload = await fetchGbpMultiDailyMetrics(
-        token,
-        profile.gbpLocationId!,
-        ALL_PERFORMANCE_METRICS,
-        range.start,
-        range.end,
-      );
-      const parsed = parsePerformancePayload(payload);
-      if (parsed.length > 0) {
-        const byMetric = new Map(parsed.map((s) => [s.metric, s]));
-        series = ALL_PERFORMANCE_METRICS.map(
-          (metric) =>
-            byMetric.get(metric) ?? {
-              metric,
-              label: METRIC_LABELS[metric],
-              total: 0,
-              points: [],
-            },
-        );
-      }
-
-      const prevStart = new Date(
-        rangeEnd.getFullYear() - 1,
-        rangeEnd.getMonth(),
-        1,
-      );
-      const prevEnd = new Date(
-        rangeEnd.getFullYear() - 1,
-        rangeEnd.getMonth(),
-        rangeEnd.getDate(),
-      );
-      try {
-        const prevPayload = await fetchGbpMultiDailyMetrics(
-          token,
-          profile.gbpLocationId!,
-          IMPRESSION_METRICS,
-          toDateParts(prevStart),
-          toDateParts(prevEnd),
-        );
-        const prevParsed = parsePerformancePayload(prevPayload);
-        if (prevParsed.length > 0) {
-          prevYearSeries = prevParsed;
-        }
-      } catch {
-        prevYearSeries = null;
-      }
-    } catch {
-      metricsError = "Nie udało się pobrać widoczności z Google.";
+    profile = await getActiveGbpProfile();
+  } catch (error) {
+    if (error instanceof GbpNotConnectedError || error instanceof AuthError) {
+      return {
+        connected: false,
+        profile: null,
+        rankPhrases: [],
+        publications: [],
+        rhythm: null,
+        reviews: null,
+        loadError: null,
+      };
     }
+    throw error;
+  }
 
-    const bundle = await loadActiveGbpBundle();
-    let photoCount = 0;
-    try {
-      const media = await listGbpLocationMedia(
-        bundle.accessToken,
-        bundle.locationName,
-      );
-      photoCount = countGbpOwnerPhotos(media.owner);
-    } catch {
-      photoCount = 0;
-    }
+  const [rankPhrases, publications, rhythm, reviews] = await Promise.all([
+    loadPulpitRankPhrases(profile).catch((error) => {
+      console.error("Pulpit rank phrases failed:", error);
+      return [] as PulpitRankPhrase[];
+    }),
+    loadPulpitPublications(profile),
+    loadPublishingRhythmSafe(profile),
+    loadPulpitReviewsSafe(profile),
+  ]);
 
-    const summary = computeCompleteness({
-      location: bundle.location,
-      attributes: bundle.attributes,
-      attributeMetadata: bundle.attributeMetadata,
-      pendingSuggestions: bundle.pendingSuggestions,
-      photoCount,
-      lastAnalyzedAt:
-        bundle.latestAuditRun?.status === "done"
-          ? bundle.latestAuditRun.finishedAt
-          : (bundle.latestAuditRun?.startedAt ?? null),
+  return {
+    connected: true,
+    profile,
+    rankPhrases,
+    publications,
+    rhythm,
+    reviews,
+    loadError: null,
+  };
+}
+
+function seriesFromPayload(payload: unknown): MetricSeries[] {
+  const parsed = parsePerformancePayload(payload);
+  if (parsed.length === 0)
+    return emptySeriesForMetrics(ALL_PERFORMANCE_METRICS);
+  const byMetric = new Map(parsed.map((s) => [s.metric, s]));
+  return ALL_PERFORMANCE_METRICS.map(
+    (metric) =>
+      byMetric.get(metric) ?? {
+        metric,
+        label: METRIC_LABELS[metric],
+        total: 0,
+        points: [],
+      },
+  );
+}
+
+/**
+ * Last 30 days and the same month a year ago, both from rolling-range
+ * snapshots. The window comes from the dates saved in the snapshot, so a
+ * snapshot from yesterday still matches its own chart.
+ */
+export const loadPulpitMetrics = cache(
+  async (profile: Profile): Promise<PulpitMetrics> => {
+    const locationName = profile.gbpLocationId!;
+    const [current, prevYear] = await Promise.all([
+      readGbpSnapshot(profile, "metrics", metricsKey(locationName, "last30")),
+      readGbpSnapshot(
+        profile,
+        "metrics",
+        metricsKey(locationName, "last30-prev-year"),
+      ).catch(() => null),
+    ]).catch((error) => {
+      console.error("Pulpit metrics failed:", error);
+      return [null, null] as const;
     });
 
-    const pending = uniquePendingByField(bundle.pendingSuggestions);
-    const proposalItems: PulpitProposalItem[] = pending
-      .filter((s) => isProposalField(s.field))
-      .map((s) => ({
-        id: s.id,
-        field: s.field,
-        label: PROPOSAL_META[s.field].label,
-        hint: proposalHint(s),
-        href: PROPOSAL_META[s.field].href,
-      }));
-
-    let rankPhrases: PulpitRankPhrase[] = [];
-    try {
-      rankPhrases = await loadPulpitRankPhrases();
-    } catch {
-      rankPhrases = [];
+    if (!current) {
+      return {
+        reportSummary: buildReportSummary(
+          emptySeriesForMetrics(ALL_PERFORMANCE_METRICS),
+        ),
+        reportRangeLabel: null,
+        monthVisibility: null,
+        loadError: "Nie udało się pobrać widoczności z Google.",
+      };
     }
 
+    const rangeStart = fromDateParts(current.data.start);
+    const rangeEnd = fromDateParts(current.data.end);
+    const series = seriesFromPayload(current.data.payload);
+    const prevParsed = prevYear
+      ? parsePerformancePayload(prevYear.data.payload).filter((s) =>
+          IMPRESSION_METRICS.includes(s.metric),
+        )
+      : [];
+
     return {
-      connected: true,
       reportSummary: buildReportSummary(series),
       reportRangeLabel: formatRangeLabel(rangeStart, rangeEnd),
       monthVisibility: buildMonthVisibility(
         series,
         rangeStart,
         rangeEnd,
-        prevYearSeries,
+        prevParsed.length > 0 ? prevParsed : null,
       ),
-      rankPhrases,
-      improve: {
-        checks: summary.checks.filter((c) => !c.filled),
-      },
-      proposals: proposalItems.slice(0, PROPOSALS_PREVIEW),
-      proposalsTotal: proposalItems.length,
-      publications: await loadPulpitPublications(profile),
-      rhythm: await loadPublishingRhythmSafe(profile),
-      reviews: await loadPulpitReviewsSafe(profile),
-      loadError: metricsError,
+      loadError: null,
     };
-  } catch (error) {
-    if (error instanceof GbpNotConnectedError || error instanceof AuthError) {
-      return emptyPayload({ connected: false, loadError: null });
+  },
+);
+
+export const loadPulpitImprove = cache(
+  async (profile: Profile): Promise<PulpitImprove> => {
+    try {
+      const [bundle, media] = await Promise.all([
+        loadActiveGbpBundle(),
+        loadGbpMedia(profile),
+      ]);
+
+      const summary = computeCompleteness({
+        location: bundle.location,
+        attributes: bundle.attributes,
+        attributeMetadata: bundle.attributeMetadata,
+        pendingSuggestions: bundle.pendingSuggestions,
+        photoCount: countGbpOwnerPhotos(media.owner),
+        lastAnalyzedAt:
+          bundle.latestAuditRun?.status === "done"
+            ? bundle.latestAuditRun.finishedAt
+            : (bundle.latestAuditRun?.startedAt ?? null),
+      });
+
+      const proposalItems: PulpitProposalItem[] = uniquePendingByField(
+        bundle.pendingSuggestions,
+      )
+        .filter((s) => isProposalField(s.field))
+        .map((s) => ({
+          id: s.id,
+          field: s.field,
+          label: PROPOSAL_META[s.field].label,
+          hint: proposalHint(s),
+          href: PROPOSAL_META[s.field].href,
+        }));
+
+      return {
+        improve: { checks: summary.checks.filter((c) => !c.filled) },
+        proposals: proposalItems.slice(0, PROPOSALS_PREVIEW),
+        proposalsTotal: proposalItems.length,
+      };
+    } catch (error) {
+      console.error("Pulpit improve failed:", error);
+      return { improve: null, proposals: [], proposalsTotal: 0 };
     }
-    return emptyPayload({
-      connected: false,
-      loadError:
-        error instanceof Error
-          ? error.message
-          : "Nie udało się wczytać pulpitu",
-    });
-  }
-}
+  },
+);

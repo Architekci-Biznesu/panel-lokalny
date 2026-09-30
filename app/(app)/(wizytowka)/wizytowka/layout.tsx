@@ -4,12 +4,22 @@ import { AnalysisRunningGate } from "@/features/wizytowka/components/analysis-ru
 import { ProposalCards } from "@/features/wizytowka/components/proposal-cards";
 import { PendingEditsBanner } from "@/features/wizytowka/components/pending-edits-banner";
 import { WizytowkaSubnav } from "@/features/wizytowka/components/wizytowka-subnav";
+import { GbpFreshness } from "@/features/wizytowka/components/gbp-freshness";
+import { WizEditingProvider } from "@/features/wizytowka/components/wiz-editing";
+import {
+  getGbpDataStatus,
+  WIZYTOWKA_SNAPSHOT_KINDS,
+  type GbpDataStatus,
+} from "@/features/wizytowka/snapshots/read";
 import {
   computeCompleteness,
   GBP_PHOTO_MIN,
 } from "@/features/wizytowka/completeness";
 import { loadLatestAuditInsights } from "@/features/wizytowka/competitor-insights";
-import { loadActiveGbpBundle } from "@/features/wizytowka/load-location";
+import {
+  loadActiveGbpBundle,
+  loadGbpMedia,
+} from "@/features/wizytowka/load-location";
 import { getUpcomingHolidayHint } from "@/features/wizytowka/polish-holidays";
 import {
   countSuggestionsByTab,
@@ -18,10 +28,8 @@ import {
 import { GbpNotConnectedError } from "@/lib/integrations/gbp/access";
 import {
   countGbpOwnerPhotos,
-  listGbpLocationMedia,
   pickGbpCollageUrls,
 } from "@/lib/integrations/gbp/client";
-import { cachedGbpRead } from "@/lib/integrations/gbp/read-cache";
 import { AuthError } from "@/lib/session";
 import type { GbpSuggestion } from "@/lib/db/schema";
 import Link from "next/link";
@@ -49,13 +57,22 @@ export default async function WizytowkaLayout({
   let ourWeeklyMinutes: number | null = null;
   let competitorHoursMedian: number | null = null;
   let competitorHoursMax: number | null = null;
+  let gbpStatus: GbpDataStatus | null = null;
 
   try {
     const bundle = await loadActiveGbpBundle();
     location = bundle.location;
     analyzing = bundle.latestAuditRun?.status === "running";
 
-    const latestInsights = await loadLatestAuditInsights(bundle.profile.id);
+    const [latestInsights, media] = await Promise.all([
+      loadLatestAuditInsights(bundle.profile.id),
+      loadGbpMedia(bundle.profile),
+    ]);
+    // After the reads above, so a refresh they just started shows up here.
+    gbpStatus = await getGbpDataStatus(
+      bundle.profile,
+      WIZYTOWKA_SNAPSHOT_KINDS,
+    ).catch(() => null);
     if (latestInsights?.insights.photoStats) {
       competitorPhotoMedian =
         latestInsights.insights.photoStats.competitorMedian;
@@ -68,19 +85,8 @@ export default async function WizytowkaLayout({
       competitorHoursMax = latestInsights.insights.hoursStats.competitorMax;
     }
 
-    let photoCount = 0;
-    try {
-      const media = await cachedGbpRead(
-        bundle.profile.id,
-        `media:${bundle.locationName}`,
-        () => listGbpLocationMedia(bundle.accessToken, bundle.locationName),
-      );
-      photoCount = countGbpOwnerPhotos(media.owner);
-      photoUrls = pickGbpCollageUrls([...media.owner, ...media.customers], 6);
-    } catch {
-      photoUrls = [];
-      photoCount = 0;
-    }
+    const photoCount = countGbpOwnerPhotos(media.owner);
+    photoUrls = pickGbpCollageUrls([...media.owner, ...media.customers], 6);
 
     summary = computeCompleteness({
       location: bundle.location,
@@ -117,69 +123,75 @@ export default async function WizytowkaLayout({
   }
 
   return (
-    <div className="wiz-page">
-      <AnalysisRunningGate analyzing={analyzing} />
-      <div className="page-header wiz-header">
-        <div>
-          <h1>Wizytówka Google</h1>
-          <p>
-            Dane na żywo z Google Business Profile - zmiany zapisują się od razu
-          </p>
-        </div>
-        <div className="wiz-header-actions">
-          <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-white">
-            <ArrowUpRight aria-hidden />
-            <span>Kontekst firmy</span>
-          </Link>
-          <div className="wiz-reanalyze">
-            <ReanalyzeButton />
-            <LastAnalysisLabel iso={lastAnalyzedIso} />
+    <WizEditingProvider>
+      <div className="wiz-page">
+        <AnalysisRunningGate analyzing={analyzing} />
+        <div className="page-header wiz-header">
+          <div>
+            <h1>Wizytówka Google</h1>
+            {gbpStatus ? (
+              <GbpFreshness
+                scope="wizytowka"
+                fetchedAtIso={gbpStatus.fetchedAt?.toISOString() ?? null}
+                refreshing={gbpStatus.refreshing}
+              />
+            ) : null}
+          </div>
+          <div className="wiz-header-actions">
+            <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-white">
+              <ArrowUpRight aria-hidden />
+              <span>Kontekst firmy</span>
+            </Link>
+            <div className="wiz-reanalyze">
+              <ReanalyzeButton />
+              <LastAnalysisLabel iso={lastAnalyzedIso} />
+            </div>
           </div>
         </div>
-      </div>
 
-      {!connected ? (
-        <div className="ui-section">
-          <p className="text-sm text-muted-foreground">
-            Ten profil nie ma podłączonej wizytówki Google.{" "}
-            <Link href="/ustawienia/integracje" className="wiz-inline-link">
-              Połącz w integracjach
-            </Link>{" "}
-            albo dokończ onboarding.
-          </p>
-        </div>
-      ) : loadError ? (
-        <div className="ui-section">
-          <p className="text-sm text-destructive">{loadError}</p>
-        </div>
-      ) : (
-        <>
-          {location && summary ? (
-            <GbpPreviewCard
-              location={location}
-              photoUrls={photoUrls}
-              summary={summary}
+        {!connected ? (
+          <div className="ui-section">
+            <p className="text-sm text-muted-foreground">
+              Ten profil nie ma podłączonej wizytówki Google.{" "}
+              <Link href="/ustawienia/integracje" className="wiz-inline-link">
+                Połącz w integracjach
+              </Link>{" "}
+              albo dokończ onboarding.
+            </p>
+          </div>
+        ) : loadError ? (
+          <div className="ui-section">
+            <p className="text-sm text-destructive">{loadError}</p>
+          </div>
+        ) : (
+          <>
+            {location && summary ? (
+              <GbpPreviewCard
+                location={location}
+                photoUrls={photoUrls}
+                summary={summary}
+              />
+            ) : null}
+            {location?.metadata?.hasPendingEdits ? (
+              <PendingEditsBanner mapsUri={location.metadata.mapsUri ?? null} />
+            ) : null}
+            <ProposalCards
+              suggestions={pendingSuggestions}
+              specialHoursHint={specialHoursHint}
+              factsToConfirm={summary?.factsToConfirm ?? 0}
+              photoCount={summary?.photoCount ?? GBP_PHOTO_MIN}
+              competitorPhotoMedian={competitorPhotoMedian}
+              competitorPhotoMax={competitorPhotoMax}
+              ourWeeklyMinutes={ourWeeklyMinutes}
+              competitorHoursMedian={competitorHoursMedian}
+              competitorHoursMax={competitorHoursMax}
+              mapsUri={location?.metadata?.mapsUri ?? null}
             />
-          ) : null}
-          {location?.metadata?.hasPendingEdits ? (
-            <PendingEditsBanner mapsUri={location.metadata.mapsUri ?? null} />
-          ) : null}
-          <ProposalCards
-            suggestions={pendingSuggestions}
-            specialHoursHint={specialHoursHint}
-            factsToConfirm={summary?.factsToConfirm ?? 0}
-            photoCount={summary?.photoCount ?? GBP_PHOTO_MIN}
-            competitorPhotoMedian={competitorPhotoMedian}
-            competitorPhotoMax={competitorPhotoMax}
-            ourWeeklyMinutes={ourWeeklyMinutes}
-            competitorHoursMedian={competitorHoursMedian}
-            competitorHoursMax={competitorHoursMax}
-            mapsUri={location?.metadata?.mapsUri ?? null}
-          />
-          <WizytowkaSubnav counts={tabCounts} />
-          <div className="wiz-tab-body">{children}</div>
-        </>
-      )}
-    </div>
+            <WizytowkaSubnav counts={tabCounts} />
+            <div className="wiz-tab-body">{children}</div>
+          </>
+        )}
+      </div>
+    </WizEditingProvider>
   );
 }

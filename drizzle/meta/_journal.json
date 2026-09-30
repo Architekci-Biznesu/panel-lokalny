@@ -134,6 +134,13 @@
       "when": 1790751083978,
       "tag": "0018_opinie_draft_outdated",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790778533910,
+      "tag": "0019_gbp_snapshots",
+      "breakpoints": true
     }
   ]
 }

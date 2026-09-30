@@ -1,18 +1,17 @@
 ﻿import { GodzinyView } from "@/features/wizytowka/components/godziny-view";
 import { InformacjeEditor } from "@/features/wizytowka/components/informacje-editor";
-import { tryLoadActiveGbpBundle } from "@/features/wizytowka/load-location";
-import { listGbpCategories } from "@/lib/integrations/gbp/client";
+import {
+  loadCategoryOptions,
+  tryLoadActiveGbpBundle,
+} from "@/features/wizytowka/load-location";
 
 export default async function InformacjePage() {
   const bundle = await tryLoadActiveGbpBundle();
   if (!bundle) return null;
 
-  const categoryOptions = await listGbpCategories(bundle.accessToken).catch(
-    () =>
-      bundle.categoryDetails.map((c) => ({
-        name: c.name,
-        displayName: c.displayName,
-      })),
+  const categoryOptions = await loadCategoryOptions(
+    bundle.profile,
+    bundle.categoryDetails,
   );
 
   return (

@@ -15,6 +15,7 @@ import {
   resolveCategoryDisplay,
 } from "@/features/wizytowka/components/suggestion-display";
 import type { GbpSuggestion } from "@/lib/db/schema";
+import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 
 type Cat = { name?: string | null; displayName?: string | null };
 
@@ -44,6 +45,7 @@ export function CategoriesSuggestion({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
+  useReportWizEditing(editing);
 
   const currentPrimaryName = primary?.name ?? "";
   const currentPrimaryLabel = primary?.displayName ?? primary?.name ?? null;

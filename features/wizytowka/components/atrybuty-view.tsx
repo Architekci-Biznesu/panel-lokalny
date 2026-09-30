@@ -13,6 +13,7 @@ import {
 import { SaveBar } from "@/components/ui/save-bar";
 import { UiSelect } from "@/features/shell/ui-select";
 import type { GbpAttributeMetadata } from "@/lib/integrations/gbp/client";
+import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 
 type AttrDraft =
   | { valueType: "BOOL"; boolValue: boolean }
@@ -32,6 +33,7 @@ export function AtrybutyView({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  useReportWizEditing(open);
   const [pending, startTransition] = useTransition();
   const [drafts, setDrafts] = useState<Record<string, AttrDraft>>({});
   const values = parseAttributeValues(attributes, attributeMetadata);

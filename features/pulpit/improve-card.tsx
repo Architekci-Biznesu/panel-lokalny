@@ -8,7 +8,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type {
-  PulpitPayload,
+  PulpitImprove,
   PulpitProposalItem,
 } from "@/features/pulpit/load-pulpit";
 import type { CompletenessCheck } from "@/features/wizytowka/completeness";
@@ -82,7 +82,7 @@ export function ImproveCard({
   proposals,
   proposalsTotal,
 }: {
-  improve: PulpitPayload["improve"];
+  improve: PulpitImprove["improve"];
   proposals: PulpitProposalItem[];
   proposalsTotal: number;
 }) {

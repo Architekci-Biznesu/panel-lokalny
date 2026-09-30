@@ -10,6 +10,8 @@ import {
   updateGbpPhones,
   updateGbpServiceArea,
 } from "@/features/wizytowka/actions";
+import { listFingerprint } from "@/features/wizytowka/fingerprint";
+import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 import { formatAddress, type GbpLocation } from "@/features/wizytowka/types";
 import { UiSelect } from "@/features/shell/ui-select";
 
@@ -91,6 +93,7 @@ export function LocationNapFields({ location }: { location: GbpLocation }) {
           <PhoneForm
             initial={location.phoneNumbers?.primaryPhone ?? ""}
             additional={additional}
+            fingerprint={listFingerprint(location, "phoneNumbers")}
             onDone={close}
           />
         )}
@@ -131,6 +134,7 @@ function NapField({
   editor: (args: { close: () => void }) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  useReportWizEditing(open);
   return (
     <div id={anchorId} className="wiz-field-row">
       <div className="wiz-field-label">{label}</div>
@@ -158,13 +162,17 @@ function NapField({
 function PhoneForm({
   initial,
   additional,
+  fingerprint: openedFingerprint,
   onDone,
 }: {
   initial: string;
   additional: string[];
+  /** Fingerprint of Google's phone numbers when the editor opened. */
+  fingerprint: string;
   onDone: () => void;
 }) {
   const router = useRouter();
+  const [fingerprint] = useState(openedFingerprint);
   const [value, setValue] = useState(initial);
   const [extra, setExtra] = useState(additional.join(", "));
   const [pending, startTransition] = useTransition();
@@ -186,9 +194,14 @@ function PhoneForm({
               .split(",")
               .map((s) => s.trim())
               .filter(Boolean),
+            fingerprint,
           });
           if (!result.ok) {
             toast.error({ title: "Nie zapisano", description: result.error });
+            if (result.conflict) {
+              onDone();
+              router.refresh();
+            }
             return;
           }
           toast.success({ title: "Telefon zapisany w Google" });
@@ -307,6 +320,9 @@ function ServiceAreaForm({
   onDone: () => void;
 }) {
   const router = useRouter();
+  const [fingerprint] = useState(() =>
+    listFingerprint(location, "serviceArea"),
+  );
   const [type, setType] = useState(
     location.serviceArea?.businessType ?? "CUSTOMER_AND_BUSINESS_LOCATION",
   );
@@ -351,9 +367,14 @@ function ServiceAreaForm({
               | "CUSTOMER_LOCATION_ONLY"
               | "BUSINESS_LOCATION_ONLY",
             places: toSave,
+            fingerprint,
           });
           if (!result.ok) {
             toast.error({ title: "Nie zapisano", description: result.error });
+            if (result.conflict) {
+              onDone();
+              router.refresh();
+            }
             return;
           }
           toast.success({ title: "Obszar zapisany w Google" });

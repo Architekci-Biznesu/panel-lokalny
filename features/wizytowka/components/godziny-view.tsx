@@ -8,6 +8,8 @@ import {
   updateGbpRegularHours,
   updateGbpSpecialHours,
 } from "@/features/wizytowka/actions";
+import { listFingerprint } from "@/features/wizytowka/fingerprint";
+import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 import { TimeField } from "@/components/ui/time-field";
 import {
   getUpcomingHolidayHint,
@@ -45,6 +47,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
   // Edytowany jest tylko otwarty kafel; drugi zostaje w podglądzie.
   const [editing, setEditing] = useState<"hours" | "special" | null>(null);
   const [seedEmptySpecial, setSeedEmptySpecial] = useState(false);
+  useReportWizEditing(editing !== null);
   const periods = location.regularHours?.periods ?? [];
   const special = useMemo(
     () => location.specialHours?.specialHourPeriods ?? [],
@@ -77,6 +80,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
         {editingHours ? (
           <HoursEditor
             initial={periods}
+            fingerprint={listFingerprint(location, "regularHours")}
             onDone={exitEdit}
             onCancel={exitEdit}
           />
@@ -105,6 +109,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
         {editingSpecial ? (
           <SpecialHoursEditor
             initial={special}
+            fingerprint={listFingerprint(location, "specialHours")}
             seedEmpty={seedEmptySpecial}
             onDone={exitEdit}
             onCancel={exitEdit}
@@ -367,15 +372,19 @@ type WeekRow = {
 
 function HoursEditor({
   initial,
+  fingerprint: openedFingerprint,
   onDone,
   onCancel,
 }: {
   initial: GbpPeriod[];
+  /** Fingerprint of Google's hours when the editor opened. */
+  fingerprint: string;
   onDone: () => void;
   onCancel: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [fingerprint] = useState(openedFingerprint);
   const [rows, setRows] = useState<WeekRow[]>(() =>
     WEEKDAYS.map((day) => {
       const match = initial.find((p) => p.openDay === day.value);
@@ -403,9 +412,13 @@ function HoursEditor({
             closeTime: r.close,
           }));
         startTransition(async () => {
-          const result = await updateGbpRegularHours({ periods });
+          const result = await updateGbpRegularHours({ periods, fingerprint });
           if (!result.ok) {
             toast.error({ title: "Nie zapisano", description: result.error });
+            if (result.conflict) {
+              onDone();
+              router.refresh();
+            }
             return;
           }
           toast.success({ title: "Godziny zapisane w Google" });
@@ -543,17 +556,21 @@ function toSpecialRows(
 
 function SpecialHoursEditor({
   initial,
+  fingerprint: openedFingerprint,
   seedEmpty,
   onDone,
   onCancel,
 }: {
   initial: GbpSpecialHourPeriod[];
+  /** Fingerprint of Google's special hours when the editor opened. */
+  fingerprint: string;
   seedEmpty: boolean;
   onDone: () => void;
   onCancel: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [fingerprint] = useState(openedFingerprint);
   const [rows, setRows] = useState(() => toSpecialRows(initial, seedEmpty));
   const holidays = useMemo(() => upcomingHolidays(HOLIDAY_SUGGESTIONS), []);
   const takenDates = new Set(rows.map((row) => row.date));
@@ -620,9 +637,13 @@ function SpecialHoursEditor({
         }
 
         startTransition(async () => {
-          const result = await updateGbpSpecialHours({ periods });
+          const result = await updateGbpSpecialHours({ periods, fingerprint });
           if (!result.ok) {
             toast.error({ title: "Nie zapisano", description: result.error });
+            if (result.conflict) {
+              onDone();
+              router.refresh();
+            }
             return;
           }
           toast.success({ title: "Godziny specjalne zapisane w Google" });

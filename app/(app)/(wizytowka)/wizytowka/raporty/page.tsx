@@ -2,19 +2,20 @@
 import { loadLatestAuditInsights } from "@/features/wizytowka/competitor-insights";
 import {
   ALL_PERFORMANCE_METRICS,
+  defaultRange,
   emptySeriesForMetrics,
+  formatDateIso,
   METRIC_LABELS,
   parsePerformancePayload,
   resolveRangeFromSearchParams,
 } from "@/features/wizytowka/performance";
 import { loadRankRaportPayload } from "@/features/wizytowka/rank/load-raport";
+import { readGbpSnapshot } from "@/features/wizytowka/snapshots/read";
+import { metricsKey } from "@/features/wizytowka/snapshots/sources";
 import {
   getActiveGbpProfile,
-  getGbpAccessTokenForProfile,
   GbpNotConnectedError,
 } from "@/lib/integrations/gbp/access";
-import { fetchGbpMultiDailyMetrics } from "@/lib/integrations/gbp/client";
-import { cachedGbpRead } from "@/lib/integrations/gbp/read-cache";
 
 export default async function RaportyPage({
   searchParams,
@@ -29,9 +30,7 @@ export default async function RaportyPage({
     rank: {
       placeId: string | null;
       businessName: string;
-      keywords: Awaited<
-        ReturnType<typeof loadRankRaportPayload>
-      >["keywords"];
+      keywords: Awaited<ReturnType<typeof loadRankRaportPayload>>["keywords"];
       latestByKeyword: Awaited<
         ReturnType<typeof loadRankRaportPayload>
       >["latestByKeyword"];
@@ -47,28 +46,27 @@ export default async function RaportyPage({
 
   try {
     const params = await searchParams;
-    const { start, end } = resolveRangeFromSearchParams(params);
+    const requested = resolveRangeFromSearchParams(params);
+    let { start, end } = requested;
     const profile = await getActiveGbpProfile();
-    const token = await getGbpAccessTokenForProfile(profile);
 
     let series = emptySeriesForMetrics(ALL_PERFORMANCE_METRICS);
     let loadError = false;
 
     try {
-      const range = `${start.year}-${start.month}-${start.day}_${end.year}-${end.month}-${end.day}`;
-      const payload = await cachedGbpRead(
-        profile.id,
-        `metrics:${profile.gbpLocationId}:${range}`,
-        () =>
-          fetchGbpMultiDailyMetrics(
-            token,
-            profile.gbpLocationId!,
-            ALL_PERFORMANCE_METRICS,
-            start,
-            end,
-          ),
+      // The default range rolls every day - it shares the named "last30"
+      // snapshot with Pulpit. Only a range picked by hand gets dates in the key.
+      const rolling = defaultRange();
+      const isDefault =
+        formatDateIso(requested.start) === formatDateIso(rolling.start) &&
+        formatDateIso(requested.end) === formatDateIso(rolling.end);
+      const snapshot = await readGbpSnapshot(
+        profile,
+        "metrics",
+        metricsKey(profile.gbpLocationId!, isDefault ? "last30" : requested),
       );
-      const parsed = parsePerformancePayload(payload);
+      ({ start, end } = snapshot.data);
+      const parsed = parsePerformancePayload(snapshot.data.payload);
       if (parsed.length > 0) {
         const byMetric = new Map(parsed.map((s) => [s.metric, s]));
         series = ALL_PERFORMANCE_METRICS.map(

@@ -1,3 +1,5 @@
+import { GbpHttpError } from "@/lib/integrations/gbp/errors";
+import { gbpFetch } from "@/lib/integrations/gbp/fetch";
 import { encryptSecret, decryptSecret } from "@/lib/crypto/secrets";
 
 const GBP_SCOPES = [
@@ -40,7 +42,7 @@ export async function exchangeGbpCode(code: string): Promise<GoogleTokenSet> {
   const clientSecret = requireEnv("GOOGLE_CLIENT_SECRET");
   const redirectUri = requireEnv("GOOGLE_REDIRECT_URI");
 
-  const response = await fetch("https://oauth2.googleapis.com/token", {
+  const response = await gbpFetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -81,7 +83,7 @@ export async function refreshGbpAccessToken(
   const clientSecret = requireEnv("GOOGLE_CLIENT_SECRET");
   const refreshToken = decryptSecret(encryptedRefreshToken);
 
-  const response = await fetch("https://oauth2.googleapis.com/token", {
+  const response = await gbpFetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -147,7 +149,7 @@ type LocationsListResponse = {
 export async function listGbpLocations(
   accessToken: string,
 ): Promise<GbpLocation[]> {
-  const accountsRes = await fetch(
+  const accountsRes = await gbpFetch(
     "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
@@ -171,7 +173,7 @@ export async function listGbpLocations(
       url.searchParams.set("pageSize", "100");
       if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-      const locRes = await fetch(url, {
+      const locRes = await gbpFetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -229,7 +231,7 @@ export async function fetchGbpLocationDetails(
     ].join(","),
   );
 
-  const response = await fetch(url, {
+  const response = await gbpFetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
@@ -260,7 +262,7 @@ export async function patchGbpLocation(
     url.searchParams.set("validateOnly", "true");
   }
 
-  const response = await fetch(url, {
+  const response = await gbpFetch(url, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -283,33 +285,16 @@ export type GbpCategory = {
   serviceTypes?: Array<{ serviceTypeId: string; displayName: string }>;
 };
 
-export async function listGbpCategories(
-  accessToken: string,
-): Promise<GbpCategory[]> {
-  const url = new URL(
-    "https://mybusinessbusinessinformation.googleapis.com/v1/categories",
-  );
-  url.searchParams.set("regionCode", "PL");
-  url.searchParams.set("languageCode", "pl");
-  url.searchParams.set("view", "FULL");
+type CategoriesResponse = {
+  categories?: Array<{
+    name?: string;
+    displayName?: string;
+    serviceTypes?: Array<{ serviceTypeId?: string; displayName?: string }>;
+  }>;
+  nextPageToken?: string;
+};
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`GBP categories.list failed: ${body}`);
-  }
-
-  const data = (await response.json()) as {
-    categories?: Array<{
-      name?: string;
-      displayName?: string;
-      serviceTypes?: Array<{ serviceTypeId?: string; displayName?: string }>;
-    }>;
-  };
-
+function parseCategories(data: CategoriesResponse): GbpCategory[] {
   return (data.categories ?? [])
     .filter((c) => c.name && c.displayName)
     .map((c) => ({
@@ -322,6 +307,49 @@ export async function listGbpCategories(
           displayName: s.displayName!,
         })),
     }));
+}
+
+/** Google caps categories.list at 100 per page. */
+const CATEGORIES_PAGE_SIZE = 100;
+/** Safety cap - the PL dictionary is a few thousand entries (tens of pages). */
+const CATEGORIES_MAX_PAGES = 100;
+
+/** The whole PL category dictionary, all pages. */
+export async function listGbpCategories(
+  accessToken: string,
+): Promise<GbpCategory[]> {
+  const collected: GbpCategory[] = [];
+  let pageToken: string | undefined;
+
+  for (let page = 0; page < CATEGORIES_MAX_PAGES; page++) {
+    const url = new URL(
+      "https://mybusinessbusinessinformation.googleapis.com/v1/categories",
+    );
+    url.searchParams.set("regionCode", "PL");
+    url.searchParams.set("languageCode", "pl");
+    url.searchParams.set("view", "FULL");
+    url.searchParams.set("pageSize", String(CATEGORIES_PAGE_SIZE));
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const response = await gbpFetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`GBP categories.list failed: ${body}`);
+    }
+
+    const data = (await response.json()) as CategoriesResponse;
+    collected.push(...parseCategories(data));
+    pageToken = data.nextPageToken;
+    if (!pageToken) return collected;
+  }
+
+  console.error(
+    `GBP categories.list: przerwano po ${CATEGORIES_MAX_PAGES} stronach (${collected.length} kategorii)`,
+  );
+  return collected;
 }
 
 export async function batchGetGbpCategories(
@@ -340,7 +368,7 @@ export async function batchGetGbpCategories(
     url.searchParams.append("names", name);
   }
 
-  const response = await fetch(url, {
+  const response = await gbpFetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
@@ -349,26 +377,7 @@ export async function batchGetGbpCategories(
     throw new Error(`GBP categories.batchGet failed: ${body}`);
   }
 
-  const data = (await response.json()) as {
-    categories?: Array<{
-      name?: string;
-      displayName?: string;
-      serviceTypes?: Array<{ serviceTypeId?: string; displayName?: string }>;
-    }>;
-  };
-
-  return (data.categories ?? [])
-    .filter((c) => c.name && c.displayName)
-    .map((c) => ({
-      name: c.name!,
-      displayName: c.displayName!,
-      serviceTypes: (c.serviceTypes ?? [])
-        .filter((s) => s.serviceTypeId && s.displayName)
-        .map((s) => ({
-          serviceTypeId: s.serviceTypeId!,
-          displayName: s.displayName!,
-        })),
-    }));
+  return parseCategories((await response.json()) as CategoriesResponse);
 }
 
 export type GbpAttributeMetadata = {
@@ -432,7 +441,7 @@ async function listGbpAttributeMetadata(
     url.searchParams.set("pageSize", "200");
     if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-    const response = await fetch(url, {
+    const response = await gbpFetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
@@ -456,7 +465,7 @@ export async function getGbpLocationAttributes(
   accessToken: string,
   locationName: string,
 ): Promise<{ name?: string; attributes?: Array<Record<string, unknown>> }> {
-  const response = await fetch(
+  const response = await gbpFetch(
     `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/attributes`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
@@ -485,7 +494,7 @@ export async function updateGbpLocationAttributes(
     url.searchParams.set("attributeMask", attributeMask.join(","));
   }
 
-  const response = await fetch(url, {
+  const response = await gbpFetch(url, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -538,7 +547,7 @@ export async function fetchGbpMultiDailyMetrics(
   url.searchParams.set("dailyRange.end_date.month", String(end.month));
   url.searchParams.set("dailyRange.end_date.day", String(end.day));
 
-  const response = await fetch(url, {
+  const response = await gbpFetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
@@ -567,12 +576,12 @@ type MediaListResponse = {
   nextPageToken?: string;
 };
 
-/** Owner media plus customer photos. `null` on the first page means the account does not own this location. */
+/** Owner media or customer photos of one v4 location, up to `limit` items. */
 async function listMediaCollection(
   accessToken: string,
   endpoint: string,
   limit: number,
-): Promise<GbpMediaItem[] | null> {
+): Promise<GbpMediaItem[]> {
   const items: GbpMediaItem[] = [];
   let pageToken: string | undefined;
 
@@ -581,10 +590,17 @@ async function listMediaCollection(
     url.searchParams.set("pageSize", "50");
     if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-    const response = await fetch(url, {
+    const response = await gbpFetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (!response.ok) return page === 0 ? null : items;
+    if (!response.ok) {
+      if (page > 0) return items;
+      throw new GbpHttpError(
+        "GBP media.list",
+        response.status,
+        await response.text(),
+      );
+    }
 
     const data = (await response.json()) as MediaListResponse;
     items.push(...(data.mediaItems ?? []));
@@ -597,7 +613,7 @@ async function listMediaCollection(
 
 /** Account Management: `accounts/{id}` names the token can see (v4 APIs need them). */
 async function listGbpAccountNames(accessToken: string): Promise<string[]> {
-  const accountsRes = await fetch(
+  const accountsRes = await gbpFetch(
     "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
@@ -609,24 +625,32 @@ async function listGbpAccountNames(accessToken: string): Promise<string[]> {
   return (accountsData.accounts ?? []).map((account) => account.name);
 }
 
+export type GbpLocationMedia = {
+  owner: GbpMediaItem[];
+  customers: GbpMediaItem[];
+};
+
+/**
+ * Photos of a location by its v4 name (`accounts/{a}/locations/{l}`, see
+ * `withGbpV4LocationName`). Throws GbpHttpError when Google refuses the name.
+ */
 export async function listGbpLocationMedia(
   accessToken: string,
-  locationName: string,
-): Promise<{ owner: GbpMediaItem[]; customers: GbpMediaItem[] }> {
-  const locationId = locationName.replace(/^locations\//, "");
-  if (!locationId) return { owner: [], customers: [] };
-
-  for (const accountName of await listGbpAccountNames(accessToken)) {
-    const parent = `https://mybusiness.googleapis.com/v4/${accountName}/locations/${locationId}/media`;
-    const owner = await listMediaCollection(accessToken, parent, 40);
-    if (!owner) continue;
-
-    const customers =
-      (await listMediaCollection(accessToken, `${parent}/customers`, 40)) ?? [];
-    return { owner, customers };
+  v4LocationName: string,
+): Promise<GbpLocationMedia> {
+  const parent = `https://mybusiness.googleapis.com/v4/${v4LocationName}/media`;
+  const owner = await listMediaCollection(accessToken, parent, 40);
+  let customers: GbpMediaItem[] = [];
+  try {
+    customers = await listMediaCollection(
+      accessToken,
+      `${parent}/customers`,
+      40,
+    );
+  } catch {
+    // Customer photos are optional - the owner list is what matters.
   }
-
-  return { owner: [], customers: [] };
+  return { owner, customers };
 }
 
 function mediaDisplayUrl(item: GbpMediaItem): string | null {
@@ -699,7 +723,7 @@ export async function resolveGbpV4LocationName(
       `https://mybusiness.googleapis.com/v4/${candidate}/localPosts`,
     );
     url.searchParams.set("pageSize", "1");
-    const response = await fetch(url, {
+    const response = await gbpFetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (response.ok) return candidate;
@@ -720,18 +744,16 @@ export type GbpLocalPostInput = {
   callToAction?: { actionType: GbpCallToActionType; url?: string } | null;
 };
 
-/** Publishes a STANDARD post (v4 localPosts). Returns the post `name`. */
+/**
+ * Publishes a STANDARD post (v4 localPosts) under the v4 location name
+ * (see `withGbpV4LocationName`). Returns the post `name`.
+ */
 export async function createGbpLocalPost(
   accessToken: string,
-  locationName: string,
+  v4LocationName: string,
   input: GbpLocalPostInput,
 ): Promise<{ name: string }> {
-  const parent = await resolveGbpV4LocationName(accessToken, locationName);
-  if (!parent) {
-    throw new Error(
-      "GBP localPosts.create failed: lokalizacja nie należy do żadnego konta tego połączenia",
-    );
-  }
+  const parent = v4LocationName;
 
   const body: Record<string, unknown> = {
     languageCode: "pl",
@@ -743,7 +765,7 @@ export async function createGbpLocalPost(
     body.media = [{ mediaFormat: "PHOTO", sourceUrl: input.imageUrl }];
   }
 
-  const response = await fetch(
+  const response = await gbpFetch(
     `https://mybusiness.googleapis.com/v4/${parent}/localPosts`,
     {
       method: "POST",
@@ -756,7 +778,11 @@ export async function createGbpLocalPost(
   );
 
   if (!response.ok) {
-    throw new Error(`GBP localPosts.create failed: ${await response.text()}`);
+    throw new GbpHttpError(
+      "GBP localPosts.create",
+      response.status,
+      await response.text(),
+    );
   }
 
   const data = (await response.json()) as { name?: string };

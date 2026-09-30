@@ -23,6 +23,7 @@ import {
 } from "@/features/wizytowka/proposal-meta";
 import { GBP_DESCRIPTION_MAX } from "@/lib/ai/gbp-limits";
 import type { GbpSuggestion } from "@/lib/db/schema";
+import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 
 type Props = {
   suggestion: GbpSuggestion;
@@ -138,6 +139,7 @@ export function InlineSuggestion({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
+  useReportWizEditing(editing);
   const [draft, setDraft] = useState(suggestion.suggestedValue);
   const [riskOpen, setRiskOpen] = useState(false);
   const isHighRisk = suggestion.risk === "high";

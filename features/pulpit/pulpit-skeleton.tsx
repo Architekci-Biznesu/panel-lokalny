@@ -50,6 +50,66 @@ function ActionRowSkel() {
   );
 }
 
+/** Statistics tiles while the metrics snapshot loads. */
+export function KpiStripSkeleton() {
+  return (
+    <section className="pulpit-section" aria-hidden>
+      <div className="wiz-report-summary">
+        <KpiSkel />
+        <KpiSkel />
+        <KpiSkel />
+      </div>
+    </section>
+  );
+}
+
+/** Visibility chart while the metrics snapshot loads. */
+export function VisibilitySkeleton() {
+  return (
+    <section className="pulpit-card">
+      <CardHeadSkel leadWide="20rem" />
+      <div
+        className="ui-skel ui-skel-block"
+        style={{ width: "100%", height: "14rem", marginTop: 20 }}
+      />
+    </section>
+  );
+}
+
+/** "Co do poprawy" while the listing snapshot loads. */
+export function ImproveSkeleton() {
+  return (
+    <section className="pulpit-card pulpit-improve">
+      <CardHeadSkel leadWide="14rem" />
+      <div className="pulpit-action-groups" aria-hidden>
+        <div className="pulpit-action-group">
+          <div className="pulpit-action-group-title">
+            <Bar w="7rem" h="0.65rem" />
+            <Bar w="1rem" h="0.65rem" />
+          </div>
+          <div className="pulpit-action-list">
+            <ActionRowSkel />
+            <ActionRowSkel />
+          </div>
+        </div>
+        <div className="pulpit-action-group">
+          <div className="pulpit-action-group-title">
+            <Bar w="8rem" h="0.65rem" />
+            <Bar w="1rem" h="0.65rem" />
+          </div>
+          <div className="pulpit-action-list">
+            <ActionRowSkel />
+          </div>
+        </div>
+      </div>
+      {/* Pusta stopka jak w ImproveCard; niewidoczny tekst trzyma tę samą wysokość. */}
+      <div className="pulpit-card-foot" aria-hidden>
+        <span style={{ visibility: "hidden" }}>Przejdź do wizytówki</span>
+      </div>
+    </section>
+  );
+}
+
 export function PulpitSkeleton() {
   return (
     <div
@@ -60,7 +120,7 @@ export function PulpitSkeleton() {
       <div className="page-header">
         <div className="ui-skel-stack">
           <Bar w="8rem" h="2rem" />
-          <Bar w="18rem" h="0.875rem" />
+          <Bar w="12rem" h="0.75rem" />
         </div>
         <div className="pulpit-header-actions">
           <span
@@ -74,23 +134,11 @@ export function PulpitSkeleton() {
         </div>
       </div>
 
-      <section className="pulpit-section" aria-hidden>
-        <div className="wiz-report-summary">
-          <KpiSkel />
-          <KpiSkel />
-          <KpiSkel />
-        </div>
-      </section>
+      <KpiStripSkeleton />
 
       <div className="pulpit-grid">
         <div className="pulpit-main">
-          <section className="pulpit-card">
-            <CardHeadSkel leadWide="20rem" />
-            <div
-              className="ui-skel ui-skel-block"
-              style={{ width: "100%", height: "14rem", marginTop: 20 }}
-            />
-          </section>
+          <VisibilitySkeleton />
 
           <section className="pulpit-card pulpit-phrases">
             <CardHeadSkel leadWide="18rem" />
@@ -121,34 +169,7 @@ export function PulpitSkeleton() {
         </div>
 
         <aside className="pulpit-side">
-          <section className="pulpit-card pulpit-improve">
-            <CardHeadSkel leadWide="14rem" />
-            <div className="pulpit-action-groups" aria-hidden>
-              <div className="pulpit-action-group">
-                <div className="pulpit-action-group-title">
-                  <Bar w="7rem" h="0.65rem" />
-                  <Bar w="1rem" h="0.65rem" />
-                </div>
-                <div className="pulpit-action-list">
-                  <ActionRowSkel />
-                  <ActionRowSkel />
-                </div>
-              </div>
-              <div className="pulpit-action-group">
-                <div className="pulpit-action-group-title">
-                  <Bar w="8rem" h="0.65rem" />
-                  <Bar w="1rem" h="0.65rem" />
-                </div>
-                <div className="pulpit-action-list">
-                  <ActionRowSkel />
-                </div>
-              </div>
-            </div>
-            {/* Pusta stopka jak w ImproveCard; niewidoczny tekst trzyma tę samą wysokość. */}
-            <div className="pulpit-card-foot" aria-hidden>
-              <span style={{ visibility: "hidden" }}>Przejdź do wizytówki</span>
-            </div>
-          </section>
+          <ImproveSkeleton />
           <section className="pulpit-card">
             <CardHeadSkel leadWide="11rem" />
             <div className="pulpit-action-list" aria-hidden>

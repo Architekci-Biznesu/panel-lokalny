@@ -92,7 +92,7 @@ Kolejność sugerowana. Przy każdym: pliki do zmiany, co zbudować, stany, kryt
 
 Ref: `screens/04a-wizytowka-informacje.png` (górna część, do tabów). Na pozostałych planszach 04b-04f ten blok jest zastąpiony szarym placeholderem - na wszystkich zakładkach wygląda tak samo jak w 04a.
 
-Pliki: `app/(app)/wizytowka/layout.tsx`, `features/wizytowka/components/gbp-preview-card.tsx`, `proposal-cards.tsx`.
+Pliki: `app/(app)/(wizytowka)/wizytowka/layout.tsx`, `features/wizytowka/components/gbp-preview-card.tsx`, `proposal-cards.tsx`.
 
 - **Rząd 1, siatka 2 kolumny (~2/3 + 1/3), gap 24:**
   - **Karta podglądu** (kafel r24, padding 24): po lewej zdjęcie 240×180 r16 (kolaż/placeholder `[Zdjęcie]` na `--canvas-strong`); po prawej nazwa firmy 22/400, kategoria główna 12 muted, pille `Google Business Profile` + `[Miasto]`, na dole 3 kolumny faktów oddzielone pionową kreską: `Adres` / `Telefon` / `Strona WWW` (etykieta 11 muted, wartość mono 13). W prawym górnym rogu okrągły przycisk ↗ (otwiera wizytówkę w Google).

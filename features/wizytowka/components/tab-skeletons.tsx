@@ -1,4 +1,4 @@
-// Szkielety ładowania zakładek Wizytówki - odwzorowują układ Stylu 4 (te same kontenery co widoki),
+// Szkielet Wizytówki przy pierwszym wejściu - odwzorowuje układ Stylu 4 (te same kontenery co widoki),
 // żeby po załadowaniu treść nie "skakała". Klocki: .ui-skel* z styles/ui.css.
 
 function Bar({ w, h = "0.75rem" }: { w: string; h?: string }) {
@@ -37,157 +37,56 @@ export function FieldRowsSkel({ count = 5 }: { count?: number }) {
   );
 }
 
-function TileSkel({ rows, titleWidth }: { rows: number; titleWidth: string }) {
+/** Whole Wizytówka on first entry: header, preview card, tabs and the first tab. */
+export function WizytowkaModuleSkel() {
   return (
-    <div className="wiz-hours-tile">
-      <div className="ui-skel-row" style={{ paddingTop: 0 }}>
-        <Bar w={titleWidth} h="1.25rem" />
-        <span className="ui-skel ui-skel-circle" />
-      </div>
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="ui-skel-row">
-          <Bar w="6rem" />
-          <Bar w="5.5rem" />
+    <div className="wiz-page" aria-busy="true" aria-label="Ładowanie wizytówki">
+      <div className="page-header wiz-header">
+        <div className="ui-skel-stack">
+          <Bar w="16rem" h="2.5rem" />
+          <Bar w="12rem" h="0.75rem" />
         </div>
-      ))}
-    </div>
-  );
-}
-
-/** Godziny otwarcia + Dni specjalne: dwa kafle obok siebie. */
-export function HoursTilesSkel() {
-  return (
-    <div className="wiz-hours-row">
-      <TileSkel rows={7} titleWidth="10rem" />
-      <TileSkel rows={2} titleWidth="8rem" />
-    </div>
-  );
-}
-
-/** Lista usług (podgląd): nazwa + opis. */
-export function ServiceListSkel({ count = 4 }: { count?: number }) {
-  return (
-    <div className="wiz-uslugi">
-      <ul className="wiz-uslugi-list">
-        {Array.from({ length: count }).map((_, i) => (
-          <li key={i} className="wiz-uslugi-item">
-            <div className="ui-skel-stack">
-              <Bar w={i % 2 === 0 ? "14rem" : "10rem"} h="0.875rem" />
-              <Bar w="45%" />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/** Atrybuty: grupy jako kafle w dwóch kolumnach, wiersz = etykieta + segment Tak/Nie. */
-export function AttrGroupsSkel({
-  groups = [3, 2, 3, 2],
-}: {
-  groups?: number[];
-}) {
-  return (
-    <div className="wiz-fields">
-      <div className="wiz-attr-scroll">
-        {groups.map((rows, g) => (
-          <section key={g} className="wiz-attr-group">
-            <div
-              className="ui-skel-row"
-              style={{ paddingTop: 0, borderBottom: 0 }}
-            >
-              <Bar w="7rem" h="1rem" />
-            </div>
-            {Array.from({ length: rows }).map((_, i) => (
-              <div key={i} className="ui-skel-row">
-                <Bar w={i % 2 === 0 ? "12rem" : "9rem"} />
-                <Bar w="5.5rem" h="2rem" />
-              </div>
-            ))}
-          </section>
-        ))}
       </div>
-    </div>
-  );
-}
-
-/** NAP: lista katalogów + kafel statusu. */
-export function NapSkel({ count = 6 }: { count?: number }) {
-  return (
-    <div className="wiz-nap-grid">
-      <section className="wiz-nap-catalogs">
-        <div className="ui-skel-row" style={{ paddingTop: 0 }}>
-          <Bar w="6rem" h="1.25rem" />
-          <Bar w="14rem" h="1.5rem" />
-        </div>
-        {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="ui-skel-row">
-            <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span
-                className="ui-skel ui-skel-block"
-                style={{ width: 36, height: 36 }}
-              />
-              <span className="ui-skel-stack">
-                <Bar w="8rem" h="0.875rem" />
-                <Bar w="10rem" h="0.625rem" />
-              </span>
-            </span>
-            <Bar w="6rem" h="1.5rem" />
-          </div>
-        ))}
-      </section>
-      <aside className="wiz-nap-cta">
-        <div className="ui-skel-stack" style={{ gap: 16, paddingBottom: 24 }}>
-          <Bar w="6rem" h="0.65rem" />
-          <Bar w="90%" h="1.25rem" />
-          <Bar w="70%" />
-          <Bar w="100%" h="68px" />
+      <div className="wiz-top-row">
+        <div className="wiz-preview-card">
           <span
-            className="ui-skel"
-            style={{
-              width: "100%",
-              height: 40,
-              marginTop: 8,
-              borderRadius: "var(--radius-pill)",
-            }}
+            className="ui-skel ui-skel-block"
+            style={{ width: "100%", minHeight: "13rem" }}
           />
-          <Bar w="85%" h="0.65rem" />
+          <div
+            className="ui-skel-stack"
+            style={{ padding: "20px 20px 20px 0" }}
+          >
+            <Bar w="70%" h="1.5rem" />
+            <Bar w="30%" />
+            <Bar w="45%" h="1.5rem" />
+            <Bar w="90%" />
+            <Bar w="80%" />
+          </div>
         </div>
-      </aside>
+        <div className="wiz-complete-card">
+          <div className="ui-skel-stack">
+            <Bar w="8rem" h="1rem" />
+            <Bar w="4rem" h="2rem" />
+            <Bar w="100%" h="0.5rem" />
+            <Bar w="85%" />
+            <Bar w="70%" />
+          </div>
+        </div>
+      </div>
+      <nav className="ui-subnav" aria-hidden>
+        {["5rem", "6rem", "4.5rem", "5rem", "5.5rem", "3rem"].map((w, i) => (
+          <span key={i} className="ui-subnav-link">
+            <Bar w={w} h="0.875rem" />
+          </span>
+        ))}
+      </nav>
+      <div className="wiz-tab-body">
+        <div className="wiz-stack">
+          <TabHeadSkel />
+          <FieldRowsSkel count={6} />
+        </div>
+      </div>
     </div>
-  );
-}
-
-/** Raporty: 3 kafle KPI + 2 wykresy. */
-export function ReportSkel() {
-  return (
-    <>
-      <div className="wiz-report-summary">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="ui-kpi wiz-report-kpi">
-            <div className="ui-skel-stack">
-              <Bar w="55%" />
-              <Bar w="35%" h="2.5rem" />
-              <Bar w="100%" h="0.5rem" />
-              <Bar w="100%" h="0.5rem" />
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="wiz-report-charts">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="ui-kpi wiz-report-chart">
-            <div className="ui-skel-stack">
-              <Bar w="45%" h="1rem" />
-              <span
-                className="ui-skel ui-skel-block"
-                style={{ width: "100%", height: "16rem", marginTop: 12 }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
   );
 }

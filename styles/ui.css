@@ -881,6 +881,67 @@
     line-height: 1.35;
   }
 
+  /* Clicked sub-navigation tab while its page loads */
+  .ui-subnav-pending {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background: var(--brand);
+    animation: ui-freshness-pulse 1.2s ease-in-out infinite;
+  }
+
+  /* "Dane z Google: 4 min temu" - age of Google data with a manual refresh */
+  .ui-freshness {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    margin-top: var(--space-2);
+    font-size: var(--type-xs);
+    color: var(--muted-foreground);
+    line-height: 1.35;
+  }
+
+  .ui-freshness-dot {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background: var(--brand);
+    animation: ui-freshness-pulse 1.2s ease-in-out infinite;
+  }
+
+  .ui-freshness-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    color: var(--brand);
+    cursor: pointer;
+  }
+
+  .ui-freshness-refresh:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+
+  .ui-freshness-refresh:disabled {
+    color: var(--muted-foreground);
+    cursor: default;
+  }
+
+  .ui-freshness-refresh svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .ui-freshness-note {
+    color: var(--warning-foreground);
+  }
+
   .ui-check-label {
     display: inline-flex;
     align-items: center;
@@ -980,6 +1041,16 @@
 
 [data-gooey-button]:hover {
   background: var(--canvas-strong) !important;
+}
+
+@keyframes ui-freshness-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 @keyframes ui-spin {

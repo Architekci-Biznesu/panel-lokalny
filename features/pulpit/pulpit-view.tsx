@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays } from "lucide-react";
 import { ImproveCard } from "@/features/pulpit/improve-card";
@@ -6,20 +7,106 @@ import { RankPhrasesCard } from "@/features/pulpit/rank-phrases-card";
 import { RecentPublicationsCard } from "@/features/pulpit/recent-publications-card";
 import { ReportKpiStrip } from "@/features/pulpit/report-kpi-strip";
 import { VisibilityCard } from "@/features/pulpit/visibility-card";
-import type { PulpitPayload } from "@/features/pulpit/load-pulpit";
+import {
+  ImproveSkeleton,
+  KpiStripSkeleton,
+  VisibilitySkeleton,
+} from "@/features/pulpit/pulpit-skeleton";
+import {
+  loadPulpitImprove,
+  loadPulpitMetrics,
+  type PulpitBase,
+} from "@/features/pulpit/load-pulpit";
+import type { PulpitReviews } from "@/features/opinie/load-pulpit-reviews";
+import { GbpFreshness } from "@/features/wizytowka/components/gbp-freshness";
+import type { Profile } from "@/lib/db/schema";
+import {
+  getGbpDataStatus,
+  PULPIT_SNAPSHOT_KINDS,
+} from "@/features/wizytowka/snapshots/read";
 
-export function PulpitView({ data }: { data: PulpitPayload }) {
+// Tiles with Google data load inside their own Suspense boundary (from
+// snapshots - usually instant); the rest of Pulpit comes from our database.
+
+/** Age of Pulpit's Google data - read after the tiles, so a refresh they started shows. */
+async function Freshness({ profile }: { profile: Profile }) {
+  await Promise.all([loadPulpitMetrics(profile), loadPulpitImprove(profile)]);
+  const status = await getGbpDataStatus(profile, PULPIT_SNAPSHOT_KINDS).catch(
+    () => null,
+  );
+  if (!status) return null;
+  return (
+    <GbpFreshness
+      scope="pulpit"
+      fetchedAtIso={status.fetchedAt?.toISOString() ?? null}
+      refreshing={status.refreshing}
+    />
+  );
+}
+
+async function RangeLabel({ profile }: { profile: Profile }) {
+  const metrics = await loadPulpitMetrics(profile);
+  return <>{metrics.reportRangeLabel ?? "Ostatnie 30 dni"}</>;
+}
+
+async function KpiTiles({
+  profile,
+  reviews,
+}: {
+  profile: Profile;
+  reviews: PulpitReviews | null;
+}) {
+  const metrics = await loadPulpitMetrics(profile);
+  return (
+    <>
+      {metrics.loadError ? (
+        <p className="locked-note">{metrics.loadError}</p>
+      ) : null}
+      <ReportKpiStrip summary={metrics.reportSummary} reviews={reviews} />
+    </>
+  );
+}
+
+async function VisibilityTile({ profile }: { profile: Profile }) {
+  const metrics = await loadPulpitMetrics(profile);
+  return <VisibilityCard visibility={metrics.monthVisibility} />;
+}
+
+async function ImproveTile({ profile }: { profile: Profile }) {
+  const data = await loadPulpitImprove(profile);
+  return (
+    <ImproveCard
+      improve={data.improve}
+      proposals={data.proposals}
+      proposalsTotal={data.proposalsTotal}
+    />
+  );
+}
+
+export function PulpitView({ data }: { data: PulpitBase }) {
+  const profile = data.profile;
+
   return (
     <div className="pulpit-page">
       <div className="page-header">
         <div>
           <h1>Pulpit</h1>
-          <p>Skrót raportu wizytówki i rzeczy do poprawy.</p>
+          {profile ? (
+            <Suspense fallback={null}>
+              <Freshness profile={profile} />
+            </Suspense>
+          ) : null}
         </div>
         <div className="pulpit-header-actions">
           <span className="pulpit-range mono">
             <CalendarDays aria-hidden />
-            {data.reportRangeLabel ?? "Ostatnie 30 dni"}
+            {profile ? (
+              <Suspense fallback="Ostatnie 30 dni">
+                <RangeLabel profile={profile} />
+              </Suspense>
+            ) : (
+              "Ostatnie 30 dni"
+            )}
           </span>
           <Link
             href="/wizytowka/raporty"
@@ -43,20 +130,34 @@ export function PulpitView({ data }: { data: PulpitPayload }) {
 
       {data.loadError ? <p className="locked-note">{data.loadError}</p> : null}
 
-      <ReportKpiStrip summary={data.reportSummary} reviews={data.reviews} />
+      {profile ? (
+        <Suspense fallback={<KpiStripSkeleton />}>
+          <KpiTiles profile={profile} reviews={data.reviews} />
+        </Suspense>
+      ) : (
+        <ReportKpiStrip summary={null} reviews={data.reviews} />
+      )}
 
       <div className="pulpit-grid">
         <div className="pulpit-main">
-          <VisibilityCard visibility={data.monthVisibility} />
+          {profile ? (
+            <Suspense fallback={<VisibilitySkeleton />}>
+              <VisibilityTile profile={profile} />
+            </Suspense>
+          ) : (
+            <VisibilityCard visibility={null} />
+          )}
           <RankPhrasesCard phrases={data.rankPhrases} />
         </div>
 
         <aside className="pulpit-side">
-          <ImproveCard
-            improve={data.improve}
-            proposals={data.proposals}
-            proposalsTotal={data.proposalsTotal}
-          />
+          {profile ? (
+            <Suspense fallback={<ImproveSkeleton />}>
+              <ImproveTile profile={profile} />
+            </Suspense>
+          ) : (
+            <ImproveCard improve={null} proposals={[]} proposalsTotal={0} />
+          )}
           <NewReviewsCard reviews={data.reviews} />
           <RecentPublicationsCard
             publications={data.publications}

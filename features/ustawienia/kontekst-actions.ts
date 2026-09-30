@@ -2,7 +2,6 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { invalidateGbpReads } from "@/lib/integrations/gbp/read-cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { profileBriefs } from "@/lib/db/schema";
@@ -84,7 +83,6 @@ export async function saveKontekstAction(
     }
 
     revalidatePath("/ustawienia/kontekst");
-    invalidateGbpReads();
     revalidatePath("/wizytowka", "layout");
     return {
       ok: true,

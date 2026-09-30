@@ -3,10 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * The review jobs must run without a request: no lib/session, no lib/auth and
+ * Background jobs must run without a request: no lib/session, no lib/auth and
  * no next/* anywhere in their STATIC import graph (direct or through other
  * files), so Phase 5 can move them to a worker unchanged. Dynamic import()
- * calls are not followed - none exist on these paths.
+ * calls are not followed - none exist on these paths. Covers the review jobs
+ * and the refresh of Google snapshots (Faza 6b).
  */
 
 const ROOT = path.resolve(__dirname, "../..");
@@ -15,6 +16,9 @@ const ENTRY_POINTS = [
   "features/opinie/draft-reviews.ts",
   "features/opinie/publish-reply.ts",
   "features/opinie/sync-control.ts",
+  "features/wizytowka/snapshots/refresh.ts",
+  "lib/integrations/gbp/snapshots/store.ts",
+  "lib/integrations/gbp/v4-name.ts",
 ];
 
 const FORBIDDEN = [

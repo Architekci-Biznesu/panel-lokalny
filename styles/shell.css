@@ -4,7 +4,10 @@
   .app-shell {
     position: relative;
     height: 100dvh;
-    overflow: hidden;
+    /* clip, not hidden: a hidden box can still be scrolled by scrollIntoView
+       (Next navigation, #field anchors) - it pushed the navbar out of view
+       with no way to scroll it back. Only .app-content scrolls. */
+    overflow: clip;
     display: flex;
     flex-direction: column;
     background: var(--background);

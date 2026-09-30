@@ -12,6 +12,7 @@ import {
 } from "@/features/wizytowka/attributes";
 import type { GbpLocation } from "@/features/wizytowka/types";
 import type { GbpAttributeMetadata } from "@/lib/integrations/gbp/client";
+import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 
 function displayUrl(url: string) {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
@@ -64,6 +65,7 @@ function Editable({
   editor: (args: { close: () => void }) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  useReportWizEditing(open);
   return (
     <div className="wiz-field-row">
       <div className="wiz-field-label">{label}</div>

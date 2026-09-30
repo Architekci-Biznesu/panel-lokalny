@@ -23,10 +23,12 @@ import {
   fetchGbpLocationDetails,
   listGbpAttributesForCategory,
   listGbpAttributesForLocation,
-  listGbpCategories,
   listGbpLocationMedia,
 } from "@/lib/integrations/gbp/client";
 import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/access";
+import { withGbpV4LocationName } from "@/lib/integrations/gbp/v4-name";
+import { readSnapshotForJob } from "@/features/wizytowka/snapshots/refresh";
+import { CATEGORIES_KEY } from "@/features/wizytowka/snapshots/sources";
 import { requireOwnedProfile } from "@/lib/session";
 import {
   fetchCompetitorInsights,
@@ -311,7 +313,9 @@ async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
 
   const [allCategories, categoryDetails, attributeMetadata, rejected, keywordRows] =
     await Promise.all([
-      listGbpCategories(accessToken).catch(() => []),
+      readSnapshotForJob(profile, "categories", CATEGORIES_KEY).catch(
+        () => [],
+      ),
       batchGetGbpCategories(accessToken, categoryNames),
       listGbpAttributesForLocation(accessToken, locationName).catch(() =>
         primaryName
@@ -341,7 +345,9 @@ async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
 
   let ourPhotoCount = 0;
   try {
-    const media = await listGbpLocationMedia(accessToken, locationName);
+    const media = await withGbpV4LocationName(profile, accessToken, (v4) =>
+      listGbpLocationMedia(accessToken, v4),
+    );
     ourPhotoCount = countGbpOwnerPhotos(media.owner);
   } catch {
     ourPhotoCount = 0;

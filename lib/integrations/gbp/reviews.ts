@@ -1,3 +1,4 @@
+import { gbpFetch } from "@/lib/integrations/gbp/fetch";
 import type { Profile } from "@/lib/db/schema";
 import {
   ChannelReviewError,
@@ -5,14 +6,15 @@ import {
   type ChannelReviews,
   type ReviewsPage,
 } from "@/lib/integrations/channel";
-import { resolveGbpV4LocationName } from "@/lib/integrations/gbp/client";
 import {
+  GbpHttpError,
   GbpNotConnectedError,
   isGbpUnauthenticatedError,
 } from "@/lib/integrations/gbp/errors";
 import { gbpReviewErrorMessage } from "@/lib/integrations/gbp/review-errors";
 import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/token";
 import { starRatingToNumber } from "@/lib/integrations/gbp/star-rating";
+import { withGbpV4LocationName } from "@/lib/integrations/gbp/v4-name";
 
 /**
  * Reviews live on the old v4 API (accounts/{a}/locations/{l}/reviews), like
@@ -92,15 +94,11 @@ export function parseGbpReviewsPage(data: GbpReviewsResponse): ReviewsPage {
 }
 
 async function readError(label: string, response: Response): Promise<Error> {
-  return new Error(
-    `${label} failed (${response.status}): ${await response.text()}`,
-  );
+  return new GbpHttpError(label, response.status, await response.text());
 }
 
 /** Reviews of one profile's Google location. */
 export function createGbpReviews(profile: Profile): ChannelReviews {
-  let parent: string | null = null;
-
   /** Token with one forced refresh when Google says it is stale. */
   async function withToken<T>(run: (token: string) => Promise<T>): Promise<T> {
     if (!profile.gbpLocationId || !profile.oauthConnectionId) {
@@ -116,24 +114,14 @@ export function createGbpReviews(profile: Profile): ChannelReviews {
     }
   }
 
-  async function reviewsParent(token: string): Promise<string> {
-    if (parent) return parent;
-    const resolved = await resolveGbpV4LocationName(
-      token,
-      profile.gbpLocationId ?? "",
-    );
-    if (!resolved) {
-      throw new Error(
-        "GBP reviews failed: lokalizacja nie należy do żadnego konta tego połączenia",
-      );
-    }
-    parent = resolved;
-    return resolved;
-  }
-
-  async function call<T>(run: (token: string) => Promise<T>): Promise<T> {
+  /** Token plus the v4 location name stored in the profile. */
+  async function call<T>(
+    run: (token: string, parent: string) => Promise<T>,
+  ): Promise<T> {
     try {
-      return await withToken(run);
+      return await withToken((token) =>
+        withGbpV4LocationName(profile, token, (parent) => run(token, parent)),
+      );
     } catch (error) {
       throw new ChannelReviewError(gbpReviewErrorMessage(error));
     }
@@ -141,15 +129,15 @@ export function createGbpReviews(profile: Profile): ChannelReviews {
 
   return {
     fetchReviews(pageToken) {
-      return call(async (token) => {
+      return call(async (token, parent) => {
         const url = new URL(
-          `https://mybusiness.googleapis.com/v4/${await reviewsParent(token)}/reviews`,
+          `https://mybusiness.googleapis.com/v4/${parent}/reviews`,
         );
         url.searchParams.set("pageSize", String(REVIEWS_PAGE_SIZE));
         url.searchParams.set("orderBy", "updateTime desc");
         if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-        const response = await fetch(url, {
+        const response = await gbpFetch(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) throw await readError("GBP reviews.list", response);
@@ -160,11 +148,10 @@ export function createGbpReviews(profile: Profile): ChannelReviews {
     },
 
     replyToReview(externalId, text) {
-      return call(async (token) => {
-        const base = await reviewsParent(token);
+      return call(async (token, base) => {
         // PUT creates the reply or REPLACES the existing one - repeating this
         // call never leaves two replies (Phase 5 retries rely on that).
-        const response = await fetch(
+        const response = await gbpFetch(
           `https://mybusiness.googleapis.com/v4/${base}/reviews/${encodeURIComponent(externalId)}/reply`,
           {
             method: "PUT",
@@ -182,9 +169,8 @@ export function createGbpReviews(profile: Profile): ChannelReviews {
     },
 
     deleteReply(externalId) {
-      return call(async (token) => {
-        const base = await reviewsParent(token);
-        const response = await fetch(
+      return call(async (token, base) => {
+        const response = await gbpFetch(
           `https://mybusiness.googleapis.com/v4/${base}/reviews/${encodeURIComponent(externalId)}/reply`,
           { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
         );

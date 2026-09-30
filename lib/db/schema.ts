@@ -6,6 +6,7 @@ import {
   boolean,
   pgEnum,
   uniqueIndex,
+  unique,
   index,
   jsonb,
   integer,
@@ -66,6 +67,8 @@ export const profiles = pgTable("profiles", {
   kind: profileKindEnum("kind").notNull().default("local_business"),
   gbpLocationId: text("gbp_location_id"),
   gbpPlaceId: text("gbp_place_id"),
+  /** v4 `accounts/{a}/locations/{l}` of gbpLocationId - found once, reused by photos, posts and reviews. */
+  gbpV4LocationName: text("gbp_v4_location_name"),
   oauthConnectionId: uuid("oauth_connection_id").references(
     (): AnyPgColumn => oauthConnections.id,
     { onDelete: "set null" },
@@ -828,3 +831,40 @@ export type ReviewMode = (typeof reviewModeEnum.enumValues)[number];
 export type ReviewPerspective =
   (typeof reviewPerspectiveEnum.enumValues)[number];
 export type ReviewStyle = (typeof reviewStyleEnum.enumValues)[number];
+
+export const gbpSnapshotKindEnum = pgEnum("gbp_snapshot_kind", [
+  "location",
+  "media",
+  "metrics",
+  "categories",
+  "attribute_metadata",
+]);
+
+/**
+ * Last copy of data read from Google, so pages open without waiting for it.
+ * `profileId` null = shared public dictionaries (categories, attribute
+ * metadata) - never data of a single listing.
+ */
+export const gbpSnapshots = pgTable(
+  "gbp_snapshots",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id").references(() => profiles.id, {
+      onDelete: "cascade",
+    }),
+    kind: gbpSnapshotKindEnum("kind").notNull(),
+    key: text("key").notNull(),
+    data: jsonb("data").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    /** Set while one request refreshes the row - others keep serving the old copy. */
+    refreshingSince: timestamp("refreshing_since", { withTimezone: true }),
+  },
+  (table) => [
+    unique("gbp_snapshots_profile_kind_key_uq")
+      .on(table.profileId, table.kind, table.key)
+      .nullsNotDistinct(),
+  ],
+);
+
+export type GbpSnapshot = typeof gbpSnapshots.$inferSelect;
+export type GbpSnapshotKind = (typeof gbpSnapshotKindEnum.enumValues)[number];

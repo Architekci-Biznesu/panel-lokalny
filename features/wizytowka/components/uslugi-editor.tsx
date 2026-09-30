@@ -21,6 +21,8 @@ import {
 import type { GbpCategory } from "@/lib/integrations/gbp/client";
 import type { GbpSuggestion } from "@/lib/db/schema";
 import { SaveBar } from "@/components/ui/save-bar";
+import { listFingerprint } from "@/features/wizytowka/fingerprint";
+import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 import { UiSelect } from "@/features/shell/ui-select";
 
 const NAME_MAX = 140;
@@ -39,6 +41,7 @@ export function UslugiEditor({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [editCount, setEditCount] = useState(0);
+  useReportWizEditing(open);
   const canModifyServices = location.metadata?.canModifyServiceList !== false;
   const primary = location.categories?.primaryCategory;
   const serviceTypes = categoryDetails.flatMap((c) =>
@@ -122,6 +125,7 @@ export function UslugiEditor({
           {open && canModifyServices ? (
             <ServicesEditor
               initial={drafts}
+              fingerprint={listFingerprint(location, "serviceItems")}
               primaryCategory={primary?.name ?? ""}
               serviceTypes={serviceTypes}
               onCountChange={setEditCount}
@@ -186,6 +190,7 @@ function sameServices(a: ServiceItemDraft[], b: ServiceItemDraft[]) {
 
 function ServicesEditor({
   initial,
+  fingerprint: openedFingerprint,
   primaryCategory,
   serviceTypes,
   onCountChange,
@@ -193,6 +198,8 @@ function ServicesEditor({
   onDone,
 }: {
   initial: ServiceItemDraft[];
+  /** Fingerprint of Google's list when the editor opened. */
+  fingerprint: string;
   primaryCategory: string;
   serviceTypes: Array<{
     serviceTypeId: string;
@@ -205,6 +212,7 @@ function ServicesEditor({
 }) {
   const router = useRouter();
   const [items, setItems] = useState(initial);
+  const [fingerprint] = useState(openedFingerprint);
   const [pending, startTransition] = useTransition();
   const [hiddenBelow, setHiddenBelow] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -311,9 +319,13 @@ function ServicesEditor({
       }
     }
     startTransition(async () => {
-      const result = await updateGbpServices({ services: items });
+      const result = await updateGbpServices({ services: items, fingerprint });
       if (!result.ok) {
         toast.error({ title: "Nie zapisano", description: result.error });
+        if (result.conflict) {
+          onDone();
+          router.refresh();
+        }
         return;
       }
       toast.success({ title: "Usługi zapisane w Google" });

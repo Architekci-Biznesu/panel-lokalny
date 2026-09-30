@@ -16,6 +16,7 @@ import {
 } from "@/lib/integrations/gbp/errors";
 import { gbpPublishErrorMessage } from "@/lib/integrations/gbp/publish-errors";
 import { createGbpLocalPost } from "@/lib/integrations/gbp/client";
+import { withGbpV4LocationName } from "@/lib/integrations/gbp/v4-name";
 
 export const gbpPublisher: ChannelPublisher = {
   async publish(item: ContentItem, target: ContentTarget) {
@@ -34,19 +35,15 @@ export const gbpPublisher: ChannelPublisher = {
       const input = { summary: item.body, imageUrl: item.imageUrl };
       let token = await getGbpAccessTokenForProfile(profile);
       try {
-        const post = await createGbpLocalPost(
-          token,
-          profile.gbpLocationId,
-          input,
+        const post = await withGbpV4LocationName(profile, token, (v4) =>
+          createGbpLocalPost(token, v4, input),
         );
         return { externalId: post.name };
       } catch (error) {
         if (!isGbpUnauthenticatedError(error)) throw error;
         token = await getGbpAccessTokenForProfile(profile, { force: true });
-        const post = await createGbpLocalPost(
-          token,
-          profile.gbpLocationId,
-          input,
+        const post = await withGbpV4LocationName(profile, token, (v4) =>
+          createGbpLocalPost(token, v4, input),
         );
         return { externalId: post.name };
       }

@@ -11,6 +11,8 @@ import {
   updateGbpTitle,
   updateGbpWebsite,
 } from "@/features/wizytowka/actions";
+import { listFingerprint } from "@/features/wizytowka/fingerprint";
+import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 import { InlineSuggestion } from "@/features/wizytowka/components/inline-suggestion";
 import { CategoriesSuggestion } from "@/features/wizytowka/components/categories-suggestion";
 import { LocationNapFields } from "@/features/wizytowka/components/location-nap-fields";
@@ -71,6 +73,7 @@ export function InformacjeEditor({
           primary={primary}
           additional={additional}
           categoryOptions={categoryOptions}
+          fingerprint={listFingerprint(location, "categories")}
         />
       )}
 
@@ -127,6 +130,7 @@ export function InformacjeEditor({
 
 function WebsiteFieldRow({ websiteUri }: { websiteUri?: string }) {
   const [open, setOpen] = useState(false);
+  useReportWizEditing(open);
   const raw = websiteUri?.trim() || "";
   const display = raw
     ? raw.replace(/^https?:\/\//, "").replace(/\/$/, "")
@@ -175,12 +179,16 @@ function CategoriesFieldRow({
   primary,
   additional,
   categoryOptions,
+  fingerprint,
 }: {
   primary?: { name?: string | null; displayName?: string | null } | null;
   additional: Array<{ name?: string | null; displayName?: string | null }>;
   categoryOptions: Array<{ name: string; displayName: string }>;
+  /** Fingerprint of Google's categories (taken again each time the editor opens). */
+  fingerprint: string;
 }) {
   const [open, setOpen] = useState(false);
+  useReportWizEditing(open);
   const primaryLabel = primary?.displayName ?? primary?.name;
   const additionalNames = additional
     .map((c) => c.name)
@@ -235,6 +243,7 @@ function CategoriesFieldRow({
               primaryName={primary?.name ?? ""}
               additionalNames={additionalNames}
               options={categoryOptions}
+              fingerprint={fingerprint}
               onDone={() => setOpen(false)}
             />
           </div>
@@ -264,6 +273,7 @@ function FieldRow({
   categoryOptions?: Array<{ name: string; displayName: string }>;
 }) {
   const [open, setOpen] = useState(false);
+  useReportWizEditing(open);
 
   if (suggestion) {
     return (
@@ -584,15 +594,19 @@ function CategoriesEditor({
   primaryName,
   additionalNames,
   options,
+  fingerprint: openedFingerprint,
   onDone,
 }: {
   mode: "primary" | "additional" | "combined";
   primaryName: string;
   additionalNames: string[];
   options: Array<{ name: string; displayName: string }>;
+  /** Fingerprint of Google's categories when the editor opened. */
+  fingerprint: string;
   onDone: () => void;
 }) {
   const router = useRouter();
+  const [fingerprint] = useState(openedFingerprint);
   const [primary, setPrimary] = useState(primaryName);
   const [additional, setAdditional] = useState(additionalNames.join("\n"));
   const [filter, setFilter] = useState("");
@@ -625,9 +639,14 @@ function CategoriesEditor({
           const result = await updateGbpCategories({
             primaryCategoryName: primary,
             additionalCategoryNames: names.filter((n) => n !== primary),
+            fingerprint,
           });
           if (!result.ok) {
             toast.error({ title: "Nie zapisano", description: result.error });
+            if (result.conflict) {
+              onDone();
+              router.refresh();
+            }
             return;
           }
           toast.success({ title: "Kategorie zapisane w Google" });
