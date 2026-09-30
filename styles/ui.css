@@ -882,10 +882,14 @@
   }
 
   /* Clicked sub-navigation tab while its page loads */
+  /* Absolute, so showing it does not shift the tabs */
   .ui-subnav-pending {
+    position: absolute;
+    top: 50%;
+    right: -12px;
     width: 6px;
     height: 6px;
-    flex-shrink: 0;
+    margin-top: -3px;
     border-radius: var(--radius-pill);
     background: var(--brand);
     animation: ui-freshness-pulse 1.2s ease-in-out infinite;
@@ -1196,6 +1200,7 @@
   }
 
   .ui-subnav-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
