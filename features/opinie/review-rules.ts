@@ -157,6 +157,34 @@ export function changedAfterReply(review: {
   );
 }
 
+/**
+ * What a sync does with the draft when the author changed an unanswered
+ * review (rating or text): an AI draft is thrown away so a new one is written
+ * for the current review; a draft the customer edited by hand is kept, but
+ * flagged to be checked. Drafts being written or published are not touched.
+ */
+export function draftAfterReviewChange(
+  stored: {
+    rating: number | null;
+    comment: string | null;
+    replyText: string | null;
+    draftStatus: "none" | "generating" | "ready" | "failed";
+    publishStatus: "idle" | "publishing" | "failed";
+    draftEditedAt: Date | null;
+  },
+  incoming: { rating: number | null; comment: string | null },
+): "keep" | "clear" | "flag" {
+  if (stored.replyText) return "keep";
+  if (stored.draftStatus !== "ready" && stored.draftStatus !== "failed") {
+    return "keep";
+  }
+  if (stored.publishStatus === "publishing") return "keep";
+  const changed =
+    stored.rating !== incoming.rating || stored.comment !== incoming.comment;
+  if (!changed) return "keep";
+  return stored.draftEditedAt ? "flag" : "clear";
+}
+
 /** Whitespace-insensitive, so Google re-flowing our text does not look like an outside edit. */
 function sameReplyText(a: string, b: string): boolean {
   const norm = (text: string) => text.replace(/\s+/g, " ").trim();

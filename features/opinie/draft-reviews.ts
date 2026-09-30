@@ -60,6 +60,9 @@ async function writeDraft(
         .set({
           draftText: checked.text,
           draftStatus: "ready",
+          // A fresh AI draft for the current review
+          draftEditedAt: null,
+          draftOutdatedAt: null,
           updatedAt: deps.now(),
         })
         .where(

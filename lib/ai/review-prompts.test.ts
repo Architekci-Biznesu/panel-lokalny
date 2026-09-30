@@ -36,12 +36,25 @@ for (const rating of [1, 2, 3, 4, 5, null]) {
   }
 }
 
+// --- język: obie ścieżki (1-2 i 3-5) odpowiadają po angielsku na opinię w innym języku ---
+for (const rating of [1, 2, 3, 4, 5, null]) {
+  const text = system(rating);
+  assert.match(
+    text,
+    /Jeśli opinia jest napisana w innym języku niż polski \(dostajesz wtedy jej tłumaczenie\), odpowiedz po angielsku\./,
+    `reguła języka dla oceny ${rating}`,
+  );
+  assert.ok(
+    !/zawsze po polsku/.test(text),
+    `"zawsze po polsku" w ocenie ${rating}`,
+  );
+}
+
 // --- oceny 1-2 i brak oceny: ostrożny prompt (przeprosiny + kontakt), bez zmian ---
 for (const rating of [1, 2, null]) {
   const text = system(rating);
   assert.match(text, /Przy ocenie 1-2 gwiazdek/);
   assert.match(text, /2-4 zdania/);
-  assert.match(text, /Odpowiadasz zawsze po polsku/);
   assert.ok(!text.includes("SCENARIUSZ"));
 }
 
@@ -56,7 +69,6 @@ for (const rating of [3, 4, 5]) {
     /Zamiast "Zapraszamy do Omega Clinic" napisz "Zapraszamy ponownie"/,
   );
   assert.match(text, /Panie \[imię w wołaczu\]/);
-  assert.match(text, /odpowiedz po angielsku/);
   assert.ok(
     !text.includes("Przy ocenie 1-2"),
     "reguła 1-2 nie należy do promptu 3-5",

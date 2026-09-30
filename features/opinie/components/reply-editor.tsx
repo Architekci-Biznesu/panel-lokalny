@@ -169,6 +169,11 @@ export function ReplyEditor({ item }: { item: ReviewItem }) {
           albo wygenerować go ponownie.
         </p>
       ) : null}
+      {item.draftOutdated ? (
+        <p className="op-reply-hint is-error">
+          Opinia zmieniła się po napisaniu szkicu - sprawdź przed publikacją.
+        </p>
+      ) : null}
       {item.publishStatus === "failed" && item.publishError ? (
         <p className="op-reply-hint is-error">
           Nie opublikowano: {item.publishError}

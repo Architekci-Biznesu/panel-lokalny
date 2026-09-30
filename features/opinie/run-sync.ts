@@ -19,6 +19,7 @@ import type { ChannelReview } from "@/lib/integrations/channel";
 import {
   AUTO_DRAFT_WINDOW_DAYS,
   autoReplyDecision,
+  draftAfterReviewChange,
   reconcileReply,
   splitReviewText,
   wantsAutoDraft,
@@ -163,6 +164,15 @@ async function syncPages(
         review.reply,
         review.updatedAt ?? now,
       );
+      // The author changed an unanswered review: a draft written for the old
+      // rating/text must not stay (draftNewReviews below writes a new one).
+      const draftChange =
+        row && !patch.clearDraft
+          ? draftAfterReviewChange(
+              { ...row, replyText: patch.replyText },
+              { rating: review.rating, comment: review.comment },
+            )
+          : "keep";
       const replyColumns = {
         replyText: patch.replyText,
         replySource: patch.replySource,
@@ -173,8 +183,19 @@ async function syncPages(
               draftStatus: "none" as const,
               publishStatus: "idle" as const,
               publishError: null,
+              draftEditedAt: null,
+              draftOutdatedAt: null,
             }
           : {}),
+        ...(draftChange === "clear"
+          ? {
+              draftText: null,
+              draftStatus: "none" as const,
+              publishError: null,
+              draftOutdatedAt: null,
+            }
+          : {}),
+        ...(draftChange === "flag" ? { draftOutdatedAt: now } : {}),
       };
 
       if (!row) {
@@ -277,6 +298,9 @@ async function publishAutoReplies(profile: Profile, deps: ReviewDeps) {
         eq(reviews.draftStatus, "ready"),
         isNotNull(reviews.draftText),
         eq(reviews.publishStatus, "idle"),
+        // An edited draft written for an older version of the review waits
+        // for the customer to check it.
+        isNull(reviews.draftOutdatedAt),
         gte(reviews.firstSeenAt, profile.reviewAutoSince),
       ),
     );

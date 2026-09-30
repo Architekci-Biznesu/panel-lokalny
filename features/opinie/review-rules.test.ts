@@ -6,6 +6,7 @@ import {
   byteLength,
   changedAfterReply,
   checkReplyText,
+  draftAfterReviewChange,
   reconcileReply,
   ratingInFilter,
   splitReviewText,
@@ -279,5 +280,67 @@ assert.equal(ratingInFilter(5, "high"), true);
 assert.equal(ratingInFilter(5, "mid"), false);
 assert.equal(ratingInFilter(null, "all"), true);
 assert.equal(ratingInFilter(null, "high"), false);
+
+// --- szkic po zmianie opinii przez autora ---
+{
+  const stored = {
+    rating: 4,
+    comment: "Dobrze",
+    replyText: null,
+    draftStatus: "ready" as const,
+    publishStatus: "idle" as const,
+    draftEditedAt: null,
+  };
+  const oneStar = { rating: 1, comment: "Dobrze" };
+  assert.equal(draftAfterReviewChange(stored, oneStar), "clear");
+  assert.equal(
+    draftAfterReviewChange(stored, { rating: 4, comment: "Jednak słabo" }),
+    "clear",
+    "zmiana samej treści",
+  );
+  assert.equal(
+    draftAfterReviewChange(stored, { rating: 4, comment: "Dobrze" }),
+    "keep",
+    "bez zmian oceny i treści",
+  );
+  assert.equal(
+    draftAfterReviewChange(
+      { ...stored, draftStatus: "failed" as const },
+      oneStar,
+    ),
+    "clear",
+  );
+  assert.equal(
+    draftAfterReviewChange({ ...stored, draftEditedAt: AFTER }, oneStar),
+    "flag",
+    "szkic klienta zostaje, tylko z ostrzeżeniem",
+  );
+  assert.equal(
+    draftAfterReviewChange(
+      { ...stored, draftStatus: "generating" as const },
+      oneStar,
+    ),
+    "keep",
+  );
+  assert.equal(
+    draftAfterReviewChange(
+      { ...stored, draftStatus: "none" as const },
+      oneStar,
+    ),
+    "keep",
+  );
+  assert.equal(
+    draftAfterReviewChange(
+      { ...stored, publishStatus: "publishing" as const },
+      oneStar,
+    ),
+    "keep",
+  );
+  assert.equal(
+    draftAfterReviewChange({ ...stored, replyText: "Dziękujemy" }, oneStar),
+    "keep",
+    "opinia z opublikowaną odpowiedzią",
+  );
+}
 
 console.log("review rules tests passed");

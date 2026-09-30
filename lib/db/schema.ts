@@ -760,6 +760,10 @@ export const reviews = pgTable(
       .notNull()
       .default("idle"),
     publishError: text("publish_error"),
+    /** The customer saved the draft by hand (AI drafts leave it null) */
+    draftEditedAt: timestamp("draft_edited_at", { withTimezone: true }),
+    /** The review changed after an edited draft was written - check before publishing */
+    draftOutdatedAt: timestamp("draft_outdated_at", { withTimezone: true }),
     /** When the panel first saw this review - gates automatic replies */
     firstSeenAt: timestamp("first_seen_at", { withTimezone: true })
       .defaultNow()

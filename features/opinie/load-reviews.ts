@@ -33,6 +33,8 @@ export type ReviewItem = {
   repliedAt: string | null;
   draftText: string | null;
   draftStatus: "none" | "generating" | "ready" | "failed";
+  /** The customer's edited draft was written for an older version of the review */
+  draftOutdated: boolean;
   publishStatus: "idle" | "publishing" | "failed";
   publishError: string | null;
 };
@@ -79,6 +81,7 @@ export function toReviewItem(row: Review, now: Date): ReviewItem {
     draftText: row.draftText,
     // A job that died leaves "generating"/"publishing" behind - show it as failed.
     draftStatus: staleDraft ? "failed" : row.draftStatus,
+    draftOutdated: row.draftOutdatedAt !== null && row.draftText !== null,
     publishStatus: stalePublish ? "failed" : row.publishStatus,
     publishError: row.publishError,
   };

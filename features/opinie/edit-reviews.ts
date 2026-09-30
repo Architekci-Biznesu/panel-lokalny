@@ -24,6 +24,10 @@ export async function saveReviewDraft(
     .set({
       draftText: checked.text,
       draftStatus: "ready",
+      // Written by the customer: a later change of the review flags it
+      // instead of replacing it; saving again means it was checked.
+      draftEditedAt: deps.now(),
+      draftOutdatedAt: null,
       updatedAt: deps.now(),
     })
     .where(
@@ -46,6 +50,8 @@ export async function discardReviewDraft(
     .set({
       draftText: null,
       draftStatus: "none",
+      draftEditedAt: null,
+      draftOutdatedAt: null,
       publishError: null,
       updatedAt: deps.now(),
     })
@@ -86,6 +92,8 @@ export async function startEditingReply(
     .set({
       draftText: row.replyText,
       draftStatus: "ready",
+      draftEditedAt: null,
+      draftOutdatedAt: null,
       publishError: null,
       updatedAt: deps.now(),
     })

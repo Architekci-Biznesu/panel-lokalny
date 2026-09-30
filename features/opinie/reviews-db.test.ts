@@ -620,6 +620,111 @@ async function main() {
   assert.equal(aiInputs[0]?.perspective, "owner");
   assert.equal(aiInputs[0]?.style, "formal");
 
+  // =============== 12d. autor zmienia opinię, która ma szkic ===============
+  const fakeF = new FakeReviews();
+  fakeF.reviews = [
+    fakeReview("f1", {
+      rating: 4,
+      comment: "Dobrze",
+      createdAt: day(1),
+      updatedAt: at(795),
+    }),
+    fakeReview("f2", {
+      rating: 5,
+      comment: "Super",
+      createdAt: day(1),
+      updatedAt: at(795),
+    }),
+  ];
+  clock = at(800);
+  const F = await makeProfile("f@test.pl", fakeF);
+  await sync(F.profile.id, F.deps);
+  assert.equal(
+    (await row(F.profile.id, "f1")).draftText,
+    "Dziękujemy za ocenę 4.",
+  );
+  // f2: klient poprawił szkic ręcznie
+  const f2Before = await row(F.profile.id, "f2");
+  await saveReviewDraft(
+    {
+      reviewId: f2Before.id,
+      profileId: F.profile.id,
+      text: "Dziękujemy, do zobaczenia!",
+    },
+    F.deps,
+  );
+  assert.ok((await row(F.profile.id, "f2")).draftEditedAt);
+  // tryb auto - oznaczony szkic nie może wyjść sam
+  await db
+    .update(profiles)
+    .set({ reviewMode: "auto", reviewAutoSince: at(790) })
+    .where(eq(profiles.id, F.profile.id));
+  F.profile.reviewMode = "auto";
+
+  // autor zmienia 4 gwiazdki na 1 i treść; f2 z 5 na 4
+  fakeF.reviews[0] = {
+    ...fakeF.reviews[0],
+    rating: 1,
+    comment: "Jednak fatalnie",
+    updatedAt: at(805),
+  };
+  fakeF.reviews[1] = {
+    ...fakeF.reviews[1],
+    rating: 4,
+    comment: "Super, ale drogo",
+    updatedAt: at(805),
+  };
+  clock = at(810);
+  aiInputs.length = 0;
+  await sync(F.profile.id, F.deps);
+
+  const f1After = await row(F.profile.id, "f1");
+  assert.equal(
+    f1After.draftText,
+    "Dziękujemy za ocenę 1.",
+    "szkic AI napisany od nowa do aktualnej opinii, nie stary",
+  );
+  assert.equal(f1After.draftStatus, "ready");
+  assert.equal(f1After.draftOutdatedAt, null);
+  assert.equal(f1After.rating, 1);
+  assert.ok(
+    aiInputs.some(
+      (input) => input.rating === 1 && input.reviewText === "Jednak fatalnie",
+    ),
+    "AI dostało nową ocenę i treść",
+  );
+
+  const f2After = await row(F.profile.id, "f2");
+  assert.equal(
+    f2After.draftText,
+    "Dziękujemy, do zobaczenia!",
+    "szkic klienta zostaje",
+  );
+  assert.ok(f2After.draftOutdatedAt, "szkic klienta oznaczony do sprawdzenia");
+  assert.equal(f2After.replyText, null);
+  assert.equal(
+    fakeF.putCalls.some((call) => call.externalId === "f2"),
+    false,
+    "tryb auto nie publikuje oznaczonego szkicu",
+  );
+  const { toReviewItem } = await import("./load-reviews");
+  assert.equal(toReviewItem(f2After, clock).draftOutdated, true);
+  assert.equal(toReviewItem(f1After, clock).draftOutdated, false);
+
+  // klient sprawdził i zapisał szkic: flaga znika, tryb auto może go wysłać
+  await saveReviewDraft(
+    {
+      reviewId: f2After.id,
+      profileId: F.profile.id,
+      text: "Dziękujemy, zapraszamy ponownie!",
+    },
+    F.deps,
+  );
+  assert.equal((await row(F.profile.id, "f2")).draftOutdatedAt, null);
+  clock = at(820);
+  await sync(F.profile.id, F.deps);
+  assert.ok(fakeF.putCalls.some((call) => call.externalId === "f2"));
+
   // =============== 13. izolacja: listy i liczniki tylko własnego profilu ===============
   const { loadReviews, countPendingReviews } = await import("./load-reviews");
   const { loadPulpitReviews } = await import("./load-pulpit-reviews");
