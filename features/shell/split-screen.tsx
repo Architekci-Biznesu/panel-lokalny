@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { LogOut, Star, Users } from "lucide-react";
 import { logoutAction } from "@/features/auth/actions";
 import { BrandLogo } from "@/features/shell/brand-logo";
 import {
@@ -69,16 +69,15 @@ function FormUserChip({ user }: { user: { name: string; email: string } }) {
 function TrustBar() {
   return (
     <div className="trust-bar">
-      <span className="trust-avatars" aria-hidden>
-        <span className="trust-avatar" />
-        <span className="trust-avatar" />
-        <span className="trust-avatar" />
+      <span className="trust-icon" aria-hidden>
+        <Users />
       </span>
       <span className="trust-item">
         <span className="mono">+300</span> klientów
       </span>
       <span className="trust-sep" aria-hidden />
       <span className="trust-item">
+        <Star aria-hidden className="trust-star" />
         <span className="mono">4.9/5</span> · <span className="mono">209</span>{" "}
         opinii Google
       </span>

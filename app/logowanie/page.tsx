@@ -9,7 +9,6 @@ export default function LoginPage() {
         headline: "Wszystko, czego potrzebujesz, w jednym miejscu.",
         description:
           "Strona WWW, wizytówka Google, publikacje, opinie i kampanie SMS/e-mail - AI przygotowuje, Ty akceptujesz.",
-        decor: "login",
         showTrustBar: true,
       }}
       topRight={
