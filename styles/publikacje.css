@@ -898,7 +898,45 @@
     color: var(--muted-foreground);
   }
 
+  /* Zaplanowany post: data jako przycisk - zmiana terminu albo anulowanie */
+  .pub-history-reschedule {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--btn-height-sm);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--card);
+    font: inherit;
+    font-size: var(--type-xs);
+    color: var(--foreground);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .pub-history-reschedule:hover,
+  .pub-history-reschedule[aria-expanded="true"] {
+    background: var(--muted);
+  }
+
+  .pub-history-reschedule svg {
+    width: 12px;
+    height: 12px;
+    color: var(--muted-foreground);
+  }
+
   /* --- kalendarz: widok Kalendarz (miesiąc) i Tygodnie --- */
+
+  /* Zaplanowany post w kalendarzu to przycisk (menu terminu) - wygląda jak link */
+  button.pub-cal-entry,
+  button.pub-week-card {
+    width: 100%;
+    border: 0;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
 
   .pub-cal {
     border-radius: var(--radius-card);

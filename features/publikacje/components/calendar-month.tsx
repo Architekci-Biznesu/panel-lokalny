@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { ScheduledPostMenu } from "@/features/publikacje/components/scheduled-post-menu";
 import { CHANNEL_LABELS } from "@/features/publikacje/content-status";
 import {
   CalendarViewToggle,
@@ -133,20 +134,42 @@ export function CalendarMonth({
                 <span className="pub-cal-date mono">{date.getDate()}</span>
                 {isToday ? <span className="pub-cal-today">Dziś</span> : null}
               </div>
-              {list.slice(0, PER_DAY).map((entry) => (
-                <Link
-                  key={entry.targetId}
-                  href="/publikacje?status=all"
-                  className={`pub-cal-entry is-${statusTone(entry.status)}`}
-                  title={`${CHANNEL_LABELS[entry.channel]} · ${entry.title}`}
-                >
-                  <span className="pub-cal-entry-time">
-                    <StatusIcon status={entry.status} />
-                    <span className="mono">{TIME_FMT.format(entry.date)}</span>
-                  </span>
-                  <span className="pub-cal-entry-title">{entry.title}</span>
-                </Link>
-              ))}
+              {list.slice(0, PER_DAY).map((entry) => {
+                const inner = (
+                  <>
+                    <span className="pub-cal-entry-time">
+                      <StatusIcon status={entry.status} />
+                      <span className="mono">
+                        {TIME_FMT.format(entry.date)}
+                      </span>
+                    </span>
+                    <span className="pub-cal-entry-title">{entry.title}</span>
+                  </>
+                );
+                const className = `pub-cal-entry is-${statusTone(entry.status)}`;
+                // A scheduled post opens its menu (new date / cancel) in place.
+                return entry.status === "scheduled" ? (
+                  <ScheduledPostMenu
+                    key={entry.targetId}
+                    itemId={entry.itemId}
+                    title={entry.title}
+                    scheduledAt={entry.date.toISOString()}
+                    triggerClassName={className}
+                    triggerLabel={`${entry.title} - zmień termin albo anuluj`}
+                  >
+                    {inner}
+                  </ScheduledPostMenu>
+                ) : (
+                  <Link
+                    key={entry.targetId}
+                    href="/publikacje?status=all"
+                    className={className}
+                    title={`${CHANNEL_LABELS[entry.channel]} · ${entry.title}`}
+                  >
+                    {inner}
+                  </Link>
+                );
+              })}
               {list.length > PER_DAY ? (
                 <Link href="/publikacje?status=all" className="pub-cal-more">
                   +{list.length - PER_DAY} więcej

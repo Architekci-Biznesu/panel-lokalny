@@ -1,4 +1,5 @@
-import { ChevronDown, ImageIcon } from "lucide-react";
+import { ChevronDown, ImageIcon, Pencil } from "lucide-react";
+import { ScheduledPostMenu } from "@/features/publikacje/components/scheduled-post-menu";
 import Link from "next/link";
 import type { ContentChannel } from "@/lib/db/schema";
 import {
@@ -164,21 +165,34 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
             )}
           </ul>
           <div className="pub-history-when">
-            <span
-              className="pub-history-date mono"
-              title={
-                item.targets.find((t) => t.externalId)?.externalId
-                  ? `Post w Google: ${item.targets
-                      .find((t) => t.externalId)
-                      ?.externalId?.split("/")
-                      .pop()}`
-                  : undefined
-              }
-            >
-              {item.when
-                ? formatPubDateTime(item.when)
-                : formatPubDate(item.createdAt)}
-            </span>
+            {item.status === "scheduled" && item.when ? (
+              <ScheduledPostMenu
+                itemId={item.id}
+                title={item.title}
+                scheduledAt={item.when.toISOString()}
+                triggerClassName="pub-history-reschedule"
+                triggerLabel={`Zaplanowano na ${formatPubDateTime(item.when)} - zmień termin albo anuluj`}
+              >
+                <span className="mono">{formatPubDateTime(item.when)}</span>
+                <Pencil aria-hidden />
+              </ScheduledPostMenu>
+            ) : (
+              <span
+                className="pub-history-date mono"
+                title={
+                  item.targets.find((t) => t.externalId)?.externalId
+                    ? `Post w Google: ${item.targets
+                        .find((t) => t.externalId)
+                        ?.externalId?.split("/")
+                        .pop()}`
+                    : undefined
+                }
+              >
+                {item.when
+                  ? formatPubDateTime(item.when)
+                  : formatPubDate(item.createdAt)}
+              </span>
+            )}
           </div>
         </li>
       ))}

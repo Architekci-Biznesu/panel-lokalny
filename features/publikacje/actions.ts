@@ -513,6 +513,107 @@ export async function getContentPublishStatus(input: unknown): Promise<
   }
 }
 
+// --- Zaplanowane: zmiana terminu i anulowanie ---
+
+/**
+ * Scheduled targets of the item on the active account's profiles - only those
+ * still waiting (status "scheduled"), never already published ones.
+ */
+async function scheduledTargetsFilter(profile: Profile, itemId: string) {
+  const item = await getOwnedItem(profile, itemId);
+  const accountProfileIds = (await listAccountProfileOptions()).map(
+    (option) => option.id,
+  );
+  return {
+    item,
+    where: and(
+      eq(contentTargets.contentItemId, item.id),
+      eq(contentTargets.status, "scheduled"),
+      inArray(contentTargets.profileId, accountProfileIds),
+    ),
+  };
+}
+
+const rescheduleSchema = z.object({
+  itemId: z.string().uuid(),
+  scheduledAt: z.string().datetime({ offset: true }),
+});
+
+/** New date for a scheduled post (all its scheduled channels and profiles). */
+export async function rescheduleContent(
+  input: unknown,
+): Promise<{ ok: true } | ActionFail> {
+  const parsed = rescheduleSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
+
+  const scheduledAt = new Date(parsed.data.scheduledAt);
+  if (initialTargetStatus(scheduledAt) !== "scheduled") {
+    return { ok: false, error: "Nowy termin musi być w przyszłości" };
+  }
+
+  try {
+    const profile = await getActiveProfile();
+    const { where } = await scheduledTargetsFilter(profile, parsed.data.itemId);
+    const updated = await db
+      .update(contentTargets)
+      .set({ scheduledAt })
+      .where(where)
+      .returning({ id: contentTargets.id });
+    if (updated.length === 0) {
+      return { ok: false, error: "Ten post nie jest już zaplanowany" };
+    }
+    revalidateModule();
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/**
+ * Cancels a scheduled post: its scheduled targets are removed and, when
+ * nothing else of it went out, the post goes back to "Do akceptacji".
+ */
+export async function cancelScheduledContent(
+  input: unknown,
+): Promise<{ ok: true } | ActionFail> {
+  const parsed = z.object({ itemId: z.string().uuid() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
+
+  try {
+    const profile = await getActiveProfile();
+    const { item, where } = await scheduledTargetsFilter(
+      profile,
+      parsed.data.itemId,
+    );
+    const removed = await db.transaction(async (tx) => {
+      const rows = await tx
+        .delete(contentTargets)
+        .where(where)
+        .returning({ id: contentTargets.id });
+      if (rows.length === 0) return 0;
+      const [left] = await tx
+        .select({ id: contentTargets.id })
+        .from(contentTargets)
+        .where(eq(contentTargets.contentItemId, item.id))
+        .limit(1);
+      if (!left) {
+        await tx
+          .update(contentItems)
+          .set({ status: "pending", updatedAt: new Date() })
+          .where(eq(contentItems.id, item.id));
+      }
+      return rows.length;
+    });
+    if (removed === 0) {
+      return { ok: false, error: "Ten post nie jest już zaplanowany" };
+    }
+    revalidateModule();
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
 // --- Posty i zdjęcia ręcznie ---
 
 /** The uploaded file from a form, or null when none was chosen. */

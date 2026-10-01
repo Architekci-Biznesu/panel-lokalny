@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, ImageIcon, Plus } from "lucide-react";
 import Link from "next/link";
+import { ScheduledPostMenu } from "@/features/publikacje/components/scheduled-post-menu";
 import { TargetStatusPill } from "@/features/publikacje/components/content-status-pill";
 import { TopicsButton } from "@/features/publikacje/components/topics-button";
 import {
@@ -41,12 +42,8 @@ function postsLabel(n: number): string {
 
 function WeekCard({ entry }: { entry: CalendarEntry }) {
   const tone = statusTone(entry.status);
-  return (
-    <Link
-      href="/publikacje?status=all"
-      className={`pub-week-card is-${tone}`}
-      title={`${CHANNEL_LABELS[entry.channel]} · ${entry.title}`}
-    >
+  const inner = (
+    <>
       <span className="pub-week-card-media">
         {entry.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- public R2 URL, domain set per environment
@@ -65,6 +62,31 @@ function WeekCard({ entry }: { entry: CalendarEntry }) {
         </span>
         <span className="pub-week-card-title">{entry.title}</span>
       </span>
+    </>
+  );
+
+  // A scheduled post opens its menu (new date / cancel) in place.
+  if (entry.status === "scheduled") {
+    return (
+      <ScheduledPostMenu
+        itemId={entry.itemId}
+        title={entry.title}
+        scheduledAt={entry.date.toISOString()}
+        triggerClassName={`pub-week-card is-${tone}`}
+        triggerLabel={`${entry.title} - zmień termin albo anuluj`}
+      >
+        {inner}
+      </ScheduledPostMenu>
+    );
+  }
+
+  return (
+    <Link
+      href="/publikacje?status=all"
+      className={`pub-week-card is-${tone}`}
+      title={`${CHANNEL_LABELS[entry.channel]} · ${entry.title}`}
+    >
+      {inner}
     </Link>
   );
 }

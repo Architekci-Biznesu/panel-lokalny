@@ -1,17 +1,9 @@
 "use client";
 
 import { Loader2, X } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useAnchoredPopover } from "@/components/ui/use-anchored-popover";
 
 /** Gotowe powody - klik wpisuje tekst do pola, można go dalej edytować. */
 const QUICK_REASONS = [
@@ -19,8 +11,6 @@ const QUICK_REASONS = [
   "Nieprawdziwe informacje",
   "Wolę obecną wersję",
 ] as const;
-
-const GAP = 8;
 
 /** Teksty i wygląd popovera z polem tekstowym - domyślnie "Odrzuć propozycję". */
 export type ReasonPopoverCopy = {
@@ -88,65 +78,15 @@ export function ReasonPopover({
   /** Zamknij panel od razu po potwierdzeniu (gdy karta zostaje na ekranie) */
   closeOnConfirm?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const { open, setOpen, close, style, triggerRef, panelRef } =
+    useAnchoredPopover();
   const [reason, setReason] = useState("");
-  const [style, setStyle] = useState<CSSProperties>({ visibility: "hidden" });
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fieldId = useId();
 
-  const place = useCallback(() => {
-    const trigger = triggerRef.current;
-    const panel = panelRef.current;
-    if (!trigger || !panel) return;
-    const rect = trigger.getBoundingClientRect();
-    const height = panel.offsetHeight;
-    const below = window.innerHeight - rect.bottom;
-    const openUp = below < height + GAP * 2 && rect.top > below;
-    setStyle({
-      // Prawa krawędź pod przyciskiem, ale min. 16 px marginesu z obu stron ekranu.
-      right: Math.min(
-        Math.max(GAP * 2, window.innerWidth - rect.right),
-        window.innerWidth - panel.offsetWidth - GAP * 2,
-      ),
-      top: openUp ? rect.top - height - GAP : rect.bottom + GAP,
-      transformOrigin: openUp ? "bottom right" : "top right",
-    });
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!open) return;
-    place();
-    textareaRef.current?.focus();
-  }, [open, place]);
-
   useEffect(() => {
-    if (!open) return;
-    function onDown(event: MouseEvent) {
-      const target = event.target as Node;
-      if (
-        panelRef.current?.contains(target) ||
-        triggerRef.current?.contains(target)
-      ) {
-        return;
-      }
-      setOpen(false);
-    }
-    window.addEventListener("scroll", place, true);
-    window.addEventListener("resize", place);
-    document.addEventListener("mousedown", onDown);
-    return () => {
-      window.removeEventListener("scroll", place, true);
-      window.removeEventListener("resize", place);
-      document.removeEventListener("mousedown", onDown);
-    };
-  }, [open, place]);
-
-  function close() {
-    setOpen(false);
-    triggerRef.current?.focus();
-  }
+    if (open) textareaRef.current?.focus();
+  }, [open]);
 
   function confirm() {
     onConfirm(reason.trim() || undefined);
