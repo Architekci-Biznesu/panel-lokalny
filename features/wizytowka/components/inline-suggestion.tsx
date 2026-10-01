@@ -24,11 +24,20 @@ import {
 import { GBP_DESCRIPTION_MAX } from "@/lib/ai/gbp-limits";
 import type { GbpSuggestion } from "@/lib/db/schema";
 import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
+import {
+  GoogleChangedTag,
+  GoogleCurrentValue,
+  GoogleProposalStrip,
+  useGoogleFieldChange,
+} from "@/features/wizytowka/components/google-changes";
+import type { GoogleField } from "@/features/wizytowka/google-updates";
 
 type Props = {
   suggestion: GbpSuggestion;
   currentDisplay: string;
   categoryOptions?: Array<{ name: string; displayName: string }>;
+  /** Field Google may have changed on its own (shown inside the proposal). */
+  googleField?: GoogleField;
 };
 
 function CharMeter({ value }: { value: string }) {
@@ -135,7 +144,10 @@ export function InlineSuggestion({
   suggestion,
   currentDisplay,
   categoryOptions,
+  googleField,
 }: Props) {
+  const { change: googleChange } = useGoogleFieldChange(googleField);
+  const googleChanged = googleChange?.kind === "google";
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -199,13 +211,17 @@ export function InlineSuggestion({
     <div className="wiz-inline-suggestion">
       <div className="wiz-inline-rail">
         <span className="wiz-field-label">{fieldLabel}</span>
-        <span className="wiz-ai-pill">
-          <Sparkles aria-hidden />
-          Propozycja AI
+        <span className="wiz-inline-tags">
+          <span className="wiz-ai-pill">
+            <Sparkles aria-hidden />
+            Propozycja AI
+          </span>
+          <GoogleChangedTag field={googleField} />
         </span>
       </div>
 
       <div className="wiz-proposal-panel">
+        <GoogleProposalStrip field={googleField} />
         {editing ? (
           <div className="ui-compare-cols">
             <div className="ui-compare-col">
@@ -254,11 +270,16 @@ export function InlineSuggestion({
                   <CharMeter value={oldValue} />
                 ) : null}
               </div>
-              <SuggestionValuePreview
-                field={suggestion.field}
-                value={oldValue}
-                categoryOptions={categoryOptions}
-                struck
+              <GoogleCurrentValue
+                field={googleField}
+                own={
+                  <SuggestionValuePreview
+                    field={suggestion.field}
+                    value={oldValue}
+                    categoryOptions={categoryOptions}
+                    struck={!googleChanged}
+                  />
+                }
               />
             </div>
             <div className="ui-compare-col ui-compare-col-next">

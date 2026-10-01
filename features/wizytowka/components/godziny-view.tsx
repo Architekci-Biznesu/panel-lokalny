@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { CircleAlert, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarX2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import {
   updateGbpRegularHours,
@@ -140,9 +140,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
             <GoogleFieldNote field="specialHours" />
             {upcomingHint ? (
               <div className="wiz-hours-tip" role="note">
-                <span className="wiz-hours-tip-icon-wrap" aria-hidden>
-                  <CircleAlert className="wiz-hours-tip-icon" />
-                </span>
+                <CalendarX2 aria-hidden className="wiz-hours-tip-icon" />
                 <div className="wiz-hours-tip-body">
                   <p className="wiz-hours-tip-title">
                     Brak nadchodzących dni specjalnych
@@ -152,6 +150,15 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
                     klienci nie trafili na zamknięte drzwi.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  className="ui-btn ui-btn-outline ui-btn-sm wiz-hours-tip-action"
+                  onClick={() =>
+                    enterEdit("special", { seedSpecial: special.length === 0 })
+                  }
+                >
+                  Ustaw godziny
+                </button>
               </div>
             ) : null}
           </>

@@ -10,7 +10,7 @@ import {
   updateGbpPhones,
   updateGbpServiceArea,
 } from "@/features/wizytowka/actions";
-import { GoogleFieldNote } from "@/features/wizytowka/components/google-changes";
+import { GoogleFieldBody } from "@/features/wizytowka/components/google-changes";
 import type { GoogleField } from "@/features/wizytowka/google-updates";
 import { listFingerprint } from "@/features/wizytowka/fingerprint";
 import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
@@ -152,9 +152,8 @@ function NapField({
             {editor({ close: () => setOpen(false) })}
           </div>
         ) : (
-          display
+          <GoogleFieldBody field={googleField}>{display}</GoogleFieldBody>
         )}
-        {googleField && !open ? <GoogleFieldNote field={googleField} /> : null}
       </div>
       <button
         type="button"

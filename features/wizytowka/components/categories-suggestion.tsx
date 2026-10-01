@@ -136,9 +136,11 @@ export function CategoriesSuggestion({
     <div className="wiz-inline-suggestion">
       <div className="wiz-inline-rail">
         <span className="wiz-field-label">Kategorie</span>
-        <span className="wiz-ai-pill">
-          <Sparkles aria-hidden />
-          Propozycja AI
+        <span className="wiz-inline-tags">
+          <span className="wiz-ai-pill">
+            <Sparkles aria-hidden />
+            Propozycja AI
+          </span>
         </span>
       </div>
 

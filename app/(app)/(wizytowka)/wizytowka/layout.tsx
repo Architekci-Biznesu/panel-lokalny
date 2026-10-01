@@ -2,10 +2,9 @@ import { GbpPreviewCard } from "@/features/wizytowka/components/gbp-preview-card
 import { LastAnalysisLabel } from "@/features/wizytowka/components/last-analysis-label";
 import { AnalysisRunningGate } from "@/features/wizytowka/components/analysis-running-gate";
 import { ProposalCards } from "@/features/wizytowka/components/proposal-cards";
-import { PendingEditsBanner } from "@/features/wizytowka/components/pending-edits-banner";
+import { GoogleStatusCard } from "@/features/wizytowka/components/pending-edits-banner";
 import { GoogleChangesProvider } from "@/features/wizytowka/components/google-changes";
 import {
-  GOOGLE_FIELD_LABELS,
   GOOGLE_FIELD_PATHS,
   googleFieldChanges,
   type GoogleFieldChange,
@@ -143,13 +142,6 @@ export default async function WizytowkaLayout({
     }
   }
 
-  const googleLabels = googleChanges
-    .filter((change) => change.kind === "google")
-    .map((change) => GOOGLE_FIELD_LABELS[change.field]);
-  const pendingLabels = googleChanges
-    .filter((change) => change.kind === "pending")
-    .map((change) => GOOGLE_FIELD_LABELS[change.field]);
-
   return (
     <WizEditingProvider>
       <GoogleChangesProvider
@@ -211,19 +203,11 @@ export default async function WizytowkaLayout({
                   summary={summary}
                 />
               ) : null}
-              {googleLabels.length ? (
-                <PendingEditsBanner
-                  kind="google"
-                  fields={googleLabels}
-                  mapsUri={location?.metadata?.mapsUri ?? null}
-                />
-              ) : null}
-              {pendingLabels.length || location?.metadata?.hasPendingEdits ? (
-                <PendingEditsBanner
-                  fields={pendingLabels}
-                  mapsUri={location?.metadata?.mapsUri ?? null}
-                />
-              ) : null}
+              <GoogleStatusCard
+                changes={googleChanges}
+                hasPendingEdits={Boolean(location?.metadata?.hasPendingEdits)}
+                mapsUri={location?.metadata?.mapsUri ?? null}
+              />
               <ProposalCards
                 suggestions={pendingSuggestions}
                 specialHoursHint={specialHoursHint}

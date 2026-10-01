@@ -11,7 +11,10 @@ import {
   updateGbpTitle,
   updateGbpWebsite,
 } from "@/features/wizytowka/actions";
-import { GoogleFieldNote } from "@/features/wizytowka/components/google-changes";
+import {
+  GoogleFieldBody,
+  GoogleFieldNote,
+} from "@/features/wizytowka/components/google-changes";
 import type { GoogleField } from "@/features/wizytowka/google-updates";
 import { listFingerprint } from "@/features/wizytowka/fingerprint";
 import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
@@ -145,19 +148,20 @@ function WebsiteFieldRow({ websiteUri }: { websiteUri?: string }) {
     <div id="wiz-field-website" className="wiz-field-row">
       <div className="wiz-field-label">Witryna</div>
       <div className="wiz-field-content">
-        {raw.startsWith("http") ? (
-          <a
-            href={raw}
-            target="_blank"
-            rel="noreferrer"
-            className="wiz-inline-link mono"
-          >
-            {display}
-          </a>
-        ) : (
-          <span className="mono">{display}</span>
-        )}
-        {open ? null : <GoogleFieldNote field="website" />}
+        <GoogleFieldBody field={open ? undefined : "website"}>
+          {raw.startsWith("http") ? (
+            <a
+              href={raw}
+              target="_blank"
+              rel="noreferrer"
+              className="wiz-inline-link mono"
+            >
+              {display}
+            </a>
+          ) : (
+            <span className="mono">{display}</span>
+          )}
+        </GoogleFieldBody>
       </div>
       <button
         type="button"
@@ -205,34 +209,35 @@ function CategoriesFieldRow({
       <span id="wiz-field-additional_categories" className="sr-only" />
       <div className="wiz-field-label">Kategorie</div>
       <div className="wiz-field-content">
-        <ul className="wiz-cat-chips">
-          {primaryLabel ? (
-            <li>
-              <span className="ui-pill wiz-cat-chip-primary">
-                <Star aria-hidden className="wiz-cat-chip-star" />
-                {primaryLabel}
-              </span>
-            </li>
-          ) : null}
-          {primaryLabel && additional.length > 0 ? (
-            <li className="wiz-cat-chips-sep" aria-hidden />
-          ) : null}
-          {additional.map((c) => {
-            const label = c.displayName ?? c.name;
-            if (!label) return null;
-            return (
-              <li key={c.name ?? label}>
-                <span className="ui-pill wiz-cat-chip-extra">{label}</span>
+        <GoogleFieldBody field={open ? undefined : "categories"}>
+          <ul className="wiz-cat-chips">
+            {primaryLabel ? (
+              <li>
+                <span className="ui-pill wiz-cat-chip-primary">
+                  <Star aria-hidden className="wiz-cat-chip-star" />
+                  {primaryLabel}
+                </span>
               </li>
-            );
-          })}
-          {!primaryLabel && additional.length === 0 ? (
-            <li>
-              <span className="text-sm text-muted-foreground">Brak</span>
-            </li>
-          ) : null}
-        </ul>
-        {open ? null : <GoogleFieldNote field="categories" />}
+            ) : null}
+            {primaryLabel && additional.length > 0 ? (
+              <li className="wiz-cat-chips-sep" aria-hidden />
+            ) : null}
+            {additional.map((c) => {
+              const label = c.displayName ?? c.name;
+              if (!label) return null;
+              return (
+                <li key={c.name ?? label}>
+                  <span className="ui-pill wiz-cat-chip-extra">{label}</span>
+                </li>
+              );
+            })}
+            {!primaryLabel && additional.length === 0 ? (
+              <li>
+                <span className="text-sm text-muted-foreground">Brak</span>
+              </li>
+            ) : null}
+          </ul>
+        </GoogleFieldBody>
       </div>
       <button
         type="button"
@@ -292,8 +297,11 @@ function FieldRow({
           suggestion={suggestion}
           currentDisplay={suggestionCurrentFallback ?? String(value ?? "")}
           categoryOptions={categoryOptions}
+          googleField={googleField}
         />
-        {googleField ? <GoogleFieldNote field={googleField} /> : null}
+        {googleField ? (
+          <GoogleFieldNote field={googleField} pendingOnly />
+        ) : null}
       </div>
     );
   }
@@ -307,9 +315,8 @@ function FieldRow({
             {editor({ close: () => setOpen(false) })}
           </div>
         ) : (
-          value
+          <GoogleFieldBody field={googleField}>{value}</GoogleFieldBody>
         )}
-        {googleField && !open ? <GoogleFieldNote field={googleField} /> : null}
       </div>
       <button
         type="button"

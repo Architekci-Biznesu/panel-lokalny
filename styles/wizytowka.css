@@ -179,7 +179,7 @@
 @layer components {
   @media (max-width: 639px) {
     .wiz-inline-rail .wiz-field-label,
-    .wiz-inline-rail .wiz-ai-pill,
+    .wiz-inline-rail .wiz-inline-tags,
     .wiz-inline-suggestion > .wiz-proposal-panel {
       grid-column: 1;
     }
@@ -198,7 +198,7 @@
     padding-top: 0;
   }
 
-  .wiz-inline-rail .wiz-ai-pill {
+  .wiz-inline-rail .wiz-inline-tags {
     grid-column: 2;
     grid-row: 1;
     justify-self: start;
@@ -1009,54 +1009,46 @@
 
   .wiz-hours-tip {
     display: flex;
-    align-items: flex-start;
-    gap: 0.65rem;
+    align-items: center;
+    gap: var(--space-3);
     margin: auto -1.25rem 0;
-    padding: 0.85rem 1.15rem;
+    padding: 0.85rem 1.25rem;
     border: 0;
     border-top: 1px solid var(--border);
     border-radius: 0;
-    background: color-mix(in srgb, var(--warning-soft) 72%, var(--card));
-  }
-
-  .wiz-hours-tip-icon-wrap {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    flex-shrink: 0;
-    margin-top: 0.05rem;
-    border: 0;
-    border-radius: 0;
     background: transparent;
-    color: var(--warning-foreground);
   }
 
   .wiz-hours-tip-icon {
     display: block;
-    width: 1.25rem;
-    height: 1.25rem;
-    stroke-width: 2;
-    color: inherit;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.75;
+    color: var(--warning);
   }
 
   .wiz-hours-tip-body {
+    flex: 1;
     min-width: 0;
   }
 
   .wiz-hours-tip-title {
     margin: 0;
-    font-size: var(--type-base);
-    font-weight: 700;
-    color: var(--warning-strong);
+    font-size: var(--type-sm);
+    font-weight: 500;
+    color: var(--foreground);
   }
 
   .wiz-hours-tip-text {
-    margin: 0.2rem 0 0;
-    font-size: var(--type-base);
+    margin: 2px 0 0;
+    font-size: var(--type-sm);
     line-height: 1.45;
-    color: var(--warning-strong);
+    color: var(--muted-foreground);
+  }
+
+  .wiz-hours-tip-action {
+    flex-shrink: 0;
   }
 
   .wiz-hours-col-head {
@@ -3077,38 +3069,17 @@
 
   .wiz-hours-tile .wiz-hours-tip {
     margin: 20px -24px 0;
-    padding: 16px 24px 18px;
+    padding: 14px 24px 16px;
     gap: 12px;
     border: 0;
-    border-top: 1px solid color-mix(in srgb, var(--warning) 18%, transparent);
+    border-top: 1px solid var(--border);
     border-radius: 0 0 var(--radius-card) var(--radius-card);
-    background: var(--warning-soft);
+    background: transparent;
   }
 
-  .wiz-hours-tile .wiz-hours-tip-icon-wrap {
-    width: 28px;
-    height: 28px;
-    margin: 0;
-    border-radius: var(--radius-pill);
-    background: var(--card);
-    color: var(--warning);
-  }
-
-  .wiz-hours-tile .wiz-hours-tip-icon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .wiz-hours-tile .wiz-hours-tip-title {
-    font-size: var(--type-base);
-    font-weight: 500;
-    color: var(--foreground);
-  }
-
-  .wiz-hours-tile .wiz-hours-tip-text {
-    margin-top: 2px;
-    font-size: var(--type-sm);
-    color: var(--muted-foreground);
+  .wiz-hours-tile:has(> .wiz-gwait:last-child) {
+    padding-bottom: 0;
+    overflow: hidden;
   }
 
   .wiz-hours-col-head .wiz-field-edit:not(.is-open) {
@@ -3266,174 +3237,392 @@
   }
 }
 
-/* Pasek "Oczekujące zmiany w Google" pod podglądem wizytówki (informacja o stanie, nie decyzja) */
+/* Stan w Google: kropka zamiast ikony - pomarańczowa = Google zmienił, indygo = czeka na Google */
 @layer components {
-  .wiz-pending {
-    display: flex;
+  .wiz-gdot {
+    position: relative;
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--warning);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--warning) 12%, transparent);
+  }
+
+  .wiz-gdot.is-pending {
+    background: var(--brand);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 14%, transparent);
+    animation: wiz-gdot-pulse 2s ease-in-out infinite;
+  }
+
+  .wiz-glink {
+    display: inline-flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: 12px 12px 12px 14px;
-    border-radius: var(--radius-block);
-    background: var(--brand-50);
+    gap: 3px;
+    flex-shrink: 0;
+    font-size: var(--type-sm);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+    transition: color 0.15s ease;
+  }
+
+  .wiz-glink:hover {
     color: var(--foreground);
   }
 
-  .wiz-pending.is-google {
-    background: var(--warning-soft);
+  .wiz-glink svg {
+    width: 12px;
+    height: 12px;
   }
 
-  .wiz-pending.is-google .wiz-pending-icon {
-    color: var(--warning-foreground);
-  }
-
-  .wiz-pending.is-google .wiz-pending-icon svg {
-    animation: none;
-  }
-
-  .wiz-pending-icon {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
+  .wiz-gtag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 8px;
     border-radius: var(--radius-pill);
-    background: var(--card);
-    color: var(--brand);
-  }
-
-  .wiz-pending-icon svg {
-    width: 16px;
-    height: 16px;
-    stroke-width: 2;
-    animation: wiz-pending-flip 2.4s ease-in-out infinite;
-  }
-
-  .wiz-pending-copy {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .wiz-pending-title {
-    margin: 0;
-    font-size: var(--type-sm);
+    background: var(--warning-soft);
+    color: var(--warning-strong);
+    font-size: var(--type-badge);
     font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
 
-  .wiz-pending-desc {
-    margin: 2px 0 0;
-    font-size: var(--type-xs);
-    color: var(--muted-foreground);
-    line-height: 1.4;
-  }
-
-  .wiz-pending-link {
-    flex-shrink: 0;
-  }
-
-  @media (max-width: 639px) {
-    .wiz-pending {
-      flex-wrap: wrap;
-    }
-
-    .wiz-pending-link {
-      width: 100%;
-    }
+  .wiz-gtag .wiz-gdot {
+    width: 6px;
+    height: 6px;
+    box-shadow: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .wiz-pending-icon svg {
+    .wiz-gdot.is-pending {
       animation: none;
     }
   }
 }
 
-/* Klepsydra obraca się co chwilę - czekamy na Google */
-@keyframes wiz-pending-flip {
+@keyframes wiz-gdot-pulse {
   0%,
-  70% {
-    transform: rotate(0deg);
-  }
-  85%,
   100% {
-    transform: rotate(180deg);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 14%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand) 4%, transparent);
   }
 }
 
-/* Pole zmienione przez Google albo czekające na weryfikację (getGoogleUpdated) */
+/* Karta "Stan w Google" pod podglądem wizytówki (informacja o stanie, nie decyzja) */
 @layer components {
-  .wiz-gnote {
+  .wiz-gstatus {
     display: flex;
-    gap: 10px;
-    margin-top: var(--space-3);
-    padding: 12px 14px;
-    border-radius: var(--radius-block);
-    font-size: var(--type-sm);
-    line-height: 1.45;
-  }
-
-  .wiz-gnote.is-google {
-    background: var(--warning-soft);
-  }
-
-  .wiz-gnote.is-pending {
-    background: var(--brand-50);
-  }
-
-  .wiz-gnote-icon {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .wiz-gnote.is-google .wiz-gnote-icon {
-    color: var(--warning-foreground);
-  }
-
-  .wiz-gnote.is-pending .wiz-gnote-icon {
-    color: var(--brand);
-  }
-
-  .wiz-gnote-copy {
-    display: flex;
-    flex: 1;
     flex-direction: column;
-    gap: 2px;
+    border-radius: var(--radius-card);
+    background: var(--card);
+    overflow: hidden;
+  }
+
+  .wiz-gstatus-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .wiz-gstatus-row + .wiz-gstatus-row {
+    border-top: 1px solid var(--border);
+  }
+
+  .wiz-gstatus-row > .wiz-gdot {
+    margin: 0 var(--space-1);
+  }
+
+  .wiz-gstatus-copy {
+    flex: 1;
     min-width: 0;
   }
 
-  .wiz-gnote-title {
+  .wiz-gstatus-title {
     margin: 0;
+    font-size: var(--type-sm);
     font-weight: 500;
-    color: var(--foreground);
   }
 
-  .wiz-gnote-text {
-    margin: 0;
+  .wiz-gstatus-desc {
+    margin: 2px 0 0;
+    font-size: var(--type-sm);
+    line-height: 1.4;
     color: var(--muted-foreground);
   }
 
-  .wiz-gnote-value {
+  .wiz-gstatus-value {
     color: var(--foreground);
   }
 
-  .wiz-gnote-link {
+  .wiz-gstatus-go {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--space-1);
+    height: 34px;
+    padding: 0 4px 0 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    font-size: var(--type-sm);
+    font-weight: 500;
+    color: var(--foreground);
+    white-space: nowrap;
+    transition: border-color 0.15s ease;
+  }
+
+  .wiz-gstatus-go:hover {
+    border-color: var(--neutral-300);
+  }
+
+  .wiz-gstatus-go-icon {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-pill);
+    background: var(--neutral-150);
+  }
+
+  .wiz-gstatus-go-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  @media (max-width: 639px) {
+    .wiz-gstatus-row {
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .wiz-gstatus-row > .wiz-gdot {
+      margin-top: 6px;
+    }
+
+    .wiz-gstatus-copy {
+      flex-basis: calc(100% - 40px);
+    }
+
+    .wiz-gstatus-go,
+    .wiz-gstatus-row > .wiz-glink {
+      margin-left: 28px;
+    }
+  }
+}
+
+/* Pole zmienione przez Google - ten sam wzór co propozycja AI (etykieta, porównanie, akcje) */
+@layer components {
+  .wiz-gchange {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .wiz-gchange-panel {
+    align-self: stretch;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--card);
+    overflow: hidden;
+  }
+
+  .wiz-gchange-own {
+    min-width: 0;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-gchange-google .ui-compare-col-head {
+    color: var(--warning-strong);
+  }
+
+  .wiz-gchange-value {
+    margin: 0;
+    font-size: var(--type-base);
+    color: var(--foreground);
+    overflow-wrap: anywhere;
+  }
+
+  .wiz-gchange-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    align-self: stretch;
+  }
+}
+
+/* Propozycja AI przy polu zmienionym przez Google */
+@layer components {
+  .wiz-inline-tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .wiz-gstrip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 10px var(--space-3) 10px var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    background: var(--neutral-50);
+  }
+
+  .wiz-inline-suggestion .wiz-gstrip + .ui-compare-cols {
+    border-top: 0;
+    border-radius: 0;
+  }
+
+  .wiz-inline-suggestion
+    .wiz-gstrip
+    + .ui-compare-cols:not(:has(+ .wiz-inline-rationale)) {
+    border-radius: 0 0 20px 20px;
+  }
+
+  .wiz-gcurrent-own > * {
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
+  }
+
+  .wiz-field-row:has(.wiz-gchange) {
+    align-items: start;
+  }
+
+  .wiz-field-row:has(.wiz-gchange) > .wiz-field-label {
+    padding-top: 2px;
+  }
+
+  .wiz-gstrip-text {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--type-sm);
+    line-height: 1.4;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-gcurrent {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .wiz-gcurrent-value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    color: var(--foreground);
+  }
+
+  .wiz-gcurrent-chip {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    color: var(--brand-deep);
+    height: 20px;
+    padding: 0 7px;
+    border-radius: var(--radius-pill);
+    background: var(--neutral-150);
+    font-size: var(--type-xs);
+    color: var(--muted-foreground);
     white-space: nowrap;
   }
 
-  .wiz-gnote-link svg {
-    width: 12px;
-    height: 12px;
+  .wiz-gcurrent-own {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: var(--space-3);
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    font-size: var(--type-sm);
+    color: var(--muted-foreground);
   }
 
-  .wiz-gnote-actions {
+  .wiz-gcurrent-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--type-xs);
+    color: var(--neutral-400);
+  }
+
+  .wiz-gcurrent-label svg {
+    width: 12px;
+    height: 12px;
+    stroke-width: 1.75;
+  }
+
+  @media (max-width: 639px) {
+    .wiz-inline-rail .wiz-inline-tags {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .wiz-inline-suggestion > .wiz-proposal-panel {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .wiz-gstrip {
+      flex-wrap: wrap;
+    }
+
+    .wiz-gstrip-text {
+      flex-basis: calc(100% - 24px);
+    }
+  }
+}
+
+/* Zmiana czeka na sprawdzenie przez Google - cicha linia pod polem */
+@layer components {
+  .wiz-gwait {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px dashed var(--border);
+  }
+
+  .wiz-gwait > .wiz-gdot {
+    margin: 0 2px;
+  }
+
+  .wiz-gwait-text {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--type-sm);
+    line-height: 1.4;
+    color: var(--foreground);
+  }
+
+  .wiz-gwait-text > span {
+    color: var(--muted-foreground);
+  }
+
+  .wiz-gwait-text > .wiz-gwait-value {
+    display: block;
+  }
+
+  .wiz-hours-tile > .wiz-gwait {
+    margin: 20px -24px 0;
+    padding: 14px 24px 16px;
+    border-top-style: solid;
   }
 }
