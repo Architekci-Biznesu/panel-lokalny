@@ -154,6 +154,8 @@ export function CalendarMonth({
                     itemId={entry.itemId}
                     title={entry.title}
                     scheduledAt={entry.date.toISOString()}
+                    imageUrl={entry.imageUrl}
+                    channelLabel={CHANNEL_LABELS[entry.channel]}
                     triggerClassName={className}
                     triggerLabel={`${entry.title} - zmień termin albo anuluj`}
                   >

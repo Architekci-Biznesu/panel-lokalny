@@ -72,6 +72,8 @@ function WeekCard({ entry }: { entry: CalendarEntry }) {
         itemId={entry.itemId}
         title={entry.title}
         scheduledAt={entry.date.toISOString()}
+        imageUrl={entry.imageUrl}
+        channelLabel={CHANNEL_LABELS[entry.channel]}
         triggerClassName={`pub-week-card is-${tone}`}
         triggerLabel={`${entry.title} - zmień termin albo anuluj`}
       >

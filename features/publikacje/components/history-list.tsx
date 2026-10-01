@@ -170,6 +170,12 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
                 itemId={item.id}
                 title={item.title}
                 scheduledAt={item.when.toISOString()}
+                imageUrl={item.imageUrl}
+                channelLabel={
+                  item.targets[0]
+                    ? CHANNEL_LABELS[item.targets[0].channel]
+                    : null
+                }
                 triggerClassName="pub-history-reschedule"
                 triggerLabel={`Zaplanowano na ${formatPubDateTime(item.when)} - zmień termin albo anuluj`}
               >

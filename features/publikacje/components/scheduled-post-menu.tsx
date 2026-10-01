@@ -3,7 +3,15 @@
 import { useState, useTransition, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { CalendarX2, Check, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarX2,
+  Check,
+  ImageIcon,
+  Loader2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import { toast } from "@/lib/toast";
 import { DateField } from "@/components/ui/date-field";
 import { TimeField } from "@/components/ui/time-field";
@@ -30,6 +38,47 @@ function todayValue(): string {
   return localParts(new Date().toISOString()).date;
 }
 
+/** `yyyy-mm-dd` (local) + days. */
+function addDays(value: string, days: number): string {
+  const [y, m, d] = value.split("-").map(Number);
+  return localParts(new Date(y, m - 1, d + days).toISOString()).date;
+}
+
+function nextMonday(value: string): string {
+  const [y, m, d] = value.split("-").map(Number);
+  const day = new Date(y, m - 1, d).getDay();
+  return addDays(value, (8 - day) % 7 || 7);
+}
+
+const SHORT_DAY = new Intl.DateTimeFormat("pl-PL", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+});
+const WHEN_FMT = new Intl.DateTimeFormat("pl-PL", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+const WEEKDAY = new Intl.DateTimeFormat("pl-PL", { weekday: "long" });
+
+/** "czw., 15 paź" -> "czw 15 paź" */
+function short(fmt: Intl.DateTimeFormat, date: Date): string {
+  return fmt.format(date).replace(/\.,? /, " ");
+}
+
+function toDate(date: string, time = "00:00"): Date {
+  return new Date(`${date}T${time}:00`);
+}
+
+function daysWord(n: number): string {
+  if (n === 0) return "dziś";
+  if (n === 1) return "jutro";
+  return `za ${n} dni`;
+}
+
 /**
  * A scheduled post's menu: change the date or cancel the publication (the
  * post goes back to "Do akceptacji"). The trigger is whatever the caller
@@ -41,11 +90,16 @@ export function ScheduledPostMenu({
   scheduledAt,
   triggerClassName,
   triggerLabel,
+  imageUrl = null,
+  channelLabel = null,
   children,
 }: {
   itemId: string;
   title: string;
   scheduledAt: string;
+  imageUrl?: string | null;
+  /** Where it goes out, e.g. "Google" */
+  channelLabel?: string | null;
   triggerClassName: string;
   /** aria-label of the trigger (its content may be only an icon or a card). */
   triggerLabel: string;
@@ -59,6 +113,20 @@ export function ScheduledPostMenu({
   const [date, setDate] = useState(initial.date);
   const [time, setTime] = useState(initial.time);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const changed = date !== initial.date || time !== initial.time;
+  const today = todayValue();
+  const daysLeft = Math.max(
+    0,
+    Math.round((toDate(date).getTime() - toDate(today).getTime()) / 86_400_000),
+  );
+  const quick = [
+    { label: "Jutro", date: addDays(today, 1) },
+    {
+      label: short(SHORT_DAY, toDate(nextMonday(today))),
+      date: nextMonday(today),
+    },
+    { label: "+1 tydzień", date: addDays(initial.date, 7) },
+  ];
 
   function toggle() {
     if (!open) {
@@ -128,7 +196,7 @@ export function ScheduledPostMenu({
             <div
               ref={panelRef}
               {...panelProps}
-              className="ui-reject-pop"
+              className="ui-reject-pop pub-sched-pop"
               role="dialog"
               aria-label="Zaplanowany post"
               style={style}
@@ -139,37 +207,96 @@ export function ScheduledPostMenu({
                 }
               }}
             >
-              <div className="ui-reject-pop-head">
-                <p className="ui-reject-pop-title">
-                  {confirmCancel ? "Anulować publikację?" : "Zaplanowany post"}
-                </p>
-                <p className="ui-reject-pop-desc">
-                  {confirmCancel
-                    ? "Post nie zostanie opublikowany i wróci do „Do akceptacji” - możesz go poprawić i zaplanować ponownie."
-                    : title}
-                </p>
+              <div className="pub-sched-head">
+                <span className="pub-sched-thumb" aria-hidden>
+                  {imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- public R2 URL, domain set per environment
+                    <img src={imageUrl} alt="" />
+                  ) : (
+                    <ImageIcon />
+                  )}
+                </span>
+                <div className="pub-sched-head-text">
+                  <span className="pub-sched-status">
+                    <span className="pub-sched-dot" aria-hidden />
+                    Zaplanowany{channelLabel ? ` · ${channelLabel}` : ""}
+                  </span>
+                  <p className="pub-sched-title">{title}</p>
+                </div>
+                <button
+                  type="button"
+                  className="pub-sched-close"
+                  aria-label="Zamknij"
+                  onClick={close}
+                >
+                  <X aria-hidden />
+                </button>
               </div>
 
-              {confirmCancel ? null : (
-                <div className="pub-card-schedule">
-                  <DateField
-                    className="pub-card-date-field"
-                    ariaLabel="Dzień publikacji"
-                    value={date}
-                    min={todayValue()}
-                    disabled={pending}
-                    onChange={setDate}
-                  />
-                  <TimeField
-                    className="pub-card-time"
-                    ariaLabel="Godzina publikacji"
-                    value={time}
-                    onChange={setTime}
-                  />
+              {confirmCancel ? (
+                <div className="pub-sched-confirm" role="alert">
+                  <TriangleAlert aria-hidden />
+                  <div>
+                    <p className="pub-sched-confirm-title">
+                      Anulować publikację?
+                    </p>
+                    <p className="pub-sched-confirm-text">
+                      Post nie wyjdzie {short(SHORT_DAY, toDate(initial.date))}.
+                      Wróci do „Do akceptacji” - możesz go poprawić i zaplanować
+                      ponownie.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="pub-sched-body">
+                  <span className="pub-sched-label">Termin publikacji</span>
+                  <div className="pub-card-schedule pub-sched-fields">
+                    <DateField
+                      className={`pub-card-date-field${date !== initial.date ? " is-changed" : ""}`}
+                      ariaLabel="Dzień publikacji"
+                      value={date}
+                      min={todayValue()}
+                      disabled={pending}
+                      onChange={setDate}
+                    />
+                    <TimeField
+                      className={`pub-card-time${time !== initial.time ? " is-changed" : ""}`}
+                      ariaLabel="Godzina publikacji"
+                      value={time}
+                      onChange={setTime}
+                    />
+                  </div>
+                  <div className="pub-sched-quick">
+                    {quick.map((option) => (
+                      <button
+                        key={option.label}
+                        type="button"
+                        className={`ui-reject-pop-chip${date === option.date ? " is-active" : ""}`}
+                        disabled={pending}
+                        onClick={() => setDate(option.date)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  {changed ? (
+                    <p className="pub-sched-hint is-diff">
+                      <s>
+                        {short(WHEN_FMT, toDate(initial.date, initial.time))}
+                      </s>
+                      <ArrowRight aria-hidden />
+                      <strong>{short(WHEN_FMT, toDate(date, time))}</strong>
+                    </p>
+                  ) : (
+                    <p className="pub-sched-hint">
+                      Wyjdzie <span className="mono">{daysWord(daysLeft)}</span>{" "}
+                      · {WEEKDAY.format(toDate(date))}
+                    </p>
+                  )}
                 </div>
               )}
 
-              <div className="ui-reject-pop-foot">
+              <div className="pub-sched-foot">
                 {confirmCancel ? (
                   <>
                     <button
@@ -191,14 +318,14 @@ export function ScheduledPostMenu({
                       ) : (
                         <CalendarX2 aria-hidden />
                       )}
-                      Anuluj publikację
+                      Tak, anuluj
                     </button>
                   </>
                 ) : (
                   <>
                     <button
                       type="button"
-                      className="ui-btn ui-btn-soft-danger ui-btn-sm"
+                      className="pub-sched-cancel"
                       disabled={pending}
                       onClick={() => setConfirmCancel(true)}
                     >
@@ -208,7 +335,7 @@ export function ScheduledPostMenu({
                     <button
                       type="button"
                       className="ui-btn ui-btn-primary ui-btn-sm"
-                      disabled={pending}
+                      disabled={pending || !changed}
                       onClick={save}
                     >
                       {pending ? (
