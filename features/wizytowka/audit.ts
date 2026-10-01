@@ -18,6 +18,7 @@ import {
   type Profile,
 } from "@/lib/db/schema";
 import {
+  fetchGbpGoogleUpdated,
   batchGetGbpCategories,
   countGbpOwnerPhotos,
   fetchGbpLocationDetails,
@@ -27,6 +28,10 @@ import {
 } from "@/lib/integrations/gbp/client";
 import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/access";
 import { withGbpV4LocationName } from "@/lib/integrations/gbp/v4-name";
+import {
+  GOOGLE_FIELD_PATHS,
+  googleFieldChanges,
+} from "@/features/wizytowka/google-updates";
 import { readSnapshotForJob } from "@/features/wizytowka/snapshots/refresh";
 import { CATEGORIES_KEY } from "@/features/wizytowka/snapshots/sources";
 import { requireOwnedProfile } from "@/lib/session";
@@ -301,6 +306,16 @@ async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
   const locationName = profile.gbpLocationId!;
   const raw = await fetchGbpLocationDetails(accessToken, locationName);
   const location = parseLocation(raw);
+  // Fields Google changed itself or the owner's edits still under review -
+  // the AI must not "fix" what Google already shows or what waits for review.
+  const googleChanges =
+    location.metadata?.hasGoogleUpdated || location.metadata?.hasPendingEdits
+      ? googleFieldChanges(
+          await fetchGbpGoogleUpdated(accessToken, locationName).catch(
+            () => null,
+          ),
+        )
+      : [];
 
   const brief = await loadBrief(profile.id);
   const contexts = await loadContexts(profile.id);
@@ -403,6 +418,19 @@ async function executeAudit(profile: Profile): Promise<GbpAuditInsights> {
       phoneNumbers: location.phoneNumbers,
       storefrontAddress: location.storefrontAddress,
       serviceArea: location.serviceArea,
+      googleVersion: googleChanges.length
+        ? {
+            changedByGoogle: googleChanges
+              .filter((change) => change.kind === "google")
+              .map((change) => ({
+                field: GOOGLE_FIELD_PATHS[change.field].top,
+                customersSee: change.customerValue,
+              })),
+            pendingReview: googleChanges
+              .filter((change) => change.kind === "pending")
+              .map((change) => GOOGLE_FIELD_PATHS[change.field].top),
+          }
+        : undefined,
     }),
     availableCategories,
     serviceTypes,

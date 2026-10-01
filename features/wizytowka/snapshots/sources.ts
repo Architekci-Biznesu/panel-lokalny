@@ -1,6 +1,7 @@
 import type { GbpSnapshotKind, Profile } from "@/lib/db/schema";
 import {
   batchGetGbpCategories,
+  fetchGbpGoogleUpdated,
   fetchGbpLocationDetails,
   fetchGbpMultiDailyMetrics,
   getGbpLocationAttributes,
@@ -9,6 +10,7 @@ import {
   listGbpLocationMedia,
   type GbpAttributeMetadata,
   type GbpCategory,
+  type GbpGoogleUpdated,
   type GbpLocationMedia,
 } from "@/lib/integrations/gbp/client";
 import {
@@ -41,6 +43,11 @@ export type LocationSnapshot = {
   attributes: Array<Record<string, unknown>>;
   /** Primary and additional categories with their service types. */
   categoryDetails: GbpCategory[];
+  /**
+   * Google's version when it differs from the owner's or edits wait for
+   * review (getGoogleUpdated). Null when Google shows the owner's data.
+   */
+  googleUpdated?: GbpGoogleUpdated | null;
 };
 
 export type MetricsSnapshot = {
@@ -133,11 +140,43 @@ function categoryNamesOf(raw: Record<string, unknown>): string[] {
 }
 
 /** Location snapshot built from a listing Google just returned (after a read or a PATCH). */
+/** Whether the listing has anything Google changed or still reviews. */
+function needsGoogleCheck(raw: Record<string, unknown>): boolean {
+  const metadata = raw.metadata as
+    { hasGoogleUpdated?: boolean; hasPendingEdits?: boolean } | undefined;
+  return Boolean(metadata?.hasGoogleUpdated || metadata?.hasPendingEdits);
+}
+
+/** Google's version, kept only when it actually differs or edits are pending. */
+async function loadGoogleUpdated(
+  accessToken: string,
+  locationName: string,
+): Promise<GbpGoogleUpdated | null> {
+  try {
+    const updated = await fetchGbpGoogleUpdated(accessToken, locationName);
+    const fields = (mask: string[]) =>
+      mask.filter((path) => path !== "metadata");
+    return fields(updated.diffMask).length || fields(updated.pendingMask).length
+      ? updated
+      : null;
+  } catch (error) {
+    console.error("GBP getGoogleUpdated failed:", error);
+    return null;
+  }
+}
+
+/**
+ * Location snapshot built from a listing Google just returned (after a read
+ * or a PATCH). Google's own version is read only when the listing says it
+ * has one - or always after a write (`afterWrite`), when the saved field may
+ * have gone to review and the returned metadata is not fresh.
+ */
 export async function buildLocationSnapshot(
   accessToken: string,
   locationName: string,
   raw: Record<string, unknown>,
   previous?: LocationSnapshot | null,
+  options: { afterWrite?: boolean } = {},
 ): Promise<LocationSnapshot> {
   const names = categoryNamesOf(raw);
   const known = new Map(
@@ -145,13 +184,16 @@ export async function buildLocationSnapshot(
   );
   const missing = names.filter((n) => !known.has(n));
 
-  const [fetched, attributes] = await Promise.all([
+  const [fetched, attributes, googleUpdated] = await Promise.all([
     batchGetGbpCategories(accessToken, missing),
     previous
       ? Promise.resolve({ attributes: previous.attributes })
       : getGbpLocationAttributes(accessToken, locationName).catch(() => ({
           attributes: [] as Array<Record<string, unknown>>,
         })),
+    options.afterWrite || needsGoogleCheck(raw)
+      ? loadGoogleUpdated(accessToken, locationName)
+      : Promise.resolve(null),
   ]);
   for (const c of fetched) known.set(c.name, c);
 
@@ -161,6 +203,7 @@ export async function buildLocationSnapshot(
     categoryDetails: names
       .map((n) => known.get(n))
       .filter((c): c is GbpCategory => Boolean(c)),
+    googleUpdated,
   };
 }
 

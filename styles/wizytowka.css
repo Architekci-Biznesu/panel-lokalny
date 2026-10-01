@@ -3278,6 +3278,18 @@
     color: var(--foreground);
   }
 
+  .wiz-pending.is-google {
+    background: var(--warning-soft);
+  }
+
+  .wiz-pending.is-google .wiz-pending-icon {
+    color: var(--warning-foreground);
+  }
+
+  .wiz-pending.is-google .wiz-pending-icon svg {
+    animation: none;
+  }
+
   .wiz-pending-icon {
     display: grid;
     place-items: center;
@@ -3344,5 +3356,84 @@
   85%,
   100% {
     transform: rotate(180deg);
+  }
+}
+
+/* Pole zmienione przez Google albo czekające na weryfikację (getGoogleUpdated) */
+@layer components {
+  .wiz-gnote {
+    display: flex;
+    gap: 10px;
+    margin-top: var(--space-3);
+    padding: 12px 14px;
+    border-radius: var(--radius-block);
+    font-size: var(--type-sm);
+    line-height: 1.45;
+  }
+
+  .wiz-gnote.is-google {
+    background: var(--warning-soft);
+  }
+
+  .wiz-gnote.is-pending {
+    background: var(--brand-50);
+  }
+
+  .wiz-gnote-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .wiz-gnote.is-google .wiz-gnote-icon {
+    color: var(--warning-foreground);
+  }
+
+  .wiz-gnote.is-pending .wiz-gnote-icon {
+    color: var(--brand);
+  }
+
+  .wiz-gnote-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .wiz-gnote-title {
+    margin: 0;
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .wiz-gnote-text {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+
+  .wiz-gnote-value {
+    color: var(--foreground);
+  }
+
+  .wiz-gnote-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--brand-deep);
+    white-space: nowrap;
+  }
+
+  .wiz-gnote-link svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .wiz-gnote-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
   }
 }

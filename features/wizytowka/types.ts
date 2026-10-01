@@ -192,9 +192,13 @@ export const WEEKDAYS = [
   { value: "SUNDAY", label: "Niedziela" },
 ] as const;
 
+/**
+ * "HH:MM" of a Google time. An empty object is midnight (Google leaves the
+ * zero fields out); a missing time gives "".
+ */
 export function formatTime(t?: GbpTimeOfDay): string {
-  if (t?.hours === undefined) return "";
-  const h = String(t.hours).padStart(2, "0");
+  if (!t) return "";
+  const h = String(t.hours ?? 0).padStart(2, "0");
   const m = String(t.minutes ?? 0).padStart(2, "0");
   return `${h}:${m}`;
 }

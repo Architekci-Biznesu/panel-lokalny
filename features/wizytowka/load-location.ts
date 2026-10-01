@@ -4,6 +4,7 @@ import { getActiveGbpProfile } from "@/lib/integrations/gbp/access";
 import type {
   GbpAttributeMetadata,
   GbpCategory,
+  GbpGoogleUpdated,
   GbpLocationMedia,
 } from "@/lib/integrations/gbp/client";
 import { db } from "@/lib/db";
@@ -33,6 +34,8 @@ export type LoadedGbpBundle = {
   latestAuditRun: GbpAuditRun | null;
   /** When the listing snapshot was read from Google. */
   fetchedAt: Date;
+  /** Google's version where it differs or edits wait for review. */
+  googleUpdated: GbpGoogleUpdated | null;
 };
 
 /** Attribute dictionary of the primary category (shared by all profiles). */
@@ -98,6 +101,7 @@ export const loadActiveGbpBundle = cache(async (): Promise<LoadedGbpBundle> => {
     attributeMetadata,
     categoryDetails: snapshot.data.categoryDetails,
     fetchedAt: snapshot.fetchedAt,
+    googleUpdated: snapshot.data.googleUpdated ?? null,
     pendingSuggestions: pendingSuggestions.map((s) =>
       s.field === "description"
         ? {

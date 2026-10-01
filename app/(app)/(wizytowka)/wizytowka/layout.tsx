@@ -3,6 +3,13 @@ import { LastAnalysisLabel } from "@/features/wizytowka/components/last-analysis
 import { AnalysisRunningGate } from "@/features/wizytowka/components/analysis-running-gate";
 import { ProposalCards } from "@/features/wizytowka/components/proposal-cards";
 import { PendingEditsBanner } from "@/features/wizytowka/components/pending-edits-banner";
+import { GoogleChangesProvider } from "@/features/wizytowka/components/google-changes";
+import {
+  GOOGLE_FIELD_LABELS,
+  GOOGLE_FIELD_PATHS,
+  googleFieldChanges,
+  type GoogleFieldChange,
+} from "@/features/wizytowka/google-updates";
 import { ModuleHeader } from "@/features/shell/module-header";
 import { WizytowkaSubnav } from "@/features/wizytowka/components/wizytowka-subnav";
 import { GbpFreshness } from "@/features/wizytowka/components/gbp-freshness";
@@ -48,6 +55,9 @@ export default async function WizytowkaLayout({
   let analyzing = false;
   let loadError: string | null = null;
   let location: GbpLocation | null = null;
+  // What customers see: Google's values for fields it changed or still reviews.
+  let customerLocation: GbpLocation | null = null;
+  let googleChanges: GoogleFieldChange[] = [];
   let photoUrls: string[] = [];
   let pendingSuggestions: GbpSuggestion[] = [];
   let lastAnalyzedIso: string | null = null;
@@ -63,6 +73,16 @@ export default async function WizytowkaLayout({
   try {
     const bundle = await loadActiveGbpBundle();
     location = bundle.location;
+    googleChanges = googleFieldChanges(bundle.googleUpdated);
+    if (bundle.googleUpdated && googleChanges.length) {
+      const live = bundle.googleUpdated.location;
+      const merged: Record<string, unknown> = { ...bundle.location };
+      for (const change of googleChanges) {
+        const top = GOOGLE_FIELD_PATHS[change.field].top;
+        if (top in live) merged[top] = live[top];
+      }
+      customerLocation = merged as GbpLocation;
+    }
     analyzing = bundle.latestAuditRun?.status === "running";
 
     const [latestInsights, media] = await Promise.all([
@@ -123,79 +143,105 @@ export default async function WizytowkaLayout({
     }
   }
 
+  const googleLabels = googleChanges
+    .filter((change) => change.kind === "google")
+    .map((change) => GOOGLE_FIELD_LABELS[change.field]);
+  const pendingLabels = googleChanges
+    .filter((change) => change.kind === "pending")
+    .map((change) => GOOGLE_FIELD_LABELS[change.field]);
+
   return (
     <WizEditingProvider>
-      <div className="wiz-page">
-        <AnalysisRunningGate analyzing={analyzing} />
-        <ModuleHeader
-          title="Wizytówka Google"
-          className="wiz-header"
-          below={
-            gbpStatus ? (
-              <GbpFreshness
-                scope="wizytowka"
-                fetchedAtIso={gbpStatus.fetchedAt?.toISOString() ?? null}
-                refreshing={gbpStatus.refreshing}
-              />
-            ) : null
-          }
-          actions={
-            <div className="wiz-header-actions">
-              <Link href="/ustawienia/kontekst" className="ui-btn ui-btn-white">
-                <ArrowUpRight aria-hidden />
-                <span>Kontekst firmy</span>
-              </Link>
-              <div className="wiz-reanalyze">
-                <ReanalyzeButton />
-                <LastAnalysisLabel iso={lastAnalyzedIso} />
+      <GoogleChangesProvider
+        changes={googleChanges}
+        mapsUri={location?.metadata?.mapsUri ?? null}
+      >
+        <div className="wiz-page">
+          <AnalysisRunningGate analyzing={analyzing} />
+          <ModuleHeader
+            title="Wizytówka Google"
+            className="wiz-header"
+            below={
+              gbpStatus ? (
+                <GbpFreshness
+                  scope="wizytowka"
+                  fetchedAtIso={gbpStatus.fetchedAt?.toISOString() ?? null}
+                  refreshing={gbpStatus.refreshing}
+                />
+              ) : null
+            }
+            actions={
+              <div className="wiz-header-actions">
+                <Link
+                  href="/ustawienia/kontekst"
+                  className="ui-btn ui-btn-white"
+                >
+                  <ArrowUpRight aria-hidden />
+                  <span>Kontekst firmy</span>
+                </Link>
+                <div className="wiz-reanalyze">
+                  <ReanalyzeButton />
+                  <LastAnalysisLabel iso={lastAnalyzedIso} />
+                </div>
               </div>
-            </div>
-          }
-        />
+            }
+          />
 
-        {!connected ? (
-          <div className="ui-section">
-            <p className="text-sm text-muted-foreground">
-              Ten profil nie ma podłączonej wizytówki Google.{" "}
-              <Link href="/ustawienia/integracje" className="wiz-inline-link">
-                Połącz w integracjach
-              </Link>{" "}
-              albo dokończ onboarding.
-            </p>
-          </div>
-        ) : loadError ? (
-          <div className="ui-section">
-            <p className="text-sm text-destructive">{loadError}</p>
-          </div>
-        ) : (
-          <>
-            {location && summary ? (
-              <GbpPreviewCard
-                location={location}
-                photoUrls={photoUrls}
-                summary={summary}
+          {!connected ? (
+            <div className="ui-section">
+              <p className="text-sm text-muted-foreground">
+                Ten profil nie ma podłączonej wizytówki Google.{" "}
+                <Link href="/ustawienia/integracje" className="wiz-inline-link">
+                  Połącz w integracjach
+                </Link>{" "}
+                albo dokończ onboarding.
+              </p>
+            </div>
+          ) : loadError ? (
+            <div className="ui-section">
+              <p className="text-sm text-destructive">{loadError}</p>
+            </div>
+          ) : (
+            <>
+              {location && summary ? (
+                <GbpPreviewCard
+                  location={customerLocation ?? location}
+                  changedByGoogle={googleChanges.length > 0}
+                  photoUrls={photoUrls}
+                  summary={summary}
+                />
+              ) : null}
+              {googleLabels.length ? (
+                <PendingEditsBanner
+                  kind="google"
+                  fields={googleLabels}
+                  mapsUri={location?.metadata?.mapsUri ?? null}
+                />
+              ) : null}
+              {pendingLabels.length || location?.metadata?.hasPendingEdits ? (
+                <PendingEditsBanner
+                  fields={pendingLabels}
+                  mapsUri={location?.metadata?.mapsUri ?? null}
+                />
+              ) : null}
+              <ProposalCards
+                suggestions={pendingSuggestions}
+                specialHoursHint={specialHoursHint}
+                factsToConfirm={summary?.factsToConfirm ?? 0}
+                photoCount={summary?.photoCount ?? GBP_PHOTO_MIN}
+                competitorPhotoMedian={competitorPhotoMedian}
+                competitorPhotoMax={competitorPhotoMax}
+                ourWeeklyMinutes={ourWeeklyMinutes}
+                competitorHoursMedian={competitorHoursMedian}
+                competitorHoursMax={competitorHoursMax}
+                mapsUri={location?.metadata?.mapsUri ?? null}
               />
-            ) : null}
-            {location?.metadata?.hasPendingEdits ? (
-              <PendingEditsBanner mapsUri={location.metadata.mapsUri ?? null} />
-            ) : null}
-            <ProposalCards
-              suggestions={pendingSuggestions}
-              specialHoursHint={specialHoursHint}
-              factsToConfirm={summary?.factsToConfirm ?? 0}
-              photoCount={summary?.photoCount ?? GBP_PHOTO_MIN}
-              competitorPhotoMedian={competitorPhotoMedian}
-              competitorPhotoMax={competitorPhotoMax}
-              ourWeeklyMinutes={ourWeeklyMinutes}
-              competitorHoursMedian={competitorHoursMedian}
-              competitorHoursMax={competitorHoursMax}
-              mapsUri={location?.metadata?.mapsUri ?? null}
-            />
-            <WizytowkaSubnav counts={tabCounts} />
-            <div className="wiz-tab-body">{children}</div>
-          </>
-        )}
-      </div>
+              <WizytowkaSubnav counts={tabCounts} />
+              <div className="wiz-tab-body">{children}</div>
+            </>
+          )}
+        </div>
+      </GoogleChangesProvider>
     </WizEditingProvider>
   );
 }

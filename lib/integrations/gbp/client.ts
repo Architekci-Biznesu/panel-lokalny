@@ -202,6 +202,79 @@ export async function listGbpLocations(
   return locations;
 }
 
+/** Listing fields the panel reads (location.get and getGoogleUpdated). */
+const LOCATION_READ_MASK = [
+  "name",
+  "title",
+  "storefrontAddress",
+  "websiteUri",
+  "phoneNumbers",
+  "regularHours",
+  "specialHours",
+  "moreHours",
+  "categories",
+  "profile",
+  "serviceItems",
+  "latlng",
+  "metadata",
+  "openInfo",
+  "serviceArea",
+  "labels",
+].join(",");
+
+export type GbpGoogleUpdated = {
+  /** The listing as customers see it in Google Search and Maps. */
+  location: Record<string, unknown>;
+  /** Fields where Google's version differs from the owner's. */
+  diffMask: string[];
+  /** Fields with the owner's edits still under review by Google. */
+  pendingMask: string[];
+};
+
+function splitMask(value: unknown): string[] {
+  return typeof value === "string" && value
+    ? value
+        .split(",")
+        .map((path) => path.trim())
+        .filter(Boolean)
+    : [];
+}
+
+/**
+ * Google's version of the listing (getGoogleUpdated): what customers see,
+ * which fields Google changed and which owner edits wait for review.
+ */
+export async function fetchGbpGoogleUpdated(
+  accessToken: string,
+  locationName: string,
+): Promise<GbpGoogleUpdated> {
+  const url = new URL(
+    `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}:getGoogleUpdated`,
+  );
+  url.searchParams.set("readMask", LOCATION_READ_MASK);
+
+  const response = await gbpFetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) {
+    throw new GbpHttpError(
+      "GBP getGoogleUpdated",
+      response.status,
+      await response.text(),
+    );
+  }
+  const data = (await response.json()) as {
+    location?: Record<string, unknown>;
+    diffMask?: string;
+    pendingMask?: string;
+  };
+  return {
+    location: data.location ?? {},
+    diffMask: splitMask(data.diffMask),
+    pendingMask: splitMask(data.pendingMask),
+  };
+}
+
 export async function fetchGbpLocationDetails(
   accessToken: string,
   locationName: string,
@@ -209,27 +282,7 @@ export async function fetchGbpLocationDetails(
   const url = new URL(
     `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}`,
   );
-  url.searchParams.set(
-    "readMask",
-    [
-      "name",
-      "title",
-      "storefrontAddress",
-      "websiteUri",
-      "phoneNumbers",
-      "regularHours",
-      "specialHours",
-      "moreHours",
-      "categories",
-      "profile",
-      "serviceItems",
-      "latlng",
-      "metadata",
-      "openInfo",
-      "serviceArea",
-      "labels",
-    ].join(","),
-  );
+  url.searchParams.set("readMask", LOCATION_READ_MASK);
 
   const response = await gbpFetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },

@@ -21,6 +21,7 @@ import {
   GbpNotConnectedError,
 } from "@/lib/integrations/gbp/access";
 import {
+  fetchGbpGoogleUpdated,
   fetchGbpLocationDetails,
   patchGbpLocation,
   updateGbpLocationAttributes,
@@ -28,6 +29,11 @@ import {
 import { autocompleteRegions } from "@/lib/integrations/places/client";
 import { getActiveProfile, requireOwnedProfile } from "@/lib/session";
 import { parseLocation } from "@/features/wizytowka/types";
+import {
+  GOOGLE_FIELD_PATHS,
+  patchForField,
+  type GoogleField,
+} from "@/features/wizytowka/google-updates";
 import {
   listFingerprint,
   WHOLE_LIST_CONFLICT_MESSAGES,
@@ -844,6 +850,69 @@ export async function acceptAllGbpSuggestions(): Promise<
       return { ok: false, error: failed.error };
     }
     return { ok: false, error: "Nie udało się zaakceptować" };
+  }
+}
+
+const googleChangeSchema = z.object({
+  field: z.enum(
+    Object.keys(GOOGLE_FIELD_PATHS) as [GoogleField, ...GoogleField[]],
+  ),
+  choice: z.enum(["google", "own"]),
+});
+
+/**
+ * A field Google changed: take Google's version as the owner's, or send the
+ * owner's version again. Both values are read fresh from Google here - never
+ * from the browser.
+ */
+export async function resolveGoogleChange(
+  input: unknown,
+): Promise<ActionResult> {
+  const parsed = googleChangeSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Niepoprawne dane" };
+  const { field, choice } = parsed.data;
+
+  try {
+    const profile = await getActiveGbpProfile();
+    const token = await getGbpAccessTokenForProfile(profile);
+    const locationName = profile.gbpLocationId!;
+    const [own, google] = await Promise.all([
+      fetchGbpLocationDetails(token, locationName),
+      fetchGbpGoogleUpdated(token, locationName),
+    ]);
+
+    const changed = google.diffMask.some(
+      (path) => path.split(".")[0] === GOOGLE_FIELD_PATHS[field].top,
+    );
+    if (!changed) {
+      await saveFreshLocation(profile, token, own);
+      revalidatePath("/wizytowka", "layout");
+      return {
+        ok: false,
+        error: "Google pokazuje już Twoją wersję - odświeżyliśmy dane",
+      };
+    }
+
+    const { body, updateMask } = patchForField(
+      field,
+      choice === "google" ? google.location : own,
+    );
+    const response = await patchGbpLocation(
+      token,
+      locationName,
+      body,
+      updateMask,
+    );
+    await saveLocationAfterPatch(profile, token, {
+      body,
+      updateMask,
+      response,
+      freshBase: own,
+    });
+    revalidatePath("/wizytowka", "layout");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
   }
 }
 

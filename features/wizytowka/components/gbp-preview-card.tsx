@@ -31,10 +31,13 @@ function barTickClass(index: number, filledTicks: number): string {
 
 export function GbpPreviewCard({
   location,
+  changedByGoogle = false,
   photoUrls,
   summary,
 }: {
+  /** What customers see in Google (Google's values for fields it changed). */
   location: GbpLocation;
+  changedByGoogle?: boolean;
   photoUrls: string[];
   summary: CompletenessSummary;
 }) {
@@ -98,6 +101,9 @@ export function GbpPreviewCard({
                 <span className="ui-pill ui-pill-neutral">
                   Google Business Profile
                 </span>
+                {changedByGoogle ? (
+                  <span className="ui-pill ui-pill-warn">Wersja z Google</span>
+                ) : null}
                 {city ? (
                   <span className="ui-pill ui-pill-neutral">{city}</span>
                 ) : null}

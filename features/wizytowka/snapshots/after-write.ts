@@ -66,6 +66,7 @@ export async function saveLocationAfterPatch(
       locationName,
       raw,
       previous,
+      { afterWrite: true },
     );
     await saveGbpSnapshot(profile, "location", locationName, snapshot);
   } catch (error) {

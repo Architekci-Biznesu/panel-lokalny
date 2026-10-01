@@ -8,7 +8,13 @@ import {
   updateGbpRegularHours,
   updateGbpSpecialHours,
 } from "@/features/wizytowka/actions";
+import { GoogleFieldNote } from "@/features/wizytowka/components/google-changes";
 import { listFingerprint } from "@/features/wizytowka/fingerprint";
+import {
+  formatDayRanges,
+  periodFromRange,
+  rangesByDay,
+} from "@/features/wizytowka/hours-display";
 import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 import { TimeField } from "@/components/ui/time-field";
 import {
@@ -98,6 +104,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
               </button>
             </header>
             <HoursWeekList periods={periods} />
+            <GoogleFieldNote field="regularHours" />
           </>
         )}
       </article>
@@ -130,6 +137,7 @@ export function GodzinyView({ location }: { location: GbpLocation }) {
               </button>
             </header>
             <SpecialDaysList periods={special} />
+            <GoogleFieldNote field="specialHours" />
             {upcomingHint ? (
               <div className="wiz-hours-tip" role="note">
                 <span className="wiz-hours-tip-icon-wrap" aria-hidden>
@@ -206,12 +214,6 @@ function SpecialModeToggle({
   );
 }
 
-function formatHoursRange(periods: GbpPeriod[]): string {
-  return periods
-    .map((p) => `${formatTime(p.openTime)}-${formatTime(p.closeTime)}`)
-    .join(", ");
-}
-
 function HoursWeekList({ periods }: { periods: GbpPeriod[] }) {
   if (!periods.length) {
     return (
@@ -219,11 +221,12 @@ function HoursWeekList({ periods }: { periods: GbpPeriod[] }) {
     );
   }
 
+  const byDay = rangesByDay(periods);
   return (
     <ul className="wiz-hours-week">
       {WEEKDAYS.map((day) => {
-        const dayPeriods = periods.filter((p) => p.openDay === day.value);
-        const closed = dayPeriods.length === 0;
+        const ranges = byDay[day.value];
+        const closed = ranges.length === 0;
         return (
           <li
             key={day.value}
@@ -234,7 +237,7 @@ function HoursWeekList({ periods }: { periods: GbpPeriod[] }) {
               {closed ? (
                 <span className="wiz-hours-closed-text">Zamknięte</span>
               ) : (
-                <span className="mono">{formatHoursRange(dayPeriods)}</span>
+                <span className="mono">{formatDayRanges(ranges)}</span>
               )}
             </span>
           </li>
@@ -364,7 +367,7 @@ function parseDateInput(value: string): {
 }
 
 type WeekRow = {
-  day: string;
+  day: (typeof WEEKDAYS)[number]["value"];
   open: string;
   close: string;
   closed: boolean;
@@ -385,17 +388,19 @@ function HoursEditor({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [fingerprint] = useState(openedFingerprint);
-  const [rows, setRows] = useState<WeekRow[]>(() =>
-    WEEKDAYS.map((day) => {
-      const match = initial.find((p) => p.openDay === day.value);
+  const [rows, setRows] = useState<WeekRow[]>(() => {
+    // Overnight hours come split at midnight - edit them joined, as shown.
+    const byDay = rangesByDay(initial);
+    return WEEKDAYS.map((day) => {
+      const match = byDay[day.value][0];
       return {
         day: day.value,
-        open: match ? formatTime(match.openTime) || "09:00" : "09:00",
-        close: match ? formatTime(match.closeTime) || "17:00" : "17:00",
+        open: match?.open ?? "09:00",
+        close: match?.close ?? "17:00",
         closed: !match,
       };
-    }),
-  );
+    });
+  });
 
   return (
     <form
@@ -405,12 +410,7 @@ function HoursEditor({
         e.preventDefault();
         const periods = rows
           .filter((r) => !r.closed && r.open && r.close)
-          .map((r) => ({
-            openDay: r.day,
-            closeDay: r.day,
-            openTime: r.open,
-            closeTime: r.close,
-          }));
+          .map((r) => periodFromRange(r.day, r.open, r.close));
         startTransition(async () => {
           const result = await updateGbpRegularHours({ periods, fingerprint });
           if (!result.ok) {

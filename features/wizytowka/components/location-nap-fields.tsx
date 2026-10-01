@@ -10,6 +10,8 @@ import {
   updateGbpPhones,
   updateGbpServiceArea,
 } from "@/features/wizytowka/actions";
+import { GoogleFieldNote } from "@/features/wizytowka/components/google-changes";
+import type { GoogleField } from "@/features/wizytowka/google-updates";
 import { listFingerprint } from "@/features/wizytowka/fingerprint";
 import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 import { formatAddress, type GbpLocation } from "@/features/wizytowka/types";
@@ -74,6 +76,7 @@ export function LocationNapFields({ location }: { location: GbpLocation }) {
       <NapField
         label="Telefon"
         anchorId="wiz-field-phone"
+        googleField="phone"
         display={
           primaryPhone ? (
             <span className="wiz-phone-display">
@@ -101,6 +104,7 @@ export function LocationNapFields({ location }: { location: GbpLocation }) {
       <NapField
         label="Adres"
         anchorId="wiz-field-address"
+        googleField="address"
         display={
           <span className="mono">
             {formatAddress(location.storefrontAddress) || "-"}
@@ -113,6 +117,7 @@ export function LocationNapFields({ location }: { location: GbpLocation }) {
       <NapField
         label="Obszar obsługi"
         anchorId="wiz-field-service-area"
+        googleField="serviceArea"
         display={<ServiceAreaPreview location={location} />}
         editor={({ close }) => (
           <ServiceAreaForm location={location} onDone={close} />
@@ -127,7 +132,10 @@ function NapField({
   anchorId,
   display,
   editor,
+  googleField,
 }: {
+  /** Field to show Google's change / pending review for. */
+  googleField?: GoogleField;
   label: string;
   anchorId: string;
   display: React.ReactNode;
@@ -146,6 +154,7 @@ function NapField({
         ) : (
           display
         )}
+        {googleField && !open ? <GoogleFieldNote field={googleField} /> : null}
       </div>
       <button
         type="button"

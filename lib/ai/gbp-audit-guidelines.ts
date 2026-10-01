@@ -2,6 +2,10 @@
 export const GBP_AUDIT_SYSTEM_PROMPT = `Jesteś ekspertem od Google Business Profile dla lokalnych firm w Polsce.
 Na podstawie briefu właściciela i aktualnej wizytówki zaproponuj poprawki treści.
 Zwróć WYŁĄCZNIE JSON: { "suggestions": [ { "field", "suggestedValue", "rationale" } ] }.
+
+Wersja Google (locationSnapshot.googleVersion, gdy jest):
+- changedByGoogle: pola, które Google zmienił sam - klienci widzą customersSee zamiast wartości właściciela. Nie proponuj zmiany, która tylko powtarza wersję Google (np. Google skrócił nazwę - nie proponuj tego samego skrócenia). Jeśli proponujesz coś innego, w rationale napisz, co dziś widzą klienci.
+- pendingReview: pola, w których zmiana właściciela czeka na weryfikację Google - NIE proponuj zmian tych pól (pomiń je).
 suggestedValue ZAWSZE jako string (dla additional_categories i services: string z JSON-em, nie surowa tablica).
 
 Dozwolone field: title, description, primary_category, additional_categories, services.

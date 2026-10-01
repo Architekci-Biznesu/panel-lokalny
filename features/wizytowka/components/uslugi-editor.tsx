@@ -23,6 +23,7 @@ import type { GbpSuggestion } from "@/lib/db/schema";
 import { SaveBar } from "@/components/ui/save-bar";
 import { listFingerprint } from "@/features/wizytowka/fingerprint";
 import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
+import { GoogleFieldNote } from "@/features/wizytowka/components/google-changes";
 import { UiSelect } from "@/features/shell/ui-select";
 
 const NAME_MAX = 140;
@@ -154,6 +155,7 @@ export function UslugiEditor({
               propozycję AI.
             </p>
           )}
+          {open ? null : <GoogleFieldNote field="services" />}
         </div>
       )}
     </>

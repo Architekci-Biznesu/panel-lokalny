@@ -11,6 +11,8 @@ import {
   updateGbpTitle,
   updateGbpWebsite,
 } from "@/features/wizytowka/actions";
+import { GoogleFieldNote } from "@/features/wizytowka/components/google-changes";
+import type { GoogleField } from "@/features/wizytowka/google-updates";
 import { listFingerprint } from "@/features/wizytowka/fingerprint";
 import { useReportWizEditing } from "@/features/wizytowka/components/wiz-editing";
 import { InlineSuggestion } from "@/features/wizytowka/components/inline-suggestion";
@@ -46,6 +48,7 @@ export function InformacjeEditor({
       <FieldRow
         label="Nazwa firmy"
         anchorId="wiz-field-title"
+        googleField="title"
         value={location.title ?? "-"}
         suggestion={byField.get("title")}
         categoryOptions={categoryOptions}
@@ -80,6 +83,7 @@ export function InformacjeEditor({
       <FieldRow
         label="Opis"
         anchorId="wiz-field-description"
+        googleField="description"
         value={location.profile?.description ?? "Brak opisu"}
         multiline
         suggestion={byField.get("description")}
@@ -93,6 +97,7 @@ export function InformacjeEditor({
       />
       <FieldRow
         label="Status"
+        googleField="openInfo"
         value={
           <span className="ui-pill ui-pill-success wiz-status-pill">
             <span className="wiz-status-dot" aria-hidden />
@@ -152,6 +157,7 @@ function WebsiteFieldRow({ websiteUri }: { websiteUri?: string }) {
         ) : (
           <span className="mono">{display}</span>
         )}
+        {open ? null : <GoogleFieldNote field="website" />}
       </div>
       <button
         type="button"
@@ -226,6 +232,7 @@ function CategoriesFieldRow({
             </li>
           ) : null}
         </ul>
+        {open ? null : <GoogleFieldNote field="categories" />}
       </div>
       <button
         type="button"
@@ -262,7 +269,10 @@ function FieldRow({
   suggestion,
   suggestionCurrentFallback,
   categoryOptions,
+  googleField,
 }: {
+  /** Field to show Google's change / pending review for. */
+  googleField?: GoogleField;
   label: string;
   anchorId?: string;
   value: React.ReactNode;
@@ -283,6 +293,7 @@ function FieldRow({
           currentDisplay={suggestionCurrentFallback ?? String(value ?? "")}
           categoryOptions={categoryOptions}
         />
+        {googleField ? <GoogleFieldNote field={googleField} /> : null}
       </div>
     );
   }
@@ -298,6 +309,7 @@ function FieldRow({
         ) : (
           value
         )}
+        {googleField && !open ? <GoogleFieldNote field={googleField} /> : null}
       </div>
       <button
         type="button"
