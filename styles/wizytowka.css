@@ -3365,38 +3365,13 @@
     color: var(--foreground);
   }
 
+  /* Ten sam przycisk co w kafelkach "Do Twojej decyzji" (.wiz-proposal-cta) */
   .wiz-gstatus-go {
-    display: inline-flex;
     flex-shrink: 0;
-    align-items: center;
-    gap: var(--space-1);
-    height: 34px;
-    padding: 0 4px 0 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    font-size: var(--type-sm);
-    font-weight: 500;
-    color: var(--foreground);
+    width: auto;
+    margin-top: 0;
+    gap: var(--space-3);
     white-space: nowrap;
-    transition: border-color 0.15s ease;
-  }
-
-  .wiz-gstatus-go:hover {
-    border-color: var(--neutral-300);
-  }
-
-  .wiz-gstatus-go-icon {
-    display: grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-pill);
-    background: var(--neutral-150);
-  }
-
-  .wiz-gstatus-go-icon svg {
-    width: 13px;
-    height: 13px;
   }
 
   @media (max-width: 639px) {

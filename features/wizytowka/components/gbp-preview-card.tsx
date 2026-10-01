@@ -98,9 +98,6 @@ export function GbpPreviewCard({
                 <p className="wiz-preview-category">{category}</p>
               ) : null}
               <div className="wiz-preview-pills">
-                <span className="ui-pill ui-pill-neutral">
-                  Google Business Profile
-                </span>
                 {changedByGoogle ? (
                   <span className="ui-pill ui-pill-warn">Wersja z Google</span>
                 ) : null}

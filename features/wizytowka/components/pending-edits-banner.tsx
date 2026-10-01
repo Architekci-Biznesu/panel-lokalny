@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import {
   GOOGLE_FIELD_LABELS,
   type GoogleField,
@@ -71,10 +71,13 @@ export function GoogleStatusCard({
               )}
             </p>
           </div>
-          <Link href={FIELD_HREF[google[0].field]} className="wiz-gstatus-go">
-            Zdecyduj przy polu
-            <span className="wiz-gstatus-go-icon" aria-hidden>
-              <ChevronRight />
+          <Link
+            href={FIELD_HREF[google[0].field]}
+            className="wiz-proposal-cta is-warn wiz-gstatus-go"
+          >
+            <span>Zdecyduj przy polu</span>
+            <span className="wiz-proposal-cta-arrow" aria-hidden>
+              <ArrowRight />
             </span>
           </Link>
         </div>
