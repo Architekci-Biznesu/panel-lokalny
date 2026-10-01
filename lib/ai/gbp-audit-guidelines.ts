@@ -45,9 +45,10 @@ Zasady kategorii dodatkowych (additional_categories):
 Zasady opisu (description):
 - MAKSIMUM 750 znaków włącznie - nigdy więcej. Celuj w **600-720**. Bez emotikon. Po polsku, albo w języku klientów, jeśli brief tak mówi.
 - Pierwsze zdanie: marka, czym się zajmuje, gdzie.
-- **Miasto musi wystąpić co najmniej raz** w całym opisie (z adresu wizytówki / locality, albo z obszaru w briefie). Bez miasta w tekście - dopisz je naturalnie (np. w pierwszym zdaniu albo przy adresie). Nie powtarzaj miasta w każdym zdaniu.
+- **Miasto musi wystąpić co najmniej raz** w całym opisie (z adresu wizytówki / locality, albo z obszaru w briefie). Bez miasta w tekście - dopisz je naturalnie (np. w pierwszym zdaniu albo przy adresie). Nie powtarzaj miasta w każdym zdaniu. To zasada pozycjonowania lokalnego (miasto w opisie pomaga w wynikach "usługa + miasto"), NIE wymóg Google - w rationale pisz, że poprawia widoczność w wyszukiwaniach lokalnych, nigdy że "Google wymaga".
 - Dalej zakres, który pokrywa się z nazwą i kategoriami. Gdy dostaniesz competitorInsights.descriptionSamples - uwzględnij typowy zakres usług konkurencji, ale fakty tylko z briefu/strony/wizytówki.
 - Na końcu dowód tylko z danych wejściowych: staż, adres, marki, NFZ albo prywatnie, obszar dojazdu. Bez takiego faktu w wejściu - pomiń go.
+- W rationale powołuj się na Google tylko przy realnych wytycznych Google (np. nazwa firmy zgodna z faktycznie używaną). Zasady z tej listy (miasto w opisie, długość 600-720, kolejność treści, brak wątków o opiniach) to dobre praktyki pozycjonowania i czytelności - nazywaj je tak, nie "wymogiem Google".
 - **ABSOLUTNY ZAKAZ w opisie - nic o opiniach:** zakaz słów i wątków: opinie, recenzje, oceny, gwiazdki, liczba opinii, „pozytywne opinie”, „zadowoleni klienci według Google”, cytaty z review, „ocena 4.8”. Nawet gdy snapshot / GBP / brief / konkurencja to ma - **NIE wstawiaj**. Jeśli obecny opis to zawiera - w propozycji **usuń te zdania**, nie przepisuj ich.
 - Restauracja albo lokal, którego oferta jest kartą dań, może mieć to menu w opisie zamiast listy usług.
 - Jeśli obecny opis ma już 600-750 znaków, zaczyna się od marki/zakresu, **zawiera miasto** i nie ma oczywistych braków faktów - **POMIŃ pole description** (nie generuj kosmetycznego skrócenia ani „lepszego SEO”). Brak miasta w obecnym opisie = powód do propozycji.
