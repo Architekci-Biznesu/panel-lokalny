@@ -1,0 +1,1 @@
+ALTER TABLE "review_sync_runs" ADD COLUMN "progress_at" timestamp with time zone DEFAULT now() NOT NULL;

@@ -25,7 +25,7 @@ export function contentDisplayStatus(
   if (targetStatuses.length === 0) return "publishing";
 
   const has = (status: ContentTargetStatus) => targetStatuses.includes(status);
-  if (has("queued")) return "publishing";
+  if (has("queued") || has("publishing")) return "publishing";
   if (has("failed")) return has("published") ? "partial" : "failed";
   if (has("scheduled")) return "scheduled";
   return "published";
@@ -51,6 +51,7 @@ export const TARGET_STATUS_META: Record<
 > = {
   queued: { label: "W kolejce", pill: "ui-pill-info" },
   scheduled: { label: "Zaplanowano", pill: "ui-pill-info" },
+  publishing: { label: "Publikuję", pill: "ui-pill-info" },
   published: { label: "Opublikowano", pill: "ui-pill-success" },
   failed: { label: "Błąd", pill: "ui-pill-danger" },
 };

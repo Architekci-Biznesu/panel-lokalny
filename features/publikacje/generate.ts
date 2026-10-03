@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { getImageProvider, getTextProvider } from "@/lib/ai";
 import { db } from "@/lib/db";
@@ -11,6 +10,7 @@ import {
   type Profile,
 } from "@/lib/db/schema";
 import { putPublicImage } from "@/lib/storage";
+import { enqueueGenerationRun } from "@/lib/queue";
 import { loadContentContext } from "@/features/publikacje/content-context";
 import {
   MAX_POSTS_PER_REQUEST,
@@ -75,10 +75,19 @@ export async function enqueueContentGeneration(input: {
     .returning({ id: contentGenerationRuns.id });
 
   const runId = run.id;
-  // TODO: przenieść do kolejki BullMQ (Faza 5)
-  after(() => {
-    void runContentGeneration(runId);
-  });
+  try {
+    await enqueueGenerationRun(runId);
+  } catch (error) {
+    await db
+      .update(contentGenerationRuns)
+      .set({
+        status: "failed",
+        error: "Nie udało się zlecić generowania - spróbuj ponownie",
+        finishedAt: new Date(),
+      })
+      .where(eq(contentGenerationRuns.id, runId));
+    throw error;
+  }
   return runId;
 }
 
@@ -183,7 +192,7 @@ async function runPosts(run: ContentGenerationRun, profile: Profile) {
 }
 
 /**
- * Runs a background batch (no session - safe for after() or a worker).
+ * Worker runner of the `content-generation` queue (no session, no next/*).
  * The profile is loaded by id; the run was validated when it was queued.
  */
 export async function runContentGeneration(runId: string): Promise<void> {

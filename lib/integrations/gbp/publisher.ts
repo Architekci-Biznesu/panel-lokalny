@@ -7,14 +7,18 @@ import {
 } from "@/lib/db/schema";
 import {
   ChannelPublishError,
+  PUBLISH_UNKNOWN_OUTCOME_MESSAGE,
   type ChannelPublisher,
 } from "@/lib/integrations/channel";
-import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/access";
+import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/token";
 import {
   GbpNotConnectedError,
   isGbpUnauthenticatedError,
 } from "@/lib/integrations/gbp/errors";
-import { gbpPublishErrorMessage } from "@/lib/integrations/gbp/publish-errors";
+import {
+  classifyGbpPublishError,
+  gbpPublishErrorMessage,
+} from "@/lib/integrations/gbp/publish-errors";
 import { createGbpLocalPost } from "@/lib/integrations/gbp/client";
 import { withGbpV4LocationName } from "@/lib/integrations/gbp/v4-name";
 
@@ -48,7 +52,13 @@ export const gbpPublisher: ChannelPublisher = {
         return { externalId: post.name };
       }
     } catch (error) {
-      throw new ChannelPublishError(gbpPublishErrorMessage(error));
+      const retry = classifyGbpPublishError(error);
+      throw new ChannelPublishError(
+        retry === "unknown"
+          ? PUBLISH_UNKNOWN_OUTCOME_MESSAGE
+          : gbpPublishErrorMessage(error),
+        retry,
+      );
     }
   },
 };

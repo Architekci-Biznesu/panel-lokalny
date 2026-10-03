@@ -19,9 +19,23 @@ export interface ChannelPublisher {
   publish(item: ContentItem, target: ContentTarget): Promise<PublishResult>;
 }
 
+/**
+ * What a failed publish means for a retry:
+ * - retry: the channel refused for a transient reason, nothing was created
+ * - final: nothing was created and another try gives the same answer
+ * - unknown: the request went out without an answer - the post may exist
+ */
+export type PublishRetry = "retry" | "final" | "unknown";
+
+export const PUBLISH_UNKNOWN_OUTCOME_MESSAGE =
+  "Nie wiemy, czy post został opublikowany - sprawdź wizytówkę przed ponowieniem";
+
 /** Error whose message is safe and readable for the customer. */
 export class ChannelPublishError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly retry: PublishRetry = "final",
+  ) {
     super(message);
     this.name = "ChannelPublishError";
   }

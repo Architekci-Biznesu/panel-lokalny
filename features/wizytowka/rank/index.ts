@@ -14,6 +14,7 @@ export {
   markStaleRunningScans,
   hasRunningScanForKeyword,
   hasDoneScanTodayForKeyword,
+  scanLimitReason,
   coerceStaleScanStatus,
   nextWarsawMidnight,
   warsawDayBounds,

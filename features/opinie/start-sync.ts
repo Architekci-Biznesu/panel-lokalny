@@ -1,24 +1,30 @@
-import { after } from "next/server";
 import type { Profile } from "@/lib/db/schema";
-import { runReviewSync } from "@/features/opinie/run-sync";
+import { enqueueReviewSync } from "@/lib/queue";
 import {
+  failReviewSync,
   isReviewSyncDue,
   startReviewSync,
 } from "@/features/opinie/sync-control";
 
 /**
- * The only place that ties the sync job to Next: `after()` runs it once the
- * response is sent. Callers must have verified the profile (getActiveProfile).
+ * Starts a review sync in the worker (`runReviewSync`, queue `reviews`).
+ * Callers must have verified the profile (getActiveProfile) - the worker's
+ * cyclic sync (features/maintenance) starts runs without a session.
  */
 export async function beginReviewSync(
   profile: Pick<Profile, "id">,
 ): Promise<{ runId: string; started: boolean }> {
   const run = await startReviewSync(profile.id);
   if (run.started) {
-    // TODO: przenieść do kolejki BullMQ + synchronizacja cykliczna (Faza 5)
-    after(() => {
-      void runReviewSync(run.runId);
-    });
+    try {
+      await enqueueReviewSync(run.runId);
+    } catch (error) {
+      await failReviewSync(
+        run.runId,
+        "Nie udało się zlecić sprawdzenia opinii",
+      );
+      throw error;
+    }
   }
   return run;
 }

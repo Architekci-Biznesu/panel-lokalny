@@ -41,8 +41,11 @@ import { publishReviewReply } from "@/features/opinie/publish-reply";
  * MVP that is acceptable.
  */
 
-/** Safety stop for a first import (50 reviews per page). */
-export const MAX_SYNC_PAGES = 200;
+/**
+ * Safety stop of one sync (50 reviews per page = 50 000 reviews). A sync that
+ * hits it is not complete, so the next one reads everything again.
+ */
+export const MAX_SYNC_PAGES = 1000;
 
 /** Drafts written per run; the rest is picked up by the next sync (newest first). */
 export const MAX_AUTO_DRAFTS_PER_RUN = 40;
@@ -55,6 +58,8 @@ type SyncCounts = {
   newCount: number;
   averageRating: number | null;
   totalCount: number | null;
+  /** The whole history is stored (see reviewSyncRuns.reachedEnd). */
+  reachedEnd: boolean;
 };
 
 function toRow(profileId: string, review: ChannelReview, now: Date) {
@@ -75,6 +80,26 @@ function toRow(profileId: string, review: ChannelReview, now: Date) {
   };
 }
 
+/**
+ * Sign of life of a running sync (after every page and step): the hung-run
+ * check looks at this, not at the start, so a long sync is not cut off.
+ */
+async function markProgress(
+  runId: string,
+  deps: ReviewDeps,
+  counts?: Pick<SyncCounts, "fetched" | "newCount">,
+) {
+  await deps.db
+    .update(reviewSyncRuns)
+    .set({
+      progressAt: deps.now(),
+      ...(counts ? { fetched: counts.fetched, newCount: counts.newCount } : {}),
+    })
+    .where(
+      and(eq(reviewSyncRuns.id, runId), eq(reviewSyncRuns.status, "running")),
+    );
+}
+
 /** Fetches pages (newest change first) and stores what is new or changed. */
 async function syncPages(
   profile: Profile,
@@ -84,10 +109,11 @@ async function syncPages(
   const { db } = deps;
   const channel = deps.channelFor(profile);
 
-  // The first sync of a profile reads everything. Later ones stop at the first
-  // review that is unchanged AND older than the last good sync - "known" alone
-  // is not enough: a run that failed halfway has stored the newest reviews
-  // without having reached the older changed ones.
+  // Until one sync has read the whole history, every sync reads everything.
+  // Later ones stop at the first review that is unchanged AND older than the
+  // last complete sync - "known" alone is not enough: a run that failed (or hit
+  // the page limit) halfway has stored the newest reviews without having
+  // reached the older ones.
   const [lastDone] = await db
     .select({ startedAt: reviewSyncRuns.startedAt })
     .from(reviewSyncRuns)
@@ -95,6 +121,7 @@ async function syncPages(
       and(
         eq(reviewSyncRuns.profileId, profile.id),
         eq(reviewSyncRuns.status, "done"),
+        eq(reviewSyncRuns.reachedEnd, true),
       ),
     )
     .orderBy(desc(reviewSyncRuns.startedAt))
@@ -108,6 +135,7 @@ async function syncPages(
     newCount: 0,
     averageRating: null,
     totalCount: null,
+    reachedEnd: false,
   };
   let pageToken: string | null = null;
   let pages = 0;
@@ -136,6 +164,14 @@ async function syncPages(
           )
       : [];
     const existing = new Map(existingRows.map((row) => [row.externalId, row]));
+    // Writes of the page go out together (one INSERT, updates pipelined in
+    // one transaction) - one by one, a first sync of a listing with
+    // thousands of reviews took over an hour.
+    const inserts: Array<typeof reviews.$inferInsert> = [];
+    const updates: Array<{
+      id: string;
+      values: Partial<typeof reviews.$inferInsert>;
+    }> = [];
 
     for (const review of page.reviews) {
       const row = existing.get(review.externalId);
@@ -199,25 +235,47 @@ async function syncPages(
       };
 
       if (!row) {
-        await db
-          .insert(reviews)
-          .values({
-            ...toRow(profile.id, review, now),
-            ...replyColumns,
-            firstSeenAt: now,
-          })
-          .onConflictDoNothing();
-        counts.newCount++;
+        inserts.push({
+          ...toRow(profile.id, review, now),
+          ...replyColumns,
+          firstSeenAt: now,
+        });
       } else {
-        await db
-          .update(reviews)
-          .set({ ...toRow(profile.id, review, now), ...replyColumns })
-          .where(
-            and(eq(reviews.id, row.id), eq(reviews.profileId, profile.id)),
-          );
+        updates.push({
+          id: row.id,
+          values: { ...toRow(profile.id, review, now), ...replyColumns },
+        });
       }
     }
 
+    if (inserts.length) {
+      const inserted = await db
+        .insert(reviews)
+        .values(inserts)
+        .onConflictDoNothing()
+        .returning({ id: reviews.id });
+      counts.newCount += inserted.length;
+    }
+    if (updates.length) {
+      await db.transaction(async (tx) => {
+        await Promise.all(
+          updates.map((update) =>
+            tx
+              .update(reviews)
+              .set(update.values)
+              .where(
+                and(
+                  eq(reviews.id, update.id),
+                  eq(reviews.profileId, profile.id),
+                ),
+              ),
+          ),
+        );
+      });
+    }
+    await markProgress(runId, deps, counts);
+
+    if (reachedKnown || !page.nextPageToken) counts.reachedEnd = true;
     pageToken = reachedKnown ? null : page.nextPageToken;
   } while (pageToken && pages < MAX_SYNC_PAGES);
 
@@ -235,6 +293,7 @@ async function syncPages(
       averageRating:
         counts.averageRating != null ? counts.averageRating.toFixed(2) : null,
       totalCount: counts.totalCount,
+      reachedEnd: counts.reachedEnd,
     })
     .where(eq(reviewSyncRuns.id, runId));
 
@@ -340,7 +399,7 @@ async function finishRun(
     .where(eq(reviewSyncRuns.id, runId));
 }
 
-// TODO: przenieść do kolejki BullMQ + synchronizacja cykliczna (Faza 5)
+/** Worker runner of the `reviews` queue (on demand and every 30 min / 3 h). */
 export async function runReviewSync(
   runId: string,
   deps: ReviewDeps = reviewDeps(),
@@ -363,6 +422,7 @@ export async function runReviewSync(
 
     await syncPages(profile, run.id, deps);
     await draftNewReviews(profile, deps);
+    await markProgress(run.id, deps);
     await publishAutoReplies(profile, deps);
     await finishRun(run.id, deps, { status: "done" });
   } catch (error) {

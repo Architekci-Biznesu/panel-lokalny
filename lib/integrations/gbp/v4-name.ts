@@ -2,7 +2,10 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { profiles, type Profile } from "@/lib/db/schema";
 import { resolveGbpV4LocationName } from "@/lib/integrations/gbp/client";
-import { isGbpNotFoundError } from "@/lib/integrations/gbp/errors";
+import {
+  GBP_V4_NOT_FOUND_MESSAGE,
+  isGbpNotFoundError,
+} from "@/lib/integrations/gbp/errors";
 
 /**
  * v4 APIs (photos, posts, reviews) need `accounts/{a}/locations/{l}`. Finding
@@ -11,8 +14,7 @@ import { isGbpNotFoundError } from "@/lib/integrations/gbp/errors";
  * No session and no next/* here - background jobs use it too.
  */
 
-export const GBP_V4_NOT_FOUND_MESSAGE =
-  "lokalizacja nie należy do żadnego konta tego połączenia";
+export { GBP_V4_NOT_FOUND_MESSAGE } from "@/lib/integrations/gbp/errors";
 
 function locationIdOf(locationName: string): string {
   return locationName.replace(/^locations\//, "");

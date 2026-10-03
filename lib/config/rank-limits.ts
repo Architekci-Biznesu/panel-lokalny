@@ -24,3 +24,9 @@ export const RANK_MISSING_POSITION = 21;
 export function rankQueryCount(gridSize: number = RANK_GRID_SIZE): number {
   return gridSize * gridSize;
 }
+
+/** Done scans of one keyword per calendar day (Europe/Warsaw) - manual and cyclic together. */
+export const RANK_SCANS_PER_KEYWORD_PER_DAY = 1;
+
+/** Cyclic scan: a keyword is rescanned when its last scan is older than this. */
+export const RANK_AUTO_SCAN_INTERVAL_DAYS = 30;

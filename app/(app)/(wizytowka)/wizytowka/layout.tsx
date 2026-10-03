@@ -52,6 +52,7 @@ export default async function WizytowkaLayout({
   let connected = true;
   let summary = null as ReturnType<typeof computeCompleteness> | null;
   let analyzing = false;
+  let analysisError: string | null = null;
   let loadError: string | null = null;
   let location: GbpLocation | null = null;
   // What customers see: Google's values for fields it changed or still reviews.
@@ -83,6 +84,10 @@ export default async function WizytowkaLayout({
       customerLocation = merged as GbpLocation;
     }
     analyzing = bundle.latestAuditRun?.status === "running";
+    analysisError =
+      bundle.latestAuditRun?.status === "failed"
+        ? (bundle.latestAuditRun.error ?? "Analiza nie powiodła się")
+        : null;
 
     const [latestInsights, media] = await Promise.all([
       loadLatestAuditInsights(bundle.profile.id),
@@ -149,7 +154,7 @@ export default async function WizytowkaLayout({
         mapsUri={location?.metadata?.mapsUri ?? null}
       >
         <div className="wiz-page">
-          <AnalysisRunningGate analyzing={analyzing} />
+          <AnalysisRunningGate analyzing={analyzing} error={analysisError} />
           <ModuleHeader
             title="Wizytówka Google"
             className="wiz-header"

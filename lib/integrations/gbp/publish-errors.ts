@@ -1,5 +1,9 @@
+import type { PublishRetry } from "@/lib/integrations/channel";
 import {
+  GBP_V4_NOT_FOUND_MESSAGE,
+  GbpHttpError,
   GbpNotConnectedError,
+  GbpUnknownOutcomeError,
   isGbpUnauthenticatedError,
 } from "@/lib/integrations/gbp/errors";
 
@@ -34,4 +38,37 @@ export function gbpPublishErrorMessage(error: unknown): string {
     // not JSON - fall through
   }
   return "Nie udało się opublikować posta w Google";
+}
+
+/** Transient HTTP answers - Google did not create the post, a retry may work. */
+function isTransientStatus(status: number): boolean {
+  return status >= 500 || status === 429 || status === 408;
+}
+
+function statusOf(error: unknown): number | null {
+  if (error instanceof GbpHttpError) return error.status;
+  const match = /failed \((\d{3})\)/.exec(
+    error instanceof Error ? error.message : "",
+  );
+  return match ? Number(match[1]) : null;
+}
+
+/**
+ * Whether publishing a post may be retried after this error. Only answers
+ * that prove Google created nothing and may answer differently next time
+ * (5xx, 429, 408) are retried. Other 4xx and expired authorization fail at
+ * once - another try gives the same answer. No answer after sending the post
+ * is unknown: the post may exist, a retry could create a duplicate.
+ */
+export function classifyGbpPublishError(error: unknown): PublishRetry {
+  if (error instanceof GbpUnknownOutcomeError) return "unknown";
+  if (error instanceof GbpNotConnectedError) return "final";
+  if (isGbpUnauthenticatedError(error)) return "final";
+  const status = statusOf(error);
+  if (status !== null) return isTransientStatus(status) ? "retry" : "final";
+  const message = error instanceof Error ? error.message : "";
+  if (message.includes(GBP_V4_NOT_FOUND_MESSAGE)) return "final";
+  // Anything else happened before the post was sent (token refresh, finding
+  // the v4 name - a broken connection there created nothing).
+  return "retry";
 }

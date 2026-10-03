@@ -160,10 +160,8 @@ export function KontekstForm({
                       });
                       return;
                     }
-                    toast.success({
-                      title: "Analiza zakończona",
-                      description: "Nowe propozycje czekają w Wizytówce.",
-                    });
+                    // Analysis runs in the worker - Wizytówka shows its
+                    // progress and the result.
                     setReauditPrompt(false);
                     router.push("/wizytowka/informacje");
                   } finally {

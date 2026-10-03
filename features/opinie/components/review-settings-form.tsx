@@ -300,8 +300,9 @@ export function ReviewSettingsForm({
               </span>
               <p className="op-foot-text">
                 Opinie 1-2 zawsze czekają na Twoją decyzję. Tryb automatyczny
-                nie rusza opinii sprzed włączenia. Odpowiedzi wysyłamy przy
-                każdym sprawdzeniu opinii (wejście w Opinie albo „Odśwież”).
+                nie rusza opinii sprzed włączenia. W trybie automatycznym
+                sprawdzamy opinie co 30 minut i odpowiadamy bez otwierania
+                panelu.
                 {autoSince && initialMode === "auto"
                   ? ` Tryb włączony od ${SINCE_FMT.format(new Date(autoSince))}.`
                   : ""}

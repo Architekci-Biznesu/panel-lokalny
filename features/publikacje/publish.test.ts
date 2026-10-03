@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import type { ContentItem, ContentTarget } from "../../lib/db/schema";
 import {
   ChannelPublishError,
+  PUBLISH_UNKNOWN_OUTCOME_MESSAGE,
   type ChannelPublishers,
 } from "../../lib/integrations/channel";
 import {
   CHANNEL_SOON_MESSAGE,
   initialTargetStatus,
-  publishQueuedTargets,
+  publishOneTarget,
 } from "./publish-core";
 
 const now = new Date("2026-09-28T10:00:00Z");
@@ -33,6 +34,7 @@ function target(
     publishedAt: null,
     externalId: null,
     error: null,
+    claimedAt: null,
     ...overrides,
   };
 }
@@ -51,7 +53,7 @@ async function main() {
     );
   }
 
-  /** Group publishing: one failing target never stops the others. */
+  /** One target per job: outcome and whether the worker may retry. */
   {
     const calls: string[] = [];
     const publishers: ChannelPublishers = {
@@ -61,6 +63,12 @@ async function main() {
           if (t.profileId === "detached") {
             throw new ChannelPublishError(
               "Profil nie ma podłączonej wizytówki Google",
+            );
+          }
+          if (t.profileId === "busy") {
+            throw new ChannelPublishError(
+              "Google chwilowo nie odpowiada",
+              "retry",
             );
           }
           if (t.profileId === "boom") throw new Error("socket hang up");
@@ -73,49 +81,53 @@ async function main() {
 
     const originalError = console.error;
     console.error = () => {};
-    const outcomes = await publishQueuedTargets(
-      item,
-      [
-        target("t1", "detached"),
-        target("t2", "ok"),
-        target("t3", "boom"),
-        target("t4", "ok", { channel: "facebook" }),
-        target("t5", "ok", { status: "scheduled" }),
-      ],
-      publishers,
-      () => now,
-    );
+    const publish = (t: ContentTarget) =>
+      publishOneTarget(item, t, publishers, () => now);
+    const detached = await publish(target("t1", "detached"));
+    const ok = await publish(target("t2", "ok"));
+    const boom = await publish(target("t3", "boom"));
+    const facebook = await publish(target("t4", "ok", { channel: "facebook" }));
+    const busy = await publish(target("t5", "busy"));
     console.error = originalError;
 
     assert.deepEqual(
       calls,
-      ["detached", "ok", "boom"],
-      "scheduled targets and channels without a publisher are not sent",
+      ["detached", "ok", "boom", "busy"],
+      "channels without a publisher are not sent",
     );
-    const byId = new Map(outcomes.map((o) => [o.targetId, o]));
-    assert.equal(outcomes.length, 4);
-    assert.deepEqual(byId.get("t1"), {
+    assert.deepEqual(detached, {
       targetId: "t1",
       status: "failed",
       error: "Profil nie ma podłączonej wizytówki Google",
+      retry: "final",
     });
-    assert.deepEqual(byId.get("t2"), {
+    assert.deepEqual(ok, {
       targetId: "t2",
       status: "published",
       externalId: "accounts/1/locations/2/localPosts/ok",
       publishedAt: now,
     });
-    const boom = byId.get("t3");
     assert.ok(
-      boom?.status === "failed" && !boom.error.includes("socket"),
+      boom.status === "failed" && !boom.error.includes("socket"),
       "raw errors never reach the customer",
     );
-    assert.deepEqual(byId.get("t4"), {
+    assert.deepEqual(
+      boom,
+      {
+        targetId: "t3",
+        status: "failed",
+        error: PUBLISH_UNKNOWN_OUTCOME_MESSAGE,
+        retry: "unknown",
+      },
+      "a raw error inside the adapter may have created the post - never retried",
+    );
+    assert.deepEqual(facebook, {
       targetId: "t4",
       status: "failed",
       error: CHANNEL_SOON_MESSAGE,
+      retry: "final",
     });
-    assert.equal(byId.has("t5"), false);
+    assert.equal(busy.status === "failed" && busy.retry, "retry");
   }
 
   console.log("content publish tests passed");

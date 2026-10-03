@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import type { GbpSnapshotKind, Profile } from "@/lib/db/schema";
 import { GBP_FRESHNESS_MS } from "@/lib/config/freshness";
 import {
@@ -8,10 +7,11 @@ import {
   isRefreshing,
   listProfileSnapshots,
   putSnapshot,
+  releaseSnapshotRefresh,
   SHARED_SNAPSHOT_KINDS,
   type SnapshotTarget,
 } from "@/lib/integrations/gbp/snapshots/store";
-import { runGbpSnapshotRefresh } from "@/features/wizytowka/snapshots/refresh";
+import { enqueueSnapshotRefresh } from "@/lib/queue";
 import {
   fetchSnapshotData,
   type SnapshotData,
@@ -45,9 +45,14 @@ function targetFor(
   };
 }
 
-function scheduleRefresh(profile: Profile, target: SnapshotTarget) {
-  // TODO: przenieść do kolejki BullMQ (Faza 5)
-  after(() => runGbpSnapshotRefresh({ tokenProfileId: profile.id, target }));
+/** The worker refreshes the claimed row; a refused job frees the claim at once. */
+async function scheduleRefresh(profile: Profile, target: SnapshotTarget) {
+  try {
+    await enqueueSnapshotRefresh({ tokenProfileId: profile.id, target });
+  } catch (error) {
+    console.error("Snapshot refresh enqueue failed:", error);
+    await releaseSnapshotRefresh(target).catch(() => {});
+  }
 }
 
 // First fetch of a missing snapshot: tabs opened at the same time share one
@@ -90,7 +95,8 @@ export async function readGbpSnapshot<K extends GbpSnapshotKind>(
     return { data, fetchedAt: row.fetchedAt, refreshing: isRefreshing(row) };
   }
 
-  if (await claimSnapshotRefresh(target)) scheduleRefresh(profile, target);
+  if (await claimSnapshotRefresh(target))
+    await scheduleRefresh(profile, target);
   return { data, fetchedAt: row.fetchedAt, refreshing: true };
 }
 
@@ -141,7 +147,8 @@ export async function requestGbpDataRefresh(
       kind: row.kind,
       key: row.key,
     };
-    if (await claimSnapshotRefresh(target)) scheduleRefresh(profile, target);
+    if (await claimSnapshotRefresh(target))
+      await scheduleRefresh(profile, target);
   }
 }
 

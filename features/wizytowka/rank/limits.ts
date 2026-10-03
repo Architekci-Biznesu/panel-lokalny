@@ -1,5 +1,9 @@
-import { and, eq, gte, lt } from "drizzle-orm";
-import { RANK_STALE_RUNNING_MS, RANK_TIMEZONE } from "@/lib/config/rank-limits";
+import { and, count, eq, gte, lt, ne } from "drizzle-orm";
+import {
+  RANK_SCANS_PER_KEYWORD_PER_DAY,
+  RANK_STALE_RUNNING_MS,
+  RANK_TIMEZONE,
+} from "@/lib/config/rank-limits";
 import { db } from "@/lib/db";
 import { rankScans, type RankScan } from "@/lib/db/schema";
 
@@ -105,14 +109,26 @@ export async function hasRunningScanForKeyword(
   return Boolean(row);
 }
 
+/** Daily limit of done scans of the keyword reached (RANK_SCANS_PER_KEYWORD_PER_DAY). */
 export async function hasDoneScanTodayForKeyword(
   profileId: string,
   keywordId: string,
   now: Date = new Date(),
 ): Promise<boolean> {
+  return (
+    (await doneScansToday(profileId, keywordId, now)) >=
+    RANK_SCANS_PER_KEYWORD_PER_DAY
+  );
+}
+
+async function doneScansToday(
+  profileId: string,
+  keywordId: string,
+  now: Date,
+): Promise<number> {
   const { startUtc, endUtc } = warsawDayBounds(now);
-  const [row] = await db
-    .select({ id: rankScans.id })
+  const [done] = await db
+    .select({ value: count() })
     .from(rankScans)
     .where(
       and(
@@ -122,9 +138,8 @@ export async function hasDoneScanTodayForKeyword(
         gte(rankScans.startedAt, startUtc),
         lt(rankScans.startedAt, endUtc),
       ),
-    )
-    .limit(1);
-  return Boolean(row);
+    );
+  return done?.value ?? 0;
 }
 
 export function coerceStaleScanStatus(
@@ -146,4 +161,43 @@ export function nextWarsawMidnight(now: Date = new Date()): Date {
 
 export function radiusKmNumber(value: string | number): number {
   return typeof value === "number" ? value : Number(value);
+}
+
+export const SCAN_RUNNING_MESSAGE = "Skan tej frazy już trwa";
+export const SCAN_DAILY_LIMIT_MESSAGE =
+  "Dziś już wykonano skan tej frazy - kolejny będzie dostępny jutro";
+
+/**
+ * The scan limits in one place - "Skanuj teraz" and the worker (before any
+ * ScrapingDog call, cyclic scans too) ask the same question. Null = allowed.
+ * `scanId` is the scan being started, not counted as "another one running".
+ */
+export async function scanLimitReason(
+  profileId: string,
+  keywordId: string,
+  options: { scanId?: string; now?: Date } = {},
+): Promise<string | null> {
+  const now = options.now ?? new Date();
+  const [running] = await db
+    .select({ id: rankScans.id })
+    .from(rankScans)
+    .where(
+      and(
+        eq(rankScans.profileId, profileId),
+        eq(rankScans.keywordId, keywordId),
+        eq(rankScans.status, "running"),
+        gte(
+          rankScans.startedAt,
+          new Date(now.getTime() - RANK_STALE_RUNNING_MS),
+        ),
+        options.scanId ? ne(rankScans.id, options.scanId) : undefined,
+      ),
+    )
+    .limit(1);
+  if (running) return SCAN_RUNNING_MESSAGE;
+
+  if (await hasDoneScanTodayForKeyword(profileId, keywordId, now)) {
+    return SCAN_DAILY_LIMIT_MESSAGE;
+  }
+  return null;
 }

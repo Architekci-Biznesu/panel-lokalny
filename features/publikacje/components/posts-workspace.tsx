@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ContentChannel } from "@/lib/db/schema";
+import { toast } from "@/lib/toast";
 import {
   getGenerationStatus,
   type GenerationStatus,
@@ -194,6 +195,16 @@ export function PostsWorkspace({
         const before = seen.get(run.id) ?? "0:running";
         if (progress !== before) changed = true;
         seen.set(run.id, progress);
+        // Failed (also cut off by a worker restart) - say so, polling stops.
+        if (run.status === "failed" && !before.endsWith(":failed")) {
+          toast.error({
+            title:
+              run.kind === "topics"
+                ? "Nie udało się przygotować tematów"
+                : "Nie udało się przygotować postów",
+            description: run.error ?? undefined,
+          });
+        }
       }
       setTracked((current) => {
         const next = new Map(current);

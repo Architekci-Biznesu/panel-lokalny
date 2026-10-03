@@ -10,14 +10,14 @@ function isUniqueViolation(error: unknown): boolean {
   return code === "23505" || causeCode === "23505";
 }
 
-/** A `running` run older than the stale limit counts as failed. */
+/** A `running` run without progress for longer than the stale limit counts as failed. */
 export function isRunStale(
-  run: Pick<ReviewSyncRun, "status" | "startedAt">,
+  run: Pick<ReviewSyncRun, "status" | "progressAt">,
   now: Date,
 ) {
   return (
     run.status === "running" &&
-    now.getTime() - run.startedAt.getTime() > SYNC_STALE_MS
+    now.getTime() - run.progressAt.getTime() > SYNC_STALE_MS
   );
 }
 
@@ -43,14 +43,19 @@ export async function startReviewSync(
       and(
         eq(reviewSyncRuns.profileId, profileId),
         eq(reviewSyncRuns.status, "running"),
-        lt(reviewSyncRuns.startedAt, cutoff),
+        lt(reviewSyncRuns.progressAt, cutoff),
       ),
     );
 
   try {
     const [run] = await db
       .insert(reviewSyncRuns)
-      .values({ profileId, status: "running", startedAt: now() })
+      .values({
+        profileId,
+        status: "running",
+        startedAt: now(),
+        progressAt: now(),
+      })
       .returning({ id: reviewSyncRuns.id });
     return { runId: run.id, started: true };
   } catch (error) {
@@ -68,6 +73,20 @@ export async function startReviewSync(
     if (!running) throw error;
     return { runId: running.id, started: false };
   }
+}
+
+/** Closes a run that never reached the worker (the queue refused it). */
+export async function failReviewSync(
+  runId: string,
+  error: string,
+  deps: ReviewDeps = reviewDeps(),
+): Promise<void> {
+  await deps.db
+    .update(reviewSyncRuns)
+    .set({ status: "failed", error, finishedAt: deps.now() })
+    .where(
+      and(eq(reviewSyncRuns.id, runId), eq(reviewSyncRuns.status, "running")),
+    );
 }
 
 export type ReviewSyncState = {
@@ -125,7 +144,10 @@ export async function loadReviewSyncState(
  * not hammered on every page view ("Odśwież" always works).
  */
 export function isSyncDue(
-  runs: Pick<ReviewSyncRun, "status" | "startedAt" | "finishedAt">[],
+  runs: Pick<
+    ReviewSyncRun,
+    "status" | "startedAt" | "progressAt" | "finishedAt"
+  >[],
   now: Date,
 ): boolean {
   const sorted = [...runs].sort(
@@ -150,6 +172,7 @@ export async function isReviewSyncDue(
     .select({
       status: reviewSyncRuns.status,
       startedAt: reviewSyncRuns.startedAt,
+      progressAt: reviewSyncRuns.progressAt,
       finishedAt: reviewSyncRuns.finishedAt,
     })
     .from(reviewSyncRuns)

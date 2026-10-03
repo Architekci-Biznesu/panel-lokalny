@@ -15,11 +15,8 @@ import {
   publishGroups,
   type OnboardingDraft,
 } from "@/lib/db/schema";
-import {
-  getGbpAuthUrl,
-  scheduleGbpAnalysis,
-  type GbpLocation,
-} from "@/lib/integrations/gbp/client";
+import { getGbpAuthUrl, type GbpLocation } from "@/lib/integrations/gbp/client";
+import { scheduleGbpAnalysis } from "@/features/wizytowka/audit";
 import { scrapeWebsite, type ScrapeResult } from "@/lib/scrape/website";
 import { getActiveAccountId, listAccountProfileOptions } from "@/lib/session";
 import { scheduleOnboardingProposals } from "@/features/publikacje/generate";

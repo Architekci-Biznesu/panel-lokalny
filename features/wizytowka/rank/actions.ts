@@ -1,7 +1,6 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
@@ -21,12 +20,11 @@ import {
 } from "@/lib/db/schema";
 import { getActiveGbpProfile } from "@/lib/integrations/gbp/access";
 import {
-  hasDoneScanTodayForKeyword,
-  hasRunningScanForKeyword,
+  scanLimitReason,
   markStaleRunningScans,
   syncGbpPlaceId,
 } from "@/features/wizytowka/rank";
-import { runScan } from "@/features/wizytowka/rank/run-scan";
+import { enqueueRankScan } from "@/lib/queue";
 
 type ActionFail = { ok: false; error: string };
 
@@ -205,17 +203,8 @@ export async function startRankScan(
       return { ok: false, error: "Nie znaleziono frazy" };
     }
 
-    if (await hasRunningScanForKeyword(profile.id, keyword.id)) {
-      return { ok: false, error: "Skan tej frazy już trwa" };
-    }
-
-    if (await hasDoneScanTodayForKeyword(profile.id, keyword.id)) {
-      return {
-        ok: false,
-        error:
-          "Dziś już wykonano skan tej frazy - kolejny będzie dostępny jutro",
-      };
-    }
+    const limit = await scanLimitReason(profile.id, keyword.id);
+    if (limit) return { ok: false, error: limit };
 
     await db
       .update(rankKeywords)
@@ -240,9 +229,19 @@ export async function startRankScan(
       .returning({ id: rankScans.id });
 
     const scanId = created.id;
-    after(() => {
-      void runScan(scanId);
-    });
+    try {
+      await enqueueRankScan(scanId);
+    } catch (error) {
+      await db
+        .update(rankScans)
+        .set({
+          status: "failed",
+          error: "Nie udało się zlecić skanu - spróbuj ponownie",
+          finishedAt: new Date(),
+        })
+        .where(eq(rankScans.id, scanId));
+      throw error;
+    }
 
     revalidatePath("/wizytowka/raporty");
     return {

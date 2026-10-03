@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { markAccountActive } from "@/lib/activity";
 import { AppShell } from "@/features/shell/app-shell";
 import {
   getAdminSwitcherProps,
@@ -15,6 +16,12 @@ export default async function AppLayout({
   const userName = session?.user?.name ?? session?.user?.email ?? "Użytkownik";
   const userEmail = session?.user?.email ?? null;
   const adminChrome = await getAdminSwitcherProps();
+  // The customer's own visit (not staff looking in) - see lib/activity.ts.
+  if (session?.user?.accountId && !session.user.adminImpersonating) {
+    await markAccountActive(session.user.accountId).catch((error) =>
+      console.error("Account activity write failed:", error),
+    );
+  }
 
   let profiles: {
     id: string;

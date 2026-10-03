@@ -2,7 +2,6 @@
 
 import { and, desc, eq, gte, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { after } from "next/server";
 import { z } from "zod";
 import { getTextProvider } from "@/lib/ai";
 import { defaultImagePrompt, GBP_POST_MAX } from "@/lib/ai/content-prompts";
@@ -54,7 +53,8 @@ import {
   topicsInScope,
 } from "@/features/publikacje/scope";
 import { initialTargetStatus } from "@/features/publikacje/publish-core";
-import { publishTargets } from "@/features/publikacje/publish";
+import { queuedTargetIds } from "@/features/publikacje/publish-job";
+import { enqueuePublish } from "@/lib/queue";
 
 type ActionFail = { ok: false; error: string };
 
@@ -464,12 +464,26 @@ export async function acceptContent(
         .where(eq(contentItems.id, item.id));
     });
 
+    // A date in the future: the worker's scheduled-posts job publishes it.
     if (status === "queued") {
-      const itemId = item.id;
-      // TODO: przenieść do kolejki BullMQ (Faza 5)
-      after(() => {
-        void publishTargets(itemId);
-      });
+      const targetIds = await queuedTargetIds(item.id);
+      try {
+        await Promise.all(targetIds.map((id) => enqueuePublish(id)));
+      } catch (error) {
+        console.error("Publish enqueue failed:", error);
+        await db
+          .update(contentTargets)
+          .set({
+            status: "failed",
+            error: "Nie udało się zlecić publikacji - spróbuj ponownie",
+          })
+          .where(
+            and(
+              inArray(contentTargets.id, targetIds),
+              eq(contentTargets.status, "queued"),
+            ),
+          );
+      }
     }
 
     revalidateModule();

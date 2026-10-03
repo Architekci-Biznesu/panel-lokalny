@@ -58,7 +58,12 @@ async function reportPublishResult(
     await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     const status = await getContentPublishStatus({ itemId });
     if (!status.ok) return;
-    if (status.targets.some((t) => t.status === "queued")) continue;
+    if (
+      status.targets.some(
+        (t) => t.status === "queued" || t.status === "publishing",
+      )
+    )
+      continue;
 
     const failed = status.targets.filter((t) => t.status === "failed");
     const published = status.targets.filter((t) => t.status === "published");

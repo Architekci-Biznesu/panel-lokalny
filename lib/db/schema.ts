@@ -350,20 +350,24 @@ export const gbpSuggestions = pgTable("gbp_suggestions", {
     .notNull(),
 });
 
-export const gbpAuditRuns = pgTable("gbp_audit_runs", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  profileId: uuid("profile_id")
-    .notNull()
-    .references(() => profiles.id, { onDelete: "cascade" }),
-  status: gbpAuditRunStatusEnum("status").notNull().default("running"),
-  error: text("error"),
-  /** Competitor Local Pack insights + suggested rank phrases from last audit. */
-  insights: jsonb("insights").$type<Record<string, unknown> | null>(),
-  startedAt: timestamp("started_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  finishedAt: timestamp("finished_at", { withTimezone: true }),
-});
+export const gbpAuditRuns = pgTable(
+  "gbp_audit_runs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    status: gbpAuditRunStatusEnum("status").notNull().default("running"),
+    error: text("error"),
+    /** Competitor Local Pack insights + suggested rank phrases from last audit. */
+    insights: jsonb("insights").$type<Record<string, unknown> | null>(),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [index("gbp_audit_runs_status_idx").on(table.status)],
+);
 
 export const napInterestRequests = pgTable("nap_interest_requests", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -383,6 +387,12 @@ export const rankScanStatusEnum = pgEnum("rank_scan_status", [
   "running",
   "done",
   "failed",
+]);
+
+/** Who started a scan: the customer ("Skanuj teraz") or the cyclic job. */
+export const rankScanTriggerEnum = pgEnum("rank_scan_trigger", [
+  "manual",
+  "auto",
 ]);
 
 export const rankMatchMethodEnum = pgEnum("rank_match_method", [
@@ -432,6 +442,7 @@ export const rankScans = pgTable(
     radiusKm: numeric("radius_km", { precision: 6, scale: 2 }).notNull(),
     zoom: integer("zoom").notNull().default(14),
     status: rankScanStatusEnum("status").notNull().default("running"),
+    trigger: rankScanTriggerEnum("trigger").notNull().default("manual"),
     error: text("error"),
     localPackPosition: integer("local_pack_position"),
     localPackResults:
@@ -526,6 +537,8 @@ export const contentChannelEnum = pgEnum("content_channel", [
 export const contentTargetStatusEnum = pgEnum("content_target_status", [
   "queued",
   "scheduled",
+  /** Claimed by the worker - the request to the channel may be in flight. */
+  "publishing",
   "published",
   "failed",
 ]);
@@ -582,6 +595,8 @@ export const contentTargets = pgTable(
     /** Google localPost `name` - needed to find or delete the post later. */
     externalId: text("external_id"),
     error: text("error"),
+    /** When the worker claimed the target (status `publishing`). */
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
   },
   (table) => [
     uniqueIndex("content_targets_item_profile_channel_uidx").on(
@@ -655,6 +670,7 @@ export const contentGenerationRuns = pgTable(
   (table) => [
     index("content_generation_runs_profile_id_idx").on(table.profileId),
     index("content_generation_runs_group_id_idx").on(table.groupId),
+    index("content_generation_runs_status_idx").on(table.status),
   ],
 );
 
@@ -811,6 +827,20 @@ export const reviewSyncRuns = pgTable(
     startedAt: timestamp("started_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    /**
+     * Last sign of life (start, every page, every step). A run counts as hung
+     * only after SYNC_STALE_MS without progress - a long first sync of a big
+     * listing is not cut off while it still works.
+     */
+    progressAt: timestamp("progress_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    /**
+     * The panel holds the whole review history after this run: it read to the
+     * last page, or stopped at reviews known from a run that had it already.
+     * Only such a run lets later syncs stop early (watermark).
+     */
+    reachedEnd: boolean("reached_end").notNull().default(false),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
   },
   (table) => [

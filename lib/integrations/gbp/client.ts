@@ -1,4 +1,8 @@
-import { GbpHttpError } from "@/lib/integrations/gbp/errors";
+import {
+  GbpHttpError,
+  GbpUnknownOutcomeError,
+} from "@/lib/integrations/gbp/errors";
+import { PUBLISH_REQUEST_TIMEOUT_MS } from "@/lib/config/job-limits";
 import { gbpFetch } from "@/lib/integrations/gbp/fetch";
 import { encryptSecret, decryptSecret } from "@/lib/crypto/secrets";
 
@@ -818,17 +822,25 @@ export async function createGbpLocalPost(
     body.media = [{ mediaFormat: "PHOTO", sourceUrl: input.imageUrl }];
   }
 
-  const response = await gbpFetch(
-    `https://mybusiness.googleapis.com/v4/${parent}/localPosts`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+  // No answer after sending (timeout, broken connection) = unknown result:
+  // the post may exist, so callers must not retry it automatically.
+  let response: Response;
+  try {
+    response = await gbpFetch(
+      `https://mybusiness.googleapis.com/v4/${parent}/localPosts`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(PUBLISH_REQUEST_TIMEOUT_MS),
       },
-      body: JSON.stringify(body),
-    },
-  );
+    );
+  } catch (error) {
+    throw new GbpUnknownOutcomeError("GBP localPosts.create", error);
+  }
 
   if (!response.ok) {
     throw new GbpHttpError(
@@ -838,21 +850,18 @@ export async function createGbpLocalPost(
     );
   }
 
-  const data = (await response.json()) as { name?: string };
+  // Google accepted the post - a broken body still means it exists.
+  let data: { name?: string };
+  try {
+    data = (await response.json()) as { name?: string };
+  } catch (error) {
+    throw new GbpUnknownOutcomeError("GBP localPosts.create", error);
+  }
   if (!data.name) {
-    throw new Error("GBP localPosts.create failed: brak name w odpowiedzi");
+    throw new GbpUnknownOutcomeError(
+      "GBP localPosts.create",
+      new Error("brak name w odpowiedzi"),
+    );
   }
   return { name: data.name };
-}
-
-/** Hook point for Phase 3 - GBP analysis after connect (non-blocking). */
-export async function scheduleGbpAnalysis(profileId: string): Promise<void> {
-  // TODO: przenieść do kolejki BullMQ (Faza 5)
-  try {
-    const { enqueueGbpAuditForProfile } =
-      await import("@/features/wizytowka/audit");
-    await enqueueGbpAuditForProfile(profileId);
-  } catch (error) {
-    console.error("GBP audit enqueue after onboarding failed:", error);
-  }
 }

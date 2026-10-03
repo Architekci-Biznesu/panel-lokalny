@@ -9,6 +9,9 @@ import {
   rankScans,
 } from "@/lib/db/schema";
 import { localSearch, mapsSearch } from "@/lib/integrations/scrapingdog";
+import { fetchGbpLocationDetails } from "@/lib/integrations/gbp/client";
+import { getGbpAccessTokenForProfile } from "@/lib/integrations/gbp/token";
+import { scanLimitReason } from "@/features/wizytowka/rank/limits";
 import {
   cityFromStorefrontAddress,
   formatStorefrontAddress,
@@ -63,8 +66,9 @@ async function mapPool<T, R>(
 }
 
 /**
- * Pure scan runner - no request/session. Safe to call from after() or BullMQ.
- * // TODO: skan cykliczny przez repeatable job (Faza 5)
+ * Worker runner of the `rank-scan` queue (manual "Skanuj teraz" and cyclic
+ * scans) - no request/session. The limits are checked again here, before any
+ * ScrapingDog call: the UI is not the only one that starts scans.
  */
 export async function runScan(scanId: string): Promise<void> {
   const [scan] = await db
@@ -75,6 +79,17 @@ export async function runScan(scanId: string): Promise<void> {
 
   if (!scan) return;
   if (scan.status !== "running") return;
+
+  const limit = await scanLimitReason(scan.profileId, scan.keywordId, {
+    scanId: scan.id,
+  });
+  if (limit) {
+    await db
+      .update(rankScans)
+      .set({ status: "failed", error: limit, finishedAt: new Date() })
+      .where(eq(rankScans.id, scanId));
+    return;
+  }
 
   const [profile] = await db
     .select()
@@ -111,11 +126,6 @@ export async function runScan(scanId: string): Promise<void> {
       .where(eq(rankScans.id, scanId));
     return;
   }
-
-  const { getGbpAccessTokenForProfile } =
-    await import("@/lib/integrations/gbp/access");
-  const { fetchGbpLocationDetails } =
-    await import("@/lib/integrations/gbp/client");
 
   let raw: Record<string, unknown>;
   try {

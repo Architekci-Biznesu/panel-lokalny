@@ -24,3 +24,18 @@ export const GBP_FRESHNESS_MS: Record<GbpSnapshotKind, number> = {
 
 /** A refresh that started longer ago than this is treated as dead - another request may take over. */
 export const GBP_REFRESH_LOCK_MS = 2 * MINUTE;
+
+/**
+ * Refresh ahead of the customer's visit (worker, profiles active in the last
+ * days below). Not a chase of GBP_FRESHNESS_MS - it only keeps the first
+ * visit from showing data many hours old. The visit itself still refreshes a
+ * stale snapshot in the background.
+ */
+export const GBP_PREFETCH_ACTIVE_DAYS = 7;
+/** Location: every 3 hours between 6:00 and 22:00 (Europe/Warsaw). */
+export const GBP_PREFETCH_LOCATION_CRON = "0 6-22/3 * * *";
+/** Photos: once a day in the morning. */
+export const GBP_PREFETCH_MEDIA_CRON = "0 6 * * *";
+/** Statistics: once a day at night - Google updates them once a day. */
+export const GBP_PREFETCH_METRICS_CRON = "0 3 * * *";
+export const GBP_PREFETCH_TIMEZONE = "Europe/Warsaw";

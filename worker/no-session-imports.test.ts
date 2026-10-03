@@ -3,22 +3,27 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * Background jobs must run without a request: no lib/session, no lib/auth and
- * no next/* anywhere in their STATIC import graph (direct or through other
- * files), so Phase 5 can move them to a worker unchanged. Dynamic import()
- * calls are not followed - none exist on these paths. Covers the review jobs
- * and the refresh of Google snapshots (Faza 6b).
+ * The worker runs without a request: no lib/session, no lib/auth and no
+ * next/* anywhere in its import graph - direct or through other files, static
+ * imports and dynamic import() alike. One entry point, worker/index.ts, so
+ * the test covers every runner the worker reaches, including ones added later.
  */
 
-const ROOT = path.resolve(__dirname, "../..");
-const ENTRY_POINTS = [
+const ROOT = path.resolve(__dirname, "..");
+const ENTRY_POINTS = ["worker/index.ts"];
+
+/** Runners the graph must reach - proves the walk really covers the worker. */
+const MUST_REACH = [
+  "features/publikacje/publish-job.ts",
+  "features/publikacje/generate.ts",
+  "features/wizytowka/audit-run.ts",
+  "features/wizytowka/rank/run-scan.ts",
   "features/opinie/run-sync.ts",
   "features/opinie/draft-reviews.ts",
   "features/opinie/publish-reply.ts",
-  "features/opinie/sync-control.ts",
   "features/wizytowka/snapshots/refresh.ts",
-  "lib/integrations/gbp/snapshots/store.ts",
-  "lib/integrations/gbp/v4-name.ts",
+  "features/maintenance/stale-runs.ts",
+  "lib/integrations/gbp/publisher.ts",
 ];
 
 const FORBIDDEN = [
@@ -30,7 +35,7 @@ const FORBIDDEN = [
 ];
 
 const IMPORT_RE =
-  /(?:import|export)\s[^"']*?from\s+["']([^"']+)["']|import\s+["']([^"']+)["']/g;
+  /(?:import|export)\s[^"']*?from\s+["']([^"']+)["']|import\s+["']([^"']+)["']|import\(\s*["']([^"']+)["']\s*\)|require\(\s*["']([^"']+)["']\s*\)/g;
 
 function resolveFile(from: string, specifier: string): string | null {
   let base: string;
@@ -58,7 +63,7 @@ function visit(file: string, chain: string[]) {
   seen.add(file);
   const source = fs.readFileSync(file, "utf8");
   for (const match of source.matchAll(IMPORT_RE)) {
-    const specifier = match[1] ?? match[2];
+    const specifier = match[1] ?? match[2] ?? match[3] ?? match[4];
     if (!specifier) continue;
     if (FORBIDDEN.some((rule) => rule.test(specifier))) {
       violations.push(
@@ -73,8 +78,11 @@ function visit(file: string, chain: string[]) {
 for (const entry of ENTRY_POINTS) visit(path.join(ROOT, entry), []);
 
 assert.deepEqual(violations, [], `zakazane importy:\n${violations.join("\n")}`);
-assert.ok(
-  seen.size > 10,
-  "graf importów wygląda na pusty - test nic nie sprawdza",
+const reached = new Set([...seen].map((file) => path.relative(ROOT, file)));
+const missing = MUST_REACH.filter((file) => !reached.has(file));
+assert.deepEqual(
+  missing,
+  [],
+  `graf importów workera nie obejmuje: ${missing.join(", ")}`,
 );
 console.log(`no-session imports test passed (${seen.size} files checked)`);

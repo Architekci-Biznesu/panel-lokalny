@@ -28,10 +28,8 @@ export function ReanalyzeButton() {
               });
               return;
             }
-            toast.success({
-              title: "Analiza zakończona",
-              description: "Sprawdź nowe propozycje.",
-            });
+            // The worker analyses; the page's AnalysisRunningGate keeps the
+            // overlay and says when it is done.
             router.refresh();
           });
         }}

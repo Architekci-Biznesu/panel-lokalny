@@ -117,7 +117,7 @@ export function AnalysisProgressOverlay({ active }: { active: boolean }) {
 
         <p className="wiz-analysis-foot">
           Krok <span className="mono">{stepIndex + 1}</span> z{" "}
-          <span className="mono">{STEPS.length}</span> · nie zamykaj tej strony
+          <span className="mono">{STEPS.length}</span> · działa też po zamknięciu strony
         </p>
       </div>
     </div>,

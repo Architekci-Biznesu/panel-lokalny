@@ -212,6 +212,21 @@ async function main() {
   );
   assert.equal(run2.newCount, 0);
   assert.equal(aiInputs.length, 0);
+  assert.equal(run1.reachedEnd, true, "pierwsza doczytała do końca");
+  assert.equal(run2.reachedEnd, true, "zatrzymanie na znanych = nadal komplet");
+
+  // import ucięty limitem stron (reached_end = false): następna synchronizacja
+  // czyta wszystko jeszcze raz, zamiast stanąć na znanych opiniach
+  await db
+    .update(reviewSyncRuns)
+    .set({ reachedEnd: false })
+    .where(eq(reviewSyncRuns.profileId, A.profile.id));
+  clock = at(40);
+  fakeA.fetchCalls = 0;
+  const backfill = await sync(A.profile.id, A.deps);
+  assert.equal(backfill.status, "done");
+  assert.equal(fakeA.fetchCalls, 3, "niekompletna historia: wszystkie strony");
+  assert.equal(backfill.reachedEnd, true);
 
   // =============== 3. tryb auto: stare szkice nie wychodzą, nowe 3-5* tak ===============
   clock = at(60);
@@ -441,6 +456,7 @@ async function main() {
   const finished = (minutesAgo: number, status: "done" | "failed") => ({
     status,
     startedAt: at(-minutesAgo),
+    progressAt: at(-minutesAgo),
     finishedAt: at(-minutesAgo),
   });
   assert.equal(isSyncDue([], T0), true);
@@ -452,24 +468,65 @@ async function main() {
     "nieudana nie jest ponawiana przy każdym wejściu",
   );
   assert.equal(
-    isSyncDue([{ status: "running", startedAt: at(-2), finishedAt: null }], T0),
+    isSyncDue(
+      [
+        {
+          status: "running",
+          startedAt: at(-2),
+          progressAt: at(-2),
+          finishedAt: null,
+        },
+      ],
+      T0,
+    ),
     false,
   );
   // zawieszony przebieg liczy się jak nieudany (od chwili, gdy stał się "stary"):
   // 11 min od startu - jeszcze świeżo, 26 min - czas spróbować ponownie
   assert.equal(
     isSyncDue(
-      [{ status: "running", startedAt: at(-11), finishedAt: null }],
+      [
+        {
+          status: "running",
+          startedAt: at(-11),
+          progressAt: at(-11),
+          finishedAt: null,
+        },
+      ],
       T0,
     ),
     false,
   );
   assert.equal(
     isSyncDue(
-      [{ status: "running", startedAt: at(-26), finishedAt: null }],
+      [
+        {
+          status: "running",
+          startedAt: at(-26),
+          progressAt: at(-26),
+          finishedAt: null,
+        },
+      ],
       T0,
     ),
     true,
+  );
+
+  // długa synchronizacja (duża wizytówka): godzinę od startu, ale z postępem
+  // sprzed 2 min - nadal trwa, nie jest uznana za zawieszoną
+  assert.equal(
+    isSyncDue(
+      [
+        {
+          status: "running",
+          startedAt: at(-60),
+          progressAt: at(-2),
+          finishedAt: null,
+        },
+      ],
+      T0,
+    ),
+    false,
   );
 
   // =============== 10. izolacja: cudze opinie są "nie znalezione" ===============
